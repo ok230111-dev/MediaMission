@@ -84,61 +84,65 @@
          Верхня навігаційна панель сайту
     =========================================================== -->
 
-    <header>
-      <nav class="navbar navbar-expand-lg navbar-light container">
-        <!-- Логотип -->
-        <a class="navbar-brand" href="/">MediaMission</a>
+    <header class="site-header shadow-sm">
+      <nav class="navbar navbar-expand-lg container py-3">
+        <a class="navbar-brand fw-bold" href="/"> MediaMission </a>
 
-        <a
-          class="nav-link {% if g.lang == 'uk' %}fw-bold text-primary{% endif %}"
-          href="/set_language/uk"
-          >UK</a
-        >
-        <a
-          class="nav-link {% if g.lang == 'de' %}fw-bold text-primary{% endif %}"
-          href="/set_language/de"
-          >DE</a
-        >
-        <a
-          class="nav-link {% if g.lang == 'en' %}fw-bold text-primary{% endif %}"
-          href="/set_language/en"
-          >EN</a
-        >
+        <div class="d-flex align-items-center ms-auto">
+          <div class="language-switch me-3">
+            <a
+              href="/set_language/uk"
+              class="{% if g.lang=='uk' %}active{% endif %}"
+            >
+              🇺🇦
+            </a>
 
-        <!-- Кнопка-гамбургер -->
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
+            <a
+              href="/set_language/en"
+              class="{% if g.lang=='en' %}active{% endif %}"
+            >
+              🇬🇧
+            </a>
 
-        <!-- Блок посилань -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul
-            class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0"
+            <a
+              href="/set_language/de"
+              class="{% if g.lang=='de' %}active{% endif %}"
+            >
+              🇩🇪
+            </a>
+          </div>
+
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
           >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-4">
             <li class="nav-item">
-              <a class="nav-link" href="/profile">{{t('nav_profile')}}</a>
+              <a class="nav-link" href="/profile">
+                <i class="bi bi-person-circle"></i>
+                {{ t('nav_profile') }}
+              </a>
             </li>
+
             <li class="nav-item">
-              <a class="nav-link" href="/">{{t('nav_home')}}</a>
+              <a class="nav-link" href="/">
+                <i class="bi bi-house-door"></i>
+                {{ t('nav_home') }}
+              </a>
             </li>
+
             <li class="nav-item">
-              <a class="nav-link" href="/missions-overview"
-                >{{t('nav_missions')}}</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/register">{{t('nav_register')}}</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/login">{{t('nav_login')}}</a>
+              <a class="nav-link" href="/missions-overview">
+                <i class="bi bi-journal-check"></i>
+                {{ t('nav_missions') }}
+              </a>
             </li>
           </ul>
         </div>

@@ -79,3 +79,19 @@
     font-size: 0.9rem;
     color: #374151;
 }
+
+.badge-verification-pending {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffe69c;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+}
+
+.badge-verification-verified {
+  background-color: #d1e7dd;
+  color: #0f5132;
+  border: 1px solid #a3cfbb;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+}

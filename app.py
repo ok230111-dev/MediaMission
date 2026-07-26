@@ -524,6 +524,7 @@ def create_user():
         accuracy=0,
         streak=0,
         created_at=datetime.now(timezone.utc),
+        email_verified=data.get("email_verified", False)
     )
 
     db.session.add(new_user)
@@ -549,20 +550,28 @@ def profile():
     if user_id is None:
         return redirect(url_for('login'))
 
-    user = Users.query.get(user_id)
-    if user is None:                 
-        session.clear()
-        return redirect(url_for('login'))
+    user = db.session.get(Users, user_id)
 
-    # Останні 5 спроб користувача, найновіші зверху
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+
     recent_progress = (
         UserMissionProgress.query
         .filter_by(user_id=user_id)
-        .order_by(UserMissionProgress.completed_at.desc(), UserMissionProgress.id.desc())        .limit(5)
+        .order_by(
+            UserMissionProgress.completed_at.desc(),
+            UserMissionProgress.id.desc()
+        )
+        .limit(5)
         .all()
     )
 
-    return render_template('profile.html', user=user, recent_progress=recent_progress)
+    return render_template(
+        "profile.html",
+        user=user,
+        recent_progress=recent_progress
+    )
 
 
 
@@ -582,6 +591,25 @@ def check_provider():
         return {"providers": providers}
     except firebase_auth.UserNotFoundError:
         return {"providers": []}
+
+
+
+
+@app.route("/api/update_verification_status", methods=["POST"])
+def update_verification_status():
+    data = request.get_json()
+    if not data or "uid" not in data:
+        return {"success": False}, 400
+
+    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
+    if user is None:
+        return {"success": False, "error": "user not found"}, 404
+
+    if data.get("email_verified") and not user.email_verified:
+        user.email_verified = True
+        db.session.commit()
+
+    return {"success": True, "email_verified": user.email_verified}
 
 
 with app.app_context():

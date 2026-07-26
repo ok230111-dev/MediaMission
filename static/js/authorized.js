@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 
 const ADMIN_EMAIL = "admin.230111@gmail.com";
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   const heroTitle = document.querySelector(".hero h1");
   const navbarNav = document.getElementById("navbarNav");
   const body = document.body;
@@ -72,5 +72,18 @@ onAuthStateChanged(auth, (user) => {
         <li class="nav-item"><a class="nav-link" href="/login">${t.login}</a></li>
       </ul>
     `;
+  }
+
+  if (user) {
+  // Перевіряємо актуальний статус верифікації і синхронізуємо з бекендом
+  await user.reload();  // підтягує свіжі дані з Firebase (важливо, бо user.emailVerified міг застаріти)
+
+  if (user.emailVerified) {
+    fetch("/api/update_verification_status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid: user.uid, email_verified: true })
+    });
+  }
   }
 });

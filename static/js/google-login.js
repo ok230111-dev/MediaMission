@@ -26,7 +26,8 @@ btn.addEventListener("click", async () => {
                 uid: user.uid,
                 email: user.email,
                 display_name: user.displayName || "Користувач",
-                provider: user.providerData[0]?.providerId || "google.com"
+                provider: user.providerData[0]?.providerId || "google.com",
+                email_verified: user.emailVerified
             })
         });
 

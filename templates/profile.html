@@ -12,6 +12,14 @@ MediaMission{% endblock %} {% block content %}
     style="border-radius: var(--radius-large, 16px)"
   >
     <div class="row align-items-center g-4">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm mt-2"
+        data-bs-toggle="modal"
+        data-bs-target="#accountInfoModal"
+      >
+        <i class="bi bi-person-lines-fill"></i> Інформація про акаунт
+      </button>
       <!-- Аватар та основна інфо -->
       <div
         class="col-md-3 text-center text-md-start d-flex align-items-center justify-content-center justify-content-md-start gap-3"
@@ -36,6 +44,29 @@ MediaMission{% endblock %} {% block content %}
           <p class="text-muted mb-0 small" id="profileEmail"></p>
         </div>
       </div>
+
+      {% if user.provider == 'password' and not user.email_verified %}
+      <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge rounded-pill badge-verification-pending">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> Email не
+          підтверджено
+        </span>
+        <button
+          id="verifyEmailBtn"
+          class="btn btn-sm btn-outline-warning rounded-pill px-3"
+        >
+          <i class="bi bi-envelope-check"></i> Підтвердити email
+        </button>
+      </div>
+      <div id="verifyStatus" class="mt-2 small"></div>
+
+      {% elif user.provider == 'google.com' or user.email_verified %}
+      <div class="mt-2">
+        <span class="badge rounded-pill badge-verification-verified">
+          <i class="bi bi-patch-check-fill me-1"></i> Email підтверджено
+        </span>
+      </div>
+      {% endif %}
 
       <!-- Шкала прогресу до наступного рівня -->
       <div class="col-md-9">
@@ -219,6 +250,86 @@ MediaMission{% endblock %} {% block content %}
       {% endfor %} {% else %}
       <p class="text-muted">{{ t('profile_no_missions') }}</p>
       {% endif %}
+    </div>
+  </div>
+  <div
+    class="modal fade"
+    id="accountInfoModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 16px; border: none">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-person-lines-fill text-primary me-2"></i>Інформація
+            про акаунт
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <small class="text-muted d-block">Nickname</small>
+            <strong>{{ user.display_name }}</strong>
+          </div>
+
+          <div class="mb-3">
+            <small class="text-muted d-block">Email</small>
+            <strong>{{ user.email }}</strong>
+          </div>
+
+          <div class="mb-3">
+            <small class="text-muted d-block">Спосіб входу</small>
+            <strong>
+              {% if user.provider == 'google.com' %}
+              <i class="bi bi-google"></i> Google {% else %}
+              <i class="bi bi-envelope"></i> Email та пароль {% endif %}
+            </strong>
+          </div>
+
+          <div class="mb-3">
+            <small class="text-muted d-block">Статус email</small>
+            <strong>
+              {% if user.email_verified %}
+              <span class="text-success">Підтверджено</span>
+              {% else %}
+              <span class="text-warning">Не підтверджено</span>
+              {% endif %}
+            </strong>
+          </div>
+
+          <div class="mb-3">
+            <small class="text-muted d-block">Дата реєстрації</small>
+            <strong>{{ user.created_at.strftime("%H:%M, %d.%m.%Y") }}</strong>
+          </div>
+
+          {% if user.last_login %}
+          <div class="mb-3">
+            <small class="text-muted d-block">Останній вхід</small>
+            <strong>{{ user.last_login.strftime("%H:%M, %d.%m.%Y") }}</strong>
+          </div>
+          {% endif %}
+
+          <div class="mb-0">
+            <small class="text-muted d-block">ID акаунта</small>
+            <code class="small">{{ user.firebase_uid }}</code>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Закрити
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </section>

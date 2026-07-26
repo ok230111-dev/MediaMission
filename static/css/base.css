@@ -1,0 +1,100 @@
+﻿/* base.css — основні правила: reset, body, navbar, footer */
+/* Reset */
+* {
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html {
+    scroll-behavior:smooth;
+    font-family:var(--font-main);
+}
+
+body{
+    background:var(--background-color);
+    color:var(--text-color);
+    line-height:1.6;
+    font-family:var(--font-main);
+}
+
+/* Контейнер */
+.container{
+    max-width:1200px;
+    margin-left:auto;
+    margin-right:auto;
+    padding:0 16px;
+}
+
+
+
+
+
+/* Navbar */
+header {
+  position: sticky;
+  z-index: 1000;
+  background-color: var(--surface-color, #ffffff);
+  box-shadow: var(--shadow-small, 0 2px 8px rgba(0,0,0,0.05));
+  top: 0;
+}
+
+.navbar{
+    /*background:var(--surface-color);*/
+    background: transparent;
+    min-height: 72px; /* Задаємо мінімальну висоту замість фіксованої */
+    box-shadow:var(--shadow-small);
+    position:sticky;
+    top:0;
+    z-index:1000;
+    display:flex;
+    align-items:center;
+    padding:0 20px;
+}
+.navbar-brand{
+    color:var(--primary-color)!important;
+    font-size:1.55rem;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.navbar-brand i{
+    margin-right:6px
+}
+.nav-link{
+    color:var(--text-light)!important;
+    font-weight:600;
+    margin-left:16px
+}
+.nav-link:hover{
+    color:var(--primary-color)!important
+} 
+
+/* Стилі для мобільного меню при розгортанні */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    padding: 16px 0;
+  }
+  .nav-link {
+    padding: 8px 0;
+  }
+}
+
+/* Footer */
+.footer {
+    margin-top:80px;
+    background:var(--surface-color);
+    border-top:1px solid var(--border-color);
+    padding:30px 0;
+    text-align:center
+}
+.footer p {
+    color:var(--text-light)
+}
+
+/* Selection */
+::selection {
+    background:var(--primary-color);
+    color:#fff
+}

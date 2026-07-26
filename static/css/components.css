@@ -1,0 +1,81 @@
+﻿/* components.css — повторно використовувані компоненти */
+
+/* Кнопки */
+.btn {
+    border: none;
+    border-radius: var(--radius-medium);
+    padding: 12px 24px;
+    font-size: var(--font-md);
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: #fff;
+    box-shadow: var(--shadow-small);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-large);
+}
+
+.btn-secondary {
+    background: #fff;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+/* Картки */
+.card,
+.card-without-hover {
+    background: var(--surface-color);
+    border-radius: var(--radius-large);
+    overflow: hidden;
+    transition: var(--transition-normal);
+}
+
+.card {
+    box-shadow: var(--shadow-small);
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-large);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-body-no-padding {
+    padding: 0;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.card-text {
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #374151;
+}

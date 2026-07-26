@@ -1,0 +1,32 @@
+{% extends "base.html" %} {% block title %} {{t('nav_missions')}} |
+MediaMission{% endblock %} {% block content %}
+<div class="container py-3">
+  <figure class="text-center">
+    <h1 class="fw-bold display-4">{{t('nav_missions')}}</h1>
+  </figure>
+  <div class="row g-4">
+    {% for mission in missions %}
+    <div class="col-md-4">
+      <div class="card h-100">
+        <img
+          src="{{ url_for('static', filename='image/' + (mission.image or 'placeholder.jpg')) }}"
+          class="card-img-top"
+          alt="{{ mission.title }}"
+        />
+        <div class="card-body">
+          <h5 class="card-title">{{ mission.title }}</h5>
+          <p class="card-text">{{ mission.description }}</p>
+          <p class="card-text">
+            {{t('published')}}: {{mission.created_at.strftime('%d.%m.%Y')}}
+          </p>
+          <a href="/mission/{{ mission.id }}" class="btn btn-primary">
+            {{t('to_mission')}}</a
+          >
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

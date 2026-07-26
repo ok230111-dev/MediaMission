@@ -1,0 +1,352 @@
+﻿/* pages.css — стилі для конкретних сторінок і секцій */
+
+/* HERO */
+.hero {
+    padding: 90px 0;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.05;
+}
+
+.hero h1 span {
+    color: var(--primary-color);
+}
+
+.hero p {
+    max-width: 700px;
+    margin: 24px auto;
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+.hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--gradient-primary);
+    color: #fff;
+    padding: 16px 36px;
+    border-radius: 20px;
+    font-weight: 700;
+    box-shadow: var(--shadow-medium);
+    border: none;
+}
+
+.hero-btn i {
+    font-size: 1.1rem;
+}
+
+.hero-btn:hover {
+    transform: translateY(-4px);
+}
+
+/* FEATURE / MISSIONS SWIPER */
+.featureSwiper {
+    position: relative;
+    padding: 0 50px;
+    overflow: hidden;
+}
+
+.featureSwiper .swiper-wrapper {
+    display: flex;
+    gap: 24px;
+}
+
+.featureSwiper .swiper-slide {
+    width: auto;
+    display: flex;
+}
+
+.featureSwiper .swiper-button-prev::after,
+.featureSwiper .swiper-button-next::after {
+    display: none !important;
+}
+
+.featureSwiper .swiper-button-prev,
+.featureSwiper .swiper-button-next {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: var(--primary-color);
+    top: 50%;
+    transform: translateY(-50%);
+    margin-top: 0;
+    transition: all 0.2s ease;
+}
+
+.featureSwiper .swiper-button-prev::before {
+    content: '‹';
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.featureSwiper .swiper-button-next::before {
+    content: '›';
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.featureSwiper .swiper-button-prev {
+    left: 10px;
+}
+
+.featureSwiper .swiper-button-next {
+    right: 10px;
+}
+
+.featureSwiper .swiper-button-prev:hover,
+.featureSwiper .swiper-button-next:hover {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.feature-card {
+    background: var(--surface-color);
+    border-radius: var(--radius-large);
+    padding: 30px;
+    text-align: center;
+    box-shadow: var(--shadow-small);
+    transition: var(--transition-normal);
+    height: 100%;
+    width: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-large);
+}
+
+.feature-card i {
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+
+.feature-card h3 {
+    margin-top: 18px;
+    font-weight: 700;
+}
+
+.feature-card p {
+    margin-top: 12px;
+    color: var(--text-light);
+}
+
+/* WHY SECTION */
+.why-section {
+    padding: 90px 0;
+    background: #f8fafc;
+}
+
+.why-title {
+    text-align: center;
+    font-size: 2.7rem;
+    font-weight: 800;
+    margin-bottom: 60px;
+}
+
+.why-card {
+    background: white;
+    border-radius: 20px;
+    padding: 35px;
+    height: 100%;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, .08);
+    transition: .3s;
+}
+
+.why-card:hover {
+    transform: translateY(-6px);
+}
+
+.why-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    font-size: 32px;
+    margin-bottom: 25px;
+}
+
+.why-card h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.why-card p {
+    color: #6b7280;
+    line-height: 1.8;
+}
+
+/* STEPS SECTION */
+.steps-section {
+    padding: 90px 0;
+}
+
+.step-card {
+    background: white;
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, .08);
+    transition: .3s;
+    height: 100%;
+}
+
+.step-card:hover {
+    transform: translateY(-8px);
+}
+
+.step-number {
+    width: 70px;
+    height: 70px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0 auto 20px;
+}
+
+/* CTA BOX */
+.cta-box {
+    background: var(--surface-color);
+    border-radius: var(--radius-medium);
+    padding: 40px;
+    text-align: center;
+    box-shadow: var(--shadow-small);
+}
+
+.cta-box h2 {
+    margin-bottom: 16px;
+}
+
+/* ADMIN PAGE */
+.admin-page {
+    background: linear-gradient(110deg, #ff0000, #4f46e5);
+    min-height: 100vh;
+}
+
+.admin-header {
+    background: linear-gradient(135deg, #fd3c26, #eb393f);
+    color: #fff;
+    padding: 2.5rem 0;
+    margin-bottom: 2.5rem;
+}
+
+.admin-header h1 {
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+}
+
+.admin-header p {
+    opacity: 0.85;
+    margin-bottom: 0;
+}
+
+.admin-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+}
+
+.admin-card .card-header {
+    background: #fff;
+    border-bottom: 1px solid #eef0f4;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.admin-card .card-header .step-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #eef1ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.admin-card .card-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.admin-card .card-body {
+    padding: 1.75rem;
+}
+
+.question-card {
+    border: 1px solid #eef0f4 !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+    background: #fafbfd;
+}
+
+.question-card .card-body {
+    padding: 1.5rem;
+}
+
+.question-card h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #4f46e5;
+}
+
+.option-row .input-group-text {
+    background: #fff;
+}
+
+.save-bar {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid #eef0f4;
+    padding: 1rem 0;
+    margin-top: 1rem;
+    z-index: 10;
+}
+
+#paragraphs-container textarea,
+#questions-container {
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .hero h1 {
+        font-size: 2.8rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+
+    .featureSwiper {
+        padding: 0 20px;
+    }
+
+    .why-title {
+        font-size: 2.2rem;
+    }
+}

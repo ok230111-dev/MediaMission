@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+.venv/
+
+# SQLite
+*.db
+
+# VS Code
+.vscode/
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+serviceAccountKey.json
+
+*firebase-adminsdk*.json

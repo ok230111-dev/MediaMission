@@ -1,0 +1,74 @@
+{% extends "base.html" %} {% block title %} Результат | MediaMission{% endblock
+%} {% block content %}
+
+<div class="container py-5">
+  <!-- Заголовок -->
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold">🎉 Місію завершено!</h1>
+
+    <p class="lead text-muted">Подивись, як ти впорався.</p>
+  </div>
+
+  <!-- Основна картка -->
+  <div class="card-without-shadow shadow-lg border-0 rounded-4">
+    <div class="card-body p-5">
+      <div class="text-center">
+        <h2 class="mb-4">Результат {{progress.tries_number}}. Спроби</h2>
+
+        <h1 class="display-2 fw-bold text-primary">{{ score }}/{{ total }}</h1>
+
+        <p class="fs-4 text-muted">правильних відповідей</p>
+
+        <p class="fs-4 text-muted">
+          Виконано за {{progress.time_spent}} секунд
+        </p>
+
+        <hr class="my-4" />
+
+        <!-- Відсоток -->
+        {% set percent = ((score / total) * 100)|int %}
+
+        <h4 class="mb-3">
+          {% if percent == 100 %} 🏆 Відмінно! {% elif percent >= 70 %} 👍 Дуже
+          добре! {% elif percent >= 40 %} 🙂 Непогано. {% else %} 📚 Варто ще
+          потренуватися. {% endif %}
+        </h4>
+
+        <!-- Progress Bar -->
+
+        <div class="progress mb-4" style="height: 30px">
+          <div
+            class="progress-bar {% if percent >= 70 %} bg-success {% elif percent >= 40 %} bg-warning {% else %} bg-danger {% endif %}"
+            style="width: {{ percent }}%;"
+          >
+            {{ percent }}%
+          </div>
+        </div>
+
+        <!-- XP -->
+
+        {%if percent == 100 %}
+        <div class="alert alert-warning">
+          ⭐ Ти отримав
+          <strong> {{ mission.xp }} </strong>
+          XP
+        </div>
+        {% endif %}
+
+        <!-- Кнопки -->
+
+        <div class="mt-5 d-flex justify-content-center gap-3">
+          <a href="/missions-overview" class="btn btn-outline-primary btn-lg">
+            ← До всіх місій
+          </a>
+
+          <a href="/mission/{{ mission.id }}" class="btn btn-primary btn-lg">
+            🔄 Пройти ще раз
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

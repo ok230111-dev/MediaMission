@@ -1,0 +1,465 @@
+{% extends "base.html" %} {% block title %}Адмін-панель | MediaMission{%
+endblock %} {% block content %}
+
+<div class="admin-page">
+  <div class="admin-header">
+    <div class="container">
+      <h1><i class="bi bi-shield-lock-fill me-2"></i>Адмін-панель</h1>
+      <p>Створення нової освітньої місії для платформи MediaMission</p>
+    </div>
+  </div>
+
+  <div class="container pb-5">
+    <form id="missionForm" onsubmit="return false;">
+      <!-- ==========================
+               Основна інформація
+          =========================== -->
+      <div class="card admin-card">
+        <div class="card-header">
+          <span class="step-badge">1</span>
+          <h3>Основна інформація</h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Назва місії</label>
+              <input
+                type="text"
+                id="missionTitle"
+                class="form-control"
+                name="title"
+                placeholder="Наприклад: Перевір новину"
+                required
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Підзаголовок</label>
+              <input
+                type="text"
+                id="missionSubTitle"
+                class="form-control"
+                name="subtitle"
+                placeholder="Короткий опис місії"
+                required
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Завдання</label>
+              <textarea
+                class="form-control"
+                id="missionExercise"
+                rows="3"
+                name="exercise"
+                placeholder="Що має зробити користувач у цій місії?"
+              ></textarea>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Тип</label>
+              <select class="form-select" name="type" id="missionType">
+                <option value="news">📰 Новина</option>
+                <option value="video">🎬 Відео</option>
+                <option value="image">🖼️ Зображення</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Складність (1–5)</label>
+              <input
+                type="number"
+                id="missionDifficulty"
+                class="form-control"
+                name="difficulty"
+                min="1"
+                max="5"
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">XP</label>
+              <input
+                type="number"
+                id="missionXP"
+                class="form-control"
+                name="xp"
+                placeholder="20"
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Час (хв)</label>
+              <input
+                type="number"
+                id="missionTime"
+                class="form-control"
+                name="time"
+                placeholder="5"
+              />
+            </div>
+
+            <div class="col-md-2">
+              <label for="image" class="form-label">Фото</label>
+              <input
+                type="file"
+                class="form-control"
+                id="image"
+                accept="image/png, image/jpeg, image/webp"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==========================
+               Контент місії
+          =========================== -->
+      <div class="card admin-card">
+        <div class="card-header">
+          <span class="step-badge">2</span>
+          <h3>Текст місії</h3>
+        </div>
+        <div class="card-body">
+          <div id="paragraphs-container">
+            <textarea
+              class="form-control mb-3"
+              rows="4"
+              name="paragraph"
+              placeholder="Абзац 1"
+            ></textarea>
+          </div>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            onclick="addParagraph()"
+          >
+            <i class="bi bi-plus-lg me-1"></i>Додати абзац
+          </button>
+        </div>
+      </div>
+
+      <!-- ==========================
+               Питання
+          =========================== -->
+      <div class="card admin-card">
+        <div class="card-header">
+          <span class="step-badge">3</span>
+          <h3>Питання та відповіді</h3>
+        </div>
+        <div class="card-body">
+          <!-- Питання №1 -->
+          <div class="card question-card mb-3">
+            <div class="card-body">
+              <h4 class="mb-3">Питання 1</h4>
+
+              <input
+                class="form-control mb-3 question-text"
+                placeholder="Текст питання"
+                name="question1"
+              />
+
+              <select
+                class="form-select mb-3 question-type"
+                name="question1_type"
+              >
+                <option value="single_choice">Одна відповідь</option>
+                <option value="multiple_choice">Кілька відповідей</option>
+              </select>
+
+              <label class="form-label mb-2"
+                >Варіанти відповідей (позначте правильні):</label
+              >
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q1_correct"
+                    value="1"
+                    title="Позначити як правильну"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 1"
+                  name="q1_option1"
+                />
+              </div>
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q1_correct"
+                    value="2"
+                    title="Позначити як правильну"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 2"
+                  name="q1_option2"
+                />
+              </div>
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q1_correct"
+                    value="3"
+                    title="Позначити як правильну"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 3"
+                  name="q1_option3"
+                />
+              </div>
+
+              <div class="input-group mb-0 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q1_correct"
+                    value="4"
+                    title="Позначити як правильну"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 4"
+                  name="q1_option4"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Питання №2 -->
+          <div class="card question-card mb-3">
+            <div class="card-body">
+              <h4 class="mb-3">Питання 2</h4>
+
+              <input
+                class="form-control mb-3 question-text"
+                placeholder="Текст питання"
+                name="question2"
+              />
+
+              <select
+                class="form-select mb-3 question-type"
+                name="question2_type"
+              >
+                <option value="single_choice">Одна відповідь</option>
+                <option value="multiple_choice">Кілька відповідей</option>
+              </select>
+
+              <label class="form-label mb-2"
+                >Варіанти відповідей (позначте правильні):</label
+              >
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q2_correct"
+                    value="1"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 1"
+                  name="q2_option1"
+                />
+              </div>
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q2_correct"
+                    value="2"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 2"
+                  name="q2_option2"
+                />
+              </div>
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q2_correct"
+                    value="3"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 3"
+                  name="q2_option3"
+                />
+              </div>
+
+              <div class="input-group mb-0 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q2_correct"
+                    value="4"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 4"
+                  name="q2_option4"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Питання №3 -->
+          <div class="card question-card mb-3">
+            <div class="card-body">
+              <h4 class="mb-3">Питання 3</h4>
+
+              <input
+                class="form-control mb-3 question-text"
+                placeholder="Текст питання"
+                name="question3"
+              />
+
+              <select
+                class="form-select mb-3 question-type"
+                name="question3_type"
+              >
+                <option value="single_choice">Одна відповідь</option>
+                <option value="multiple_choice">Кілька відповідей</option>
+              </select>
+
+              <label class="form-label mb-2"
+                >Варіанти відповідей (позначте правильні):</label
+              >
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q3_correct"
+                    value="1"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 1"
+                  name="q3_option1"
+                />
+              </div>
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q3_correct"
+                    value="2"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 2"
+                  name="q3_option2"
+                />
+              </div>
+
+              <div class="input-group mb-2 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q3_correct"
+                    value="3"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 3"
+                  name="q3_option3"
+                />
+              </div>
+
+              <div class="input-group mb-0 option-row">
+                <div class="input-group-text">
+                  <input
+                    class="form-check-input mt-0 correct"
+                    type="checkbox"
+                    name="q3_correct"
+                    value="4"
+                  />
+                </div>
+                <input
+                  type="text"
+                  class="form-control option"
+                  placeholder="Варіант 4"
+                  name="q3_option4"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Сюди динамічно додаються нові питання -->
+          <div id="questions-container"></div>
+
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            onclick="addQuestion()"
+          >
+            <i class="bi bi-plus-lg me-1"></i>Додати питання
+          </button>
+        </div>
+      </div>
+
+      <!-- ==========================
+               Кнопка збереження
+          =========================== -->
+      <div class="save-bar text-center">
+        <button
+          type="button"
+          class="btn btn-success btn-lg px-5"
+          id="saveMissionBtn"
+        >
+          <i class="bi bi-check-circle-fill me-2"></i>Зберегти місію
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+{% endblock %}

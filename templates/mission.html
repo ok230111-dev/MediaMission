@@ -1,0 +1,88 @@
+{% extends "base.html" %} {% block title %}{{t('mission')}} №{{ mission.id }}{{ mission.title }} | MediaMission{% endblock %} {%
+block content %}
+
+<div class="container py-5">
+  <div class="mb-5">
+    <h1 class="fw-bold">{{t('mission')}} {{ mission.id }}</h1>
+    <div class="card-without-hover shadow-sm mb-5">
+      <div class="card-body">
+        <h3 class="fw-bold">{{t('try')}} №{{ next_try_number }}</h3>
+        <h3 class="fw-bold">{{ mission.title }}</h3>
+        {% for paragraph in mission.contents %}
+          <p>{{ paragraph.text }}</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card-without-hover shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row text-center">
+        <div class="col-md-3">
+          <h6 class="text-muted">{{t('type')}}</h6>
+
+          <span class="badge bg-primary"> {%if mission.type == 'news' %} 📰 {{t('new')}} {% else %} додати в missions {% endif %} </span>
+        </div>
+
+        <div class="col-md-3">
+          <h6 class="text-muted">{{t('complexity')}}</h6>
+
+          <span class="badge bg-success"> {%if mission.difficulty == 'easy' %} 🟢 {{t('easy')}} {% elif mission.difficulty == 'medium' %} 🟡 {{t('medium')}} {% else %} 🔴 {{t('hard')}} {% endif %} </span>
+        </div>
+
+        <div class="col-md-3">
+          <h6 class="text-muted">{{t('award')}}</h6>
+
+          <span class="badge bg-warning text-dark"> ⭐ {{ mission.xp }} XP </span>
+        </div>
+
+        <div class="col-md-3">
+          <h6 class="text-muted">{{t('time')}}</h6>
+
+          <span class="badge bg-secondary"> {{ mission.time }} {{t('min')}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      <form method="POST">
+
+        <input type="hidden" name="started_at" value="{{current_timestamp}}">
+
+        {% for question in mission.questions %}
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h4 class="mb-4">{{ question.question }}</h4>
+
+            {% for option in question.options %}
+
+            <div class="form-check">
+                  <input
+                      class="form-check-input"
+                      type= "{% if question.type == 'single_choice' %}radio{% else %}checkbox{% endif %}"
+                      name="question_{{ question.id }}"
+                      value="{{ option.option_order }}">
+
+                  <label>{{ option.option_text }}</label>
+            </div>
+
+            {% endfor %}
+            </div>
+        </div>
+
+            {% endfor %}
+      <!-- ==========================
+         Кнопка
+    =========================== -->
+
+        <div class="text-center mt-5">
+          <button class="btn btn-primary">
+              {{t('ready_mission')}}
+          </button>
+        </div>
+      </div>
+    </form>
+
+    {% endblock %}
+  </div>
+</div>

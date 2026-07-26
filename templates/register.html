@@ -1,0 +1,135 @@
+{% extends "base.html" %} {% block title %}{{ t('register_title') }} |
+MediaMission{% endblock %} {% block content %}
+<section
+  class="container py-5 d-flex justify-content-center align-items-center"
+  style="min-height: 70vh"
+>
+  <div
+    class="card shadow-sm border-0 p-4"
+    style="
+      max-width: 420px;
+      width: 100%;
+      border-radius: var(--radius-large, 16px);
+    "
+  >
+    <div class="text-center mb-4">
+      <i class="bi bi-person-plus display-4 text-primary"></i>
+      <h2 class="fw-bold mt-2">{{ t('register_title') }}</h2>
+      <p class="text-muted small">{{ t('register_subtitle') }}</p>
+    </div>
+
+    <!-- Блок для виводу повідомлень про помилки/успіх -->
+    <div id="authAlert" class="alert d-none" role="alert"></div>
+
+    <form id="registerForm">
+      <div class="mb-4">
+        <label for="languageSelect" class="form-label"
+          >{{ t('choose_language') }}</label
+        >
+        <select class="form-select" id="languageSelect" name="language">
+          <option value="uk" {{ 'selected' if g.lang == 'uk' else '' }}>
+            🇺🇦 Українська
+          </option>
+          <option value="de" {{ 'selected' if g.lang == 'de' else '' }}>
+            🇩🇪 Deutsch
+          </option>
+          <option value="en" {{ 'selected' if g.lang == 'en' else '' }}>
+            🇬🇧 English
+          </option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="name" class="form-label font-weight-bold"
+          >{{ t('nickname') }}</label
+        >
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person"></i></span>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            placeholder="Ivan123"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label font-weight-bold"
+          >{{ t('email') }}</label
+        >
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            placeholder="name@example.com"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="password" class="form-label">{{ t('password') }}</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            placeholder=""
+            required
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        id="registerBtn"
+        class="btn btn-primary w-100 py-2 fw-bold"
+        style="border-radius: 12px"
+      >
+        {{ t('nav_register') }}
+      </button>
+    </form>
+
+    <div class="text-center mt-4">
+      <small class="text-muted"
+        >{{ t('already_have_account') }}
+        <a href="/login" class="text-primary text-decoration-none fw-bold"
+          >{{ t('nav_login') }}</a
+        ></small
+      >
+    </div>
+    <button id="googleBtn" class="btn btn-outline-dark w-100 mt-3">
+      <i class="bi bi-google"></i>
+      {{ t('login_google') }}
+    </button>
+  </div>
+</section>
+
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/register.js') }}"
+></script>
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/google-login.js') }}"
+></script>
+<script>
+  document
+    .getElementById("languageSelect")
+    .addEventListener("change", async (e) => {
+      const lang = e.target.value;
+
+      await fetch("/api/set_language", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: lang }),
+      });
+
+      window.location.reload(); // перезавантажуємо сторінку, щоб Jinja перерендерив усе новою мовою
+    });
+</script>
+{% endblock %}

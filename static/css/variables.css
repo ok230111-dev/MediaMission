@@ -1,0 +1,48 @@
+﻿/* variables.css — кольори, шрифти, розміри і тіні */
+:root{
+    /* Кольори */
+    --primary-color: #2563EB;
+    --primary-dark:  #1D4ED8;
+    --secondary-color: #6366F1;
+    --background-color: #F8FAFC;
+    --surface-color: #FFFFFF;
+    --text-color: #1E293B;
+    --text-light: #64748B;
+    --border-color: #E2E8F0;
+    --success-color: #10B981;
+    --warning-color: #F59E0B;
+    --danger-color: #EF4444;
+
+    /* Шрифт */
+    --font-main: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+
+    /* Розміри шрифтів */
+    --font-xs: .8rem;
+    --font-sm: .95rem;
+    --font-md: 1rem;
+    --font-lg: 1.2rem;
+    --font-xl: 1.5rem;
+
+    /* Закруглення */
+    --radius-small: 10px;
+    --radius-medium: 18px;
+    --radius-large: 26px;
+
+    /* Тіні */
+    --shadow-small: 0 4px 12px rgba(0,0,0,.05);
+    --shadow-medium: 0 10px 30px rgba(0,0,0,.08);
+    --shadow-large: 0 20px 45px rgba(37,99,235,.15);
+
+    /* Відступи */
+    --space-sm: 16px;
+    --space-md: 24px;
+    --space-lg: 40px;
+
+    /* Анімації */
+    --transition-fast: .2s;
+    --transition-normal: .3s;
+    --transition-slow: .5s;
+
+    /* Градієнт */
+    --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}

@@ -96,21 +96,30 @@
             >
               🇺🇦
             </a>
-
-            <a
-              href="/set_language/en"
-              class="{% if g.lang=='en' %}active{% endif %}"
-            >
-              🇬🇧
-            </a>
-
             <a
               href="/set_language/de"
               class="{% if g.lang=='de' %}active{% endif %}"
             >
               🇩🇪
             </a>
+            <a
+              href="/set_language/en"
+              class="{% if g.lang=='en' %}active{% endif %}"
+            >
+              🇬🇧
+            </a>
           </div>
+
+          <!-- В навігації, поруч з вибором мови -->
+          <li class="nav-item">
+            <button
+              class="nav-link btn btn-link"
+              id="themeToggle"
+              onclick="toggleTheme()"
+            >
+              <i class="bi bi-moon-fill" id="themeIcon"></i>
+            </button>
+          </li>
 
           <button
             class="navbar-toggler"

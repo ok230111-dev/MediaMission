@@ -1,462 +1,490 @@
-{% extends "base.html" %} {% block title %}Адмін-панель | MediaMission{%
-endblock %} {% block content %}
+{% extends "base.html" %} {% block title %} Панель адміністратора {% endblock %}
+{% block content %}
+<div class="container py-4 admin-page">
+  <!-- ==========================================
+       1. ПАНЕЛЬ З КНОПКАМИ (ПЕРЕМИКАЧ)
+  =========================================== -->
+  <div class="d-flex justify-content-center mb-4">
+    <div class="admin-header">
+      <div class="container">
+        <h1><i class="bi bi-shield-lock-fill me-2"></i>Адмін-панель</h1>
+        <p>Створення нової освітньої місії для платформи MediaMission</p>
+        <div class="btn-group btn-admin-header" role="tablist">
+          <button
+            class="btn btn-outline-info active"
+            id="users-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#users-pane"
+            type="button"
+            role="tab"
+          >
+            <i class="bi bi-people-fill me-1"></i> База даних користувачів
+          </button>
 
-<div class="admin-page">
-  <div class="admin-header">
-    <div class="container">
-      <h1><i class="bi bi-shield-lock-fill me-2"></i>Адмін-панель</h1>
-      <p>Створення нової освітньої місії для платформи MediaMission</p>
+          <button
+            class="btn btn-outline-info"
+            id="create-mission-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#create-mission-pane"
+            type="button"
+            role="tab"
+          >
+            <i class="bi bi-plus-circle-fill me-1"></i> Створити місію
+          </button>
+
+          <!-- Нова кнопка для статистики -->
+          <button
+            class="btn btn-outline-info"
+            id="stats-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#stats-pane"
+            type="button"
+            role="tab"
+          >
+            <i class="bi bi-graph-up-arrow me-1"></i> Статистика
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="container pb-5">
-    <form id="missionForm" onsubmit="return false;">
-      <!-- ==========================
-               Основна інформація
-          =========================== -->
-      <div class="card admin-card">
-        <div class="card-header">
-          <span class="step-badge">1</span>
-          <h3>Основна інформація</h3>
-        </div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Назва місії</label>
-              <input
-                type="text"
-                id="missionTitle"
-                class="form-control"
-                name="title"
-                placeholder="Наприклад: Перевір новину"
-                required
-              />
-            </div>
+  <!-- ==========================================
+       2. КОНТЕНТ ВКЛАДОК
+  =========================================== -->
+  <div class="tab-content">
+    <!-- ВКЛАДКА 1: Користувачі -->
+    <div class="tab-pane fade show active" id="users-pane" role="tabpanel">
+      <div class="card shadow-sm p-4">
+        <h3 class="mb-3">Користувачі та пошук</h3>
 
-            <div class="col-md-6">
-              <label class="form-label">Підзаголовок</label>
-              <input
-                type="text"
-                id="missionSubTitle"
-                class="form-control"
-                name="subtitle"
-                placeholder="Короткий опис місії"
-                required
-              />
-            </div>
-
-            <div class="col-12">
-              <label class="form-label">Завдання</label>
-              <textarea
-                class="form-control"
-                id="missionExercise"
-                rows="3"
-                name="exercise"
-                placeholder="Що має зробити користувач у цій місії?"
-              ></textarea>
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label">Тип</label>
-              <select class="form-select" name="type" id="missionType">
-                <option value="news">📰 Новина</option>
-                <option value="video">🎬 Відео</option>
-                <option value="image">🖼️ Зображення</option>
-              </select>
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label">Складність (1–5)</label>
-              <input
-                type="number"
-                id="missionDifficulty"
-                class="form-control"
-                name="difficulty"
-                min="1"
-                max="5"
-              />
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label">XP</label>
-              <input
-                type="number"
-                id="missionXP"
-                class="form-control"
-                name="xp"
-                placeholder="20"
-              />
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label">Час (хв)</label>
-              <input
-                type="number"
-                id="missionTime"
-                class="form-control"
-                name="time"
-                placeholder="5"
-              />
-            </div>
-
-            <div class="col-md-2">
-              <label for="image" class="form-label">Фото</label>
-              <input
-                type="file"
-                class="form-control"
-                id="image"
-                accept="image/png, image/jpeg, image/webp"
-              />
-            </div>
+        <!-- Форма пошуку -->
+        <form method="GET" action="/admin" class="mb-4">
+          <div class="input-group">
+            <input
+              type="email"
+              name="search_email"
+              class="form-control"
+              placeholder="Введіть email користувача..."
+              id="search_email"
+              value="{{ request.args.get('search_email', '') }}"
+            />
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-search"></i> Шукати
+            </button>
+            {% if request.args.get('search_email') %}
+            <a href="/admin" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle"></i> Очистити
+            </a>
+            {% endif %}
           </div>
+        </form>
+
+        <!-- Повідомлення про результат пошуку -->
+        {% if search_email %} {% if users %}
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          Знайдено користувача з email: <strong>{{ search_email }}</strong>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          Користувача з email <strong>{{ search_email }}</strong> не знайдено
+        </div>
+        {% endif %} {% endif %}
+
+        <!-- Таблиця користувачів -->
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Нікнейм</th>
+                <th>Email</th>
+                <th>Email верифіковано?</th>
+                <th>Дії</th>
+                <th>XP</th>
+                <th>Виконано Місій</th>
+                <th>Точність відповідей</th>
+                <th>Зареєстровано</th>
+                <th>Останній вхід</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if users %} {% for user in users %}
+              <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.display_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  {% if user.email_verified == False %}Ні{% else %}Так{% endif
+                  %}
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="deleteUser({{ user.id }})"
+                  >
+                    Видалити
+                  </button>
+                </td>
+                <td>{{ user.total_xp }}</td>
+                <td>{{ user.missions_completed }}</td>
+                <td>{{ user.accuracy }}</td>
+                <td>{{ user.created_at.strftime("%d.%m.%Y") }}</td>
+                <td>{{ user.last_login.strftime("%d.%m.%Y") }}</td>
+              </tr>
+              {% endfor %} {% else %}
+              <tr>
+                <td colspan="10" class="text-center text-muted py-3">
+                  {% if search_email %} Користувача з email "{{ search_email }}"
+                  не знайдено {% else %} Користувачів не знайдено {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
 
-      <!-- ==========================
-               Контент місії
-          =========================== -->
-      <div class="card admin-card">
-        <div class="card-header">
-          <span class="step-badge">2</span>
-          <h3>Текст місії</h3>
-        </div>
-        <div class="card-body">
-          <div id="paragraphs-container">
-            <textarea
-              class="form-control mb-3"
-              rows="4"
-              name="paragraph"
-              placeholder="Абзац 1"
-            ></textarea>
-          </div>
-          <button
-            type="button"
-            class="btn btn-outline-primary btn-sm"
-            onclick="addParagraph()"
-          >
-            <i class="bi bi-plus-lg me-1"></i>Додати абзац
-          </button>
-        </div>
-      </div>
-
-      <!-- ==========================
-               Питання
-          =========================== -->
-      <div class="card admin-card">
-        <div class="card-header">
-          <span class="step-badge">3</span>
-          <h3>Питання та відповіді</h3>
-        </div>
-        <div class="card-body">
-          <!-- Питання №1 -->
-          <div class="card question-card mb-3">
-            <div class="card-body">
-              <h4 class="mb-3">Питання 1</h4>
-
-              <input
-                class="form-control mb-3 question-text"
-                placeholder="Текст питання"
-                name="question1"
-              />
-
-              <select
-                class="form-select mb-3 question-type"
-                name="question1_type"
-              >
-                <option value="single_choice">Одна відповідь</option>
-                <option value="multiple_choice">Кілька відповідей</option>
-              </select>
-
-              <label class="form-label mb-2"
-                >Варіанти відповідей (позначте правильні):</label
-              >
-
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q1_correct"
-                    value="1"
-                    title="Позначити як правильну"
-                  />
-                </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 1"
-                  name="q1_option1"
-                />
-              </div>
-
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q1_correct"
-                    value="2"
-                    title="Позначити як правильну"
-                  />
-                </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 2"
-                  name="q1_option2"
-                />
-              </div>
-
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q1_correct"
-                    value="3"
-                    title="Позначити як правильну"
-                  />
-                </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 3"
-                  name="q1_option3"
-                />
-              </div>
-
-              <div class="input-group mb-0 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q1_correct"
-                    value="4"
-                    title="Позначити як правильну"
-                  />
-                </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 4"
-                  name="q1_option4"
-                />
-              </div>
+    <!-- ВКЛАДКА 2: Створення місії -->
+    <div class="tab-pane fade" id="create-mission-pane" role="tabpanel">
+      <div class="container pb-5">
+        <form id="missionForm" onsubmit="return false;">
+          <!-- Основна інформація -->
+          <div class="card admin-card mb-4">
+            <div class="card-header">
+              <span class="step-badge">1</span>
+              <h3>Основна інформація</h3>
             </div>
-          </div>
-
-          <!-- Питання №2 -->
-          <div class="card question-card mb-3">
             <div class="card-body">
-              <h4 class="mb-3">Питання 2</h4>
-
-              <input
-                class="form-control mb-3 question-text"
-                placeholder="Текст питання"
-                name="question2"
-              />
-
-              <select
-                class="form-select mb-3 question-type"
-                name="question2_type"
-              >
-                <option value="single_choice">Одна відповідь</option>
-                <option value="multiple_choice">Кілька відповідей</option>
-              </select>
-
-              <label class="form-label mb-2"
-                >Варіанти відповідей (позначте правильні):</label
-              >
-
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Назва місії *</label>
                   <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q2_correct"
+                    type="text"
+                    id="missionTitle"
+                    class="form-control"
+                    placeholder="Наприклад: Перевір новину"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Підзаголовок *</label>
+                  <input
+                    type="text"
+                    id="missionSubTitle"
+                    class="form-control"
+                    placeholder="Короткий опис місії"
+                    required
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-bold">Завдання</label>
+                  <textarea
+                    class="form-control"
+                    id="missionExercise"
+                    rows="3"
+                    placeholder="Що має зробити користувач у цій місії?"
+                  ></textarea>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label fw-bold">Тип</label>
+                  <select class="form-select" id="missionType">
+                    <option value="news">📰 Новина</option>
+                    <option value="video">🎬 Відео</option>
+                    <option value="image">🖼️ Зображення</option>
+                  </select>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label fw-bold">Складність (1–5)</label>
+                  <input
+                    type="number"
+                    id="missionDifficulty"
+                    class="form-control"
+                    min="1"
+                    max="5"
                     value="1"
                   />
                 </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 1"
-                  name="q2_option1"
-                />
-              </div>
 
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">XP</label>
                   <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q2_correct"
-                    value="2"
+                    type="number"
+                    id="missionXP"
+                    class="form-control"
+                    placeholder="20"
+                    value="20"
                   />
                 </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 2"
-                  name="q2_option2"
-                />
-              </div>
 
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">Час (хв)</label>
                   <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q2_correct"
-                    value="3"
+                    type="number"
+                    id="missionTime"
+                    class="form-control"
+                    placeholder="5"
+                    value="5"
                   />
                 </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 3"
-                  name="q2_option3"
-                />
-              </div>
 
-              <div class="input-group mb-0 option-row">
-                <div class="input-group-text">
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">Обкладинка</label>
                   <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q2_correct"
-                    value="4"
+                    type="file"
+                    class="form-control"
+                    id="image"
+                    accept="image/png, image/jpeg, image/webp"
                   />
                 </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 4"
-                  name="q2_option4"
-                />
               </div>
             </div>
           </div>
 
-          <!-- Питання №3 -->
-          <div class="card question-card mb-3">
+          <!-- Контент місії -->
+          <div class="card admin-card mb-4">
+            <div class="card-header">
+              <span class="step-badge">2</span>
+              <h3>Текст місії</h3>
+            </div>
             <div class="card-body">
-              <h4 class="mb-3">Питання 3</h4>
-
-              <input
-                class="form-control mb-3 question-text"
-                placeholder="Текст питання"
-                name="question3"
-              />
-
-              <select
-                class="form-select mb-3 question-type"
-                name="question3_type"
+              <div id="paragraphs-container">
+                <div class="mb-3 position-relative paragraph-row">
+                  <textarea
+                    class="form-control"
+                    rows="3"
+                    name="paragraph"
+                    placeholder="Абзац 1"
+                  ></textarea>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm"
+                onclick="addParagraph()"
               >
-                <option value="single_choice">Одна відповідь</option>
-                <option value="multiple_choice">Кілька відповідей</option>
-              </select>
+                <i class="bi bi-plus-lg me-1"></i>Додати абзац
+              </button>
+            </div>
+          </div>
 
-              <label class="form-label mb-2"
-                >Варіанти відповідей (позначте правильні):</label
+          <!-- Питання -->
+          <div class="card admin-card mb-4">
+            <div class="card-header">
+              <span class="step-badge">3</span>
+              <h3>Питання та відповіді</h3>
+            </div>
+            <div class="card-body">
+              <div id="questions-container"></div>
+
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-sm"
+                onclick="addQuestion()"
               >
+                <i class="bi bi-plus-lg me-1"></i>Додати питання
+              </button>
+            </div>
+          </div>
 
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q3_correct"
-                    value="1"
-                  />
-                </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 1"
-                  name="q3_option1"
-                />
-              </div>
+          <!-- Кнопка збереження -->
+          <div class="save-bar text-center my-4">
+            <button
+              type="button"
+              class="btn btn-success btn-lg px-5"
+              id="saveMissionBtn"
+            >
+              <i class="bi bi-check-circle-fill me-2"></i>Зберегти місію
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q3_correct"
-                    value="2"
-                  />
-                </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 2"
-                  name="q3_option2"
-                />
-              </div>
+    <!-- ВКЛАДКА 3: Статистика -->
+    <div class="tab-pane fade" id="stats-pane" role="tabpanel">
+      <div class="card shadow-sm p-4">
+        <h3 class="mb-4">
+          <i class="bi bi-graph-up-arrow me-2"></i>Статистика платформи
+        </h3>
 
-              <div class="input-group mb-2 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q3_correct"
-                    value="3"
-                  />
+        <div class="row g-4">
+          <!-- Картка: Користувачі -->
+          <div class="col-md-3">
+            <div class="card text-white bg-primary h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase">Користувачі</h6>
+                    <h2 class="display-4 mb-0">{{ users_count }}</h2>
+                  </div>
+                  <i class="bi bi-people-fill display-1 opacity-50"></i>
                 </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 3"
-                  name="q3_option3"
-                />
-              </div>
-
-              <div class="input-group mb-0 option-row">
-                <div class="input-group-text">
-                  <input
-                    class="form-check-input mt-0 correct"
-                    type="checkbox"
-                    name="q3_correct"
-                    value="4"
-                  />
+                <div class="mt-3">
+                  <small>Підтверджено: {{ user_count_verified }}</small>
                 </div>
-                <input
-                  type="text"
-                  class="form-control option"
-                  placeholder="Варіант 4"
-                  name="q3_option4"
-                />
               </div>
             </div>
           </div>
 
-          <!-- Сюди динамічно додаються нові питання -->
-          <div id="questions-container"></div>
+          <!-- Картка: Місії -->
+          <div class="col-md-3">
+            <div class="card text-white bg-success h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase">Місії</h6>
+                    <h2 class="display-4 mb-0">{{ missions_count }}</h2>
+                  </div>
+                  <i class="bi bi-journal-check display-1 opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            class="btn btn-outline-primary btn-sm"
-            onclick="addQuestion()"
-          >
-            <i class="bi bi-plus-lg me-1"></i>Додати питання
-          </button>
+          <!-- Картка: Спроби -->
+          <div class="col-md-3">
+            <div class="card text-white bg-warning h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase">Всього спроб</h6>
+                    <h2 class="display-4 mb-0">{{ attempts_count }}</h2>
+                  </div>
+                  <i class="bi bi-clipboard-check display-1 opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Картка: Загальний XP -->
+          <div class="col-md-4">
+            <div class="card text-white bg-info h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase">Загальний XP</h6>
+                    <h2 class="display-4 mb-0">{{ total_xp }}</h2>
+                  </div>
+                  <i class="bi bi-star-fill display-1 opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Картка: Відсоток верифікованих -->
+          <div class="col-md-4">
+            <div class="card text-white bg-dark h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase">Верифіковані</h6>
+                    <h2 class="display-4 mb-0">
+                      {% if users_count > 0 %} {{ (user_count_verified /
+                      users_count * 100) | round(1) }}% {% else %} 0% {% endif
+                      %}
+                    </h2>
+                  </div>
+                  <i class="bi bi-check-circle-fill display-1 opacity-50"></i>
+                </div>
+                <div class="progress mt-3" style="height: 10px">
+                  <div
+                    class="progress-bar bg-success"
+                    style="width: {% if users_count > 0 %}{{ (user_count_verified / users_count * 100) }}{% else %}0{% endif %}%;"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Картка: Середній XP на користувача -->
+          <div class="col-md-4">
+            <div class="card text-white bg-secondary h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase">Середній XP</h6>
+                    <h2 class="display-4 mb-0">
+                      {% if users_count > 0 %} {{ (total_xp / users_count) |
+                      round(0) }} {% else %} 0 {% endif %}
+                    </h2>
+                  </div>
+                  <i class="bi bi-award-fill display-1 opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Детальна таблиця статистики -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-table me-2"></i>Детальна статистика
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Показник</th>
+                    <th>Значення</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Всього користувачів</td>
+                    <td><strong>{{ users_count }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Підтверджених email</td>
+                    <td><strong>{{ user_count_verified }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Всього місій</td>
+                    <td><strong>{{ missions_count }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Всього спроб пройти місії</td>
+                    <td><strong>{{ attempts_count }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Загальний XP на платформі</td>
+                    <td><strong>{{ total_xp }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Середній XP на користувача</td>
+                    <td>
+                      <strong>
+                        {% if users_count > 0 %} {{ (total_xp / users_count) |
+                        round(0) }} {% else %} 0 {% endif %}
+                      </strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Відсоток верифікованих</td>
+                    <td>
+                      <strong>
+                        {% if users_count > 0 %} {{ (user_count_verified /
+                        users_count * 100) | round(1) }}% {% else %} 0% {% endif
+                        %}
+                      </strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- ==========================
-               Кнопка збереження
-          =========================== -->
-      <div class="save-bar text-center">
-        <button
-          type="button"
-          class="btn btn-success btn-lg px-5"
-          id="saveMissionBtn"
-        >
-          <i class="bi bi-check-circle-fill me-2"></i>Зберегти місію
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
 

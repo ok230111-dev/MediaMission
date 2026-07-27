@@ -44,100 +44,166 @@
     transform: translateY(-4px);
 }
 
-/* FEATURE / MISSIONS SWIPER */
+
+/* ==========================================================
+   FEATURES SECTION
+=========================================================== */
+
+.features-section {
+  background: #f8fafc;
+  border-radius: 40px;
+  margin: 80px auto;
+  padding: 90px 0;
+  overflow: hidden;
+}
+
+.section-header .section-badge {
+  display: inline-block;
+  background: #eef4ff;
+  color: #2f6bff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 6px 18px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.section-header h2 {
+  font-weight: 800;
+  margin-top: 1rem;
+}
+
+.section-header p {
+  max-width: 480px;
+  margin: 0.75rem auto 0;
+}
+
+/* Swiper container: місце для стрілок по боках */
 .featureSwiper {
-    position: relative;
-    padding: 0 50px;
-    overflow: hidden;
+  position: relative;
+  padding: 0 80px;
+
 }
 
-.featureSwiper .swiper-wrapper {
-    display: flex;
-    gap: 24px;
-}
-
-.featureSwiper .swiper-slide {
-    width: auto;
-    display: flex;
-}
-
-.featureSwiper .swiper-button-prev::after,
-.featureSwiper .swiper-button-next::after {
-    display: none !important;
-}
-
-.featureSwiper .swiper-button-prev,
-.featureSwiper .swiper-button-next {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    color: var(--primary-color);
-    top: 50%;
-    transform: translateY(-50%);
-    margin-top: 0;
-    transition: all 0.2s ease;
-}
-
-.featureSwiper .swiper-button-prev::before {
-    content: '‹';
-    font-size: 28px;
-    font-weight: bold;
-    line-height: 1;
-}
-
-.featureSwiper .swiper-button-next::before {
-    content: '›';
-    font-size: 28px;
-    font-weight: bold;
-    line-height: 1;
-}
-
-.featureSwiper .swiper-button-prev {
-    left: 10px;
-}
-
-.featureSwiper .swiper-button-next {
-    right: 10px;
-}
-
-.featureSwiper .swiper-button-prev:hover,
-.featureSwiper .swiper-button-next:hover {
-    background-color: var(--primary-color);
-    color: #ffffff;
-}
-
+/* Картки */
 .feature-card {
-    background: var(--surface-color);
-    border-radius: var(--radius-large);
-    padding: 30px;
-    text-align: center;
-    box-shadow: var(--shadow-small);
-    transition: var(--transition-normal);
-    height: 100%;
-    width: 100%;
+  background: linear-gradient(180deg, white, #f9fbff);
+  border-radius: 20px;
+  padding: 2rem 6rem;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  transition: 0.35s;
+
 }
 
 .feature-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-large);
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
 }
 
-.feature-card i {
-    font-size: 3rem;
-    color: var(--primary-color);
+.feature-icon {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #eef4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
 }
 
-.feature-card h3 {
-    margin-top: 18px;
-    font-weight: 700;
+.feature-icon i {
+  font-size: 42px;
+  color: #2f6bff;
 }
 
-.feature-card p {
-    margin-top: 12px;
-    color: var(--text-light);
+.feature-link {
+  margin-top: auto;
+  color: #2f6bff;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9rem;
 }
+
+.feature-link:hover {
+  text-decoration: underline;
+}
+
+/* Стрілки Swiper */
+.swiper-button-prev,
+.swiper-button-next {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+  transition: 0.25s;
+  top: 50%;
+  margin-top: -28px;
+  padding: 40px;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  transform: scale(1.1);
+}
+
+.swiper-button-prev {
+  left: 10px;
+}
+
+.swiper-button-next {
+  right: 10px;
+}
+
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2f6bff;
+}
+
+/* Pagination */
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background: #cdd8f0;
+  opacity: 1;
+}
+
+.swiper-pagination-bullet-active {
+  background: #2f6bff;
+}
+
+.swiper-pagination {
+  position: relative;
+  margin-top: 2.5rem;
+}
+
+/* Адаптив для мобільних */
+@media (max-width: 768px) {
+  .featureSwiper {
+    padding: 0 20px;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    padding: 30px;
+  }
+
+  .features-section {
+    border-radius: 20px;
+    padding: 50px 0;
+    margin: 40px auto;
+  }
+}
+
+
 
 /* WHY SECTION */
 .why-section {
@@ -234,10 +300,24 @@
     margin-bottom: 16px;
 }
 
+/*admin*/
+.step-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
 /* ADMIN PAGE */
 .admin-page {
     background: linear-gradient(110deg, #ff0000, #4f46e5);
     min-height: 100vh;
+    min-width: 100%;
+    margin: 0;
 }
 
 .admin-header {
@@ -245,6 +325,7 @@
     color: #fff;
     padding: 2.5rem 0;
     margin-bottom: 2.5rem;
+    min-width: 100%
 }
 
 .admin-header h1 {

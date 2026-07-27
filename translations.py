@@ -90,6 +90,15 @@ TRANSLATIONS = {
         "register_subtitle": "Створіть акаунт, щоб починати місії та заробляти XP",
         "nickname": "Твій Nickname",
         "already_have_account": "Вже є акаунт?",
+        "profile_information_account": "Інформація про акаунт",
+        "change_avatar": "Змінити Фото",
+        "email_unverified": "Email не підтверджено",
+        "verify_email": "Підтвердити Email",
+        "email_verified": "Email підтверджено",
+        "index_features": "Можливості",
+        "features_learn_media": "Вивчай медіаграмотність",
+        "features_ways": "по-різному",
+        "features_desc": "Новини, відео, фото, кейси та багато інших інтерактивних місій.",
     },
     "de": {
         "mission": "Mission",
@@ -126,7 +135,7 @@ TRANSLATIONS = {
         "index_video_desc": "Analysiere kurze Videos, identifiziere Manipulationen und überprüfe Informationen.",
         "index_news_desc": "Lerne, Fälschungen, Clickbait und unzuverlässige Quellen zu erkennen.",
         "index_cases_desc": "Löse praxisnahe Informationsszenarien und sammle XP.",
-        "index_protos_desc": "Analysiere Bilder und suche nach Anzeichen von Bildmanipulation.",
+        "index_photos_desc": "Analysiere Bilder und suche nach Anzeichen von Bildmanipulation.",
         "index_websites_desc": "Überprüfe die Zuverlässigkeit von Websites und deren Quellen.",
         "index_why": "Warum ist Medienkompetenz wichtig?",
         "index_why_check": "Überprüfe Informationen",
@@ -182,6 +191,15 @@ TRANSLATIONS = {
         "register_subtitle": "Erstelle ein Konto, um Missionen zu starten und XP zu sammeln",
         "nickname": "Dein Nickname",
         "already_have_account": "Hast du schon ein Konto?",
+        "profile_information_account": "Kontoinformationen",
+        "change_avatar": "Foto ändern",
+        "email_unverified": "E-Mail nicht bestätigt",
+        "verify_email": "E-Mail bestätigen",
+        "email_verified": "E-Mail bestätigt",
+        "index_features": "Funktionen",
+        "features_learn_media": "Lerne Medienkompetenz",
+        "features_ways": "auf verschiedene Weise",
+        "features_desc": "Nachrichten, Videos, Fotos, Fallstudien und viele andere interaktive Missionen.",
     },
     "en": {
         "mission": "Mission",
@@ -218,7 +236,7 @@ TRANSLATIONS = {
         "index_video_desc": "Analyze short videos, spot manipulation, and verify information.",
         "index_news_desc": "Learn to spot fakes, clickbait, and unreliable sources.",
         "index_cases_desc": "Solve real information scenarios and earn XP.",
-        "index_protos_desc": "Analyze images and spot signs of editing.",
+        "index_photos_desc": "Analyze images and spot signs of editing.",
         "index_websites_desc": "Check the reliability of websites and their sources.",
         "index_why": "Why is media literacy important?",
         "index_why_check": "Verify information",
@@ -274,9 +292,23 @@ TRANSLATIONS = {
         "register_subtitle": "Create an account to start missions and earn XP",
         "nickname": "Your Nickname",
         "already_have_account": "Already have an account?",
+        "profile_information_account": "Account information",
+        "change_avatar": "Change Photo",
+        "email_unverified": "Email not verified",
+        "verify_email": "Verify Email",
+        "email_verified": "Email verified",
+        "index_features": "Features",
+        "features_learn_media": "Learn media literacy",
+        "features_ways": "in different ways",
+        "features_desc": "News, videos, photos, case studies, and many other interactive missions.",
     },
 }
 
 
 def translate(key, lang):
-    return TRANSLATIONS.get(lang, TRANSLATIONS["uk"]).get(key, key)
+    # Перевіряємо чи існує мова, якщо ні - використовуємо українську
+    if lang not in TRANSLATIONS:
+        lang = "uk"
+    
+    # Отримуємо переклад або повертаємо ключ, якщо перекладу немає
+    return TRANSLATIONS[lang].get(key, key)

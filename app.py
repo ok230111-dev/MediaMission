@@ -12,21 +12,30 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 import time
 from flask_sqlalchemy import SQLAlchemy
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 
 
 
 app = Flask(__name__)
 
-os.makedirs(os.path.join("static", "image"), exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+
+UPLOAD_FOLDER = "static/uploads/avatars"
+
+os.makedirs(os.path.join("static", "image"), exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 cred = credentials.Certificate("./mediamission-a0b70-firebase-adminsdk-fbsvc-a1ebbce726.json")
 firebase_admin.initialize_app(cred)
 
+
 # 1. СПОЧАТКУ задаємо налаштування бази даних:
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mediamission.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config['SECRET_KEY'] = 'your-secret-key' # Потрібно для Flask-Admin
 
 # 2. І ТІЛЬКИ ПОТІМ передаємо app у SQLAlchemy:
 db = SQLAlchemy(app)
@@ -129,9 +138,19 @@ class Users(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     last_login = db.Column(db.DateTime)
     admin = db.Column(db.Boolean, default=False)
-    avatar = db.Column(db.String(500), default="dafault-avatar.png")
+    avatar = db.Column(db.String(500), default="None", nullable=True)
     photo_url = db.Column(db.String(500))
     language = db.Column(db.String(70), default="uk")
+
+class UserAdminView(ModelView):
+    column_searchable_list = ['email'] # Пошук за email
+    column_list = ['id', 'email']      # Що показувати у списку
+
+# 3. Ініціалізація адмінки
+admin = Admin(app, name='MediaMission Admin')
+
+# 4. РЕЄСТРАЦІЯ МОДЕЛІ (Обов'язково викликати!)
+admin.add_view(UserAdminView(Users, db.session))
 
 class UserMissionProgress(db.Model):
     __tablename__ = "user_mission_progress"
@@ -181,6 +200,11 @@ UKRAINIAN_MONTHS = [
     "липня", "серпня", "вересня", "жовтня", "листопада", "грудня"
 ]
 
+AVATAR_COLORS = [
+    "#FF6B6B", "#F06595", "#CC5DE8", "#845EF7", "#5C7CFA",
+    "#339AF0", "#22B8CF", "#20C997", "#51CF66", "#94D82D",
+    "#FCC419", "#FF922B", "#FF8787", "#748FFC", "#63E6BE",
+]
 
 
 @app.before_request
@@ -378,6 +402,8 @@ def mission_detail(id):
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
+    users = Users.query.all()
+    missions = Missions.query.all()
     user_id = session.get("user_id")
 
     if user_id is None:
@@ -386,9 +412,27 @@ def admin():
     user = Users.query.get(user_id)
 
     if not user.admin:
-        return "Forbidden",403
+        return "Forbidden", 403
+
+    # Обробка пошуку за email
+    search_email = request.args.get('search_email', '').strip()
+    searched_user = None
+
+    users_count = Users.query.count()
+    missions_count = Missions.query.count()
+    attempts_count = UserMissionProgress.query.count()
+    user_count_verified = Users.query.filter_by(email_verified=True).count()
+    total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
     
-    return render_template('admin.html')
+    if search_email:
+        searched_user = Users.query.filter_by(email=search_email).first()
+        if searched_user:
+            # Якщо знайдено, показуємо тільки цього користувача
+            users = [searched_user]
+        else:
+            users = []  # Якщо не знайдено, показуємо порожній список
+    
+    return render_template('admin.html', users=users, missions=missions, searched_user=searched_user, search_email=search_email, users_count=users_count, user_count_verified=user_count_verified, missions_count=missions_count, attempts_count=attempts_count, total_xp=total_xp)
 
 
 
@@ -568,7 +612,7 @@ def profile():
     )
 
     return render_template(
-        "profile.html",
+        'profile.html',
         user=user,
         recent_progress=recent_progress
     )
@@ -610,6 +654,200 @@ def update_verification_status():
         db.session.commit()
 
     return {"success": True, "email_verified": user.email_verified}
+
+
+
+
+@app.route("/upload-avatar", methods=["POST"])
+def upload_avatar():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/login")
+
+    file = request.files.get("avatar")
+    if not file or not file.filename:
+        return redirect("/profile")
+
+    filename = secure_filename(file.filename)
+
+    if not allowed_file(filename):
+        return redirect("/profile")
+
+    ext = filename.rsplit(".", 1)[1].lower()
+    new_filename = f"{uuid.uuid4()}.{ext}"
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)  # переконуємось, що папка існує
+    file.save(os.path.join(app.config["UPLOAD_FOLDER"], new_filename))
+
+    user = db.session.get(Users, user_id)
+
+    # Видаляємо старий файл аватарки, якщо він не дефолтний (щоб не накопичувати сміття на диску)
+    if user.avatar and user.avatar != "dafault-avatar.png":
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], user.avatar)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    user.avatar = new_filename
+    db.session.commit()
+
+    return redirect("/profile")
+
+
+
+def get_avatar_color(name):
+    if not name:
+        return AVATAR_COLORS[0]
+    index = sum(ord(char) for char in name) % len(AVATAR_COLORS)
+    return AVATAR_COLORS[index]
+
+@app.context_processor
+def inject_avatar_color():
+    return {"avatar_color": get_avatar_color}
+
+
+
+
+@app.route("/api/admin/stats", methods=["GET"])
+def admin_stats():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    users_count = Users.query.count()
+    missions_count = Missions.query.count()
+    attempts_count = UserMissionProgress.query.count()
+    user_count_verified = Users.query.filter_by(email_verified=True).count()
+
+    return {
+        "success": True,
+        "stats": {
+            "users": users_count,
+            "missions": missions_count,
+            "attempts": attempts_count,
+            "user_count_verified": user_count_verified
+        }
+    }
+
+
+# ----------------------------------------------------
+# ADMIN API ROUTE: Пошук користувача за Email
+# ----------------------------------------------------
+@app.route("/api/admin/find_user", methods=["POST"])
+def find_user_by_email():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    data = request.get_json()
+    email_query = data.get("email", "").strip()
+
+    if not email_query:
+        return {"success": False, "error": "Email не вказано"}, 400
+
+    target_user = Users.query.filter_by(email=email_query).first()
+
+    if not target_user:
+        return {"success": False, "error": "Користувача з таким email не знайдено"}, 404
+
+    # Повертаємо детальну інформацію про користувача
+    return {
+        "success": True,
+        "user": {
+            "id": target_user.id,
+            "display_name": target_user.display_name,
+            "email": target_user.email,
+            "total_xp": target_user.total_xp,
+            "admin": target_user.admin,
+            "missions_completed": target_user.missions_completed,
+            "accuracy": target_user.accuracy,
+            "streak": target_user.streak,
+            "created_at": target_user.created_at.strftime('%Y-%m-%d %H:%M') if target_user.created_at else "—",
+            "last_login": target_user.last_login.strftime('%Y-%m-%d %H:%M') if target_user.last_login else "—"
+        }
+    }
+
+# ----------------------------------------------------
+# ADMIN API ROUTE: Видалення користувача
+# ----------------------------------------------------
+@app.route("/api/admin/delete_user/<int:target_id>", methods=["DELETE"])
+def delete_user(target_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    target_user = Users.query.get(target_id)
+    if not target_user:
+        return {"success": False, "error": "Користувача не знайдено"}, 404
+
+    if target_user.id == current_user.id:
+        return {"success": False, "error": "Ви не можете видалити самого себе!"}, 400
+
+    # Видаляємо всі зв'язані записи користувача
+    UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+    
+    db.session.delete(target_user)
+    db.session.commit()
+
+    return {"success": True}
+
+
+# ----------------------------------------------------
+# ADMIN API ROUTE: Отримання списку місій та їх видалення
+# ----------------------------------------------------
+@app.route("/api/admin/missions", methods=["GET"])
+def get_admin_missions():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    missions = Missions.query.all()
+    result = [{
+        "id": m.id,
+        "title": m.title,
+        "xp": m.xp,
+        "difficulty": m.difficulty
+    } for m in missions]
+
+    return {"success": True, "missions": result}
+
+
+@app.route("/api/admin/delete_mission/<int:mission_id>", methods=["DELETE"])
+def delete_mission(mission_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    mission = Missions.query.get(mission_id)
+    if not mission:
+        return {"success": False, "error": "Місію не знайдено"}, 404
+
+    db.session.delete(mission)
+    db.session.commit()
+
+    return {"success": True}
+
+
+
 
 
 with app.app_context():

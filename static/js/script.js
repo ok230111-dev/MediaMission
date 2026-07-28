@@ -15,6 +15,19 @@ new Swiper(".swiper", {
   },
 });
 
+new Swiper(".leaderboardSwiper .swiper", {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    pagination: {
+      el: ".leaderboardSwiper .swiper-pagination",
+      clickable: true,
+    },
+    navigation: {
+      nextEl: ".leaderboardSwiper .swiper-button-next",
+      prevEl: ".leaderboardSwiper .swiper-button-prev",
+    },
+  });
+
 // В кінці вашого base.html або в окремому файлі
 function toggleTheme() {
     const html = document.documentElement;

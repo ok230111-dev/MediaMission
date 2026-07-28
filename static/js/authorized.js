@@ -21,6 +21,7 @@ onAuthStateChanged(auth, async (user) => {
     logout: body.dataset.tLogout,
     register: body.dataset.tRegister,
     login: body.dataset.tLogin,
+    leaderboard: body.dataset.tLeaderboard
   };
 
   // 1. Оновлюємо заголовок ЛИШЕ якщо він є на цій сторінці
@@ -47,15 +48,61 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     const isAdmin = user.email === ADMIN_EMAIL;
 
+    // navbarNav.innerHTML = `
+    //   <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
+    //     ${isAdmin ? `<li class="nav-item"><a class="nav-link" href="/admin">${t.adminPanel}</a></li>` : ''}
+    //     <li class="nav-item"><a class="nav-link" href="/profile">${t.profile}</a></li>
+    //     <li class="nav-item"><a class="nav-link" href="/leaderboard">${t.leaderboard}</a></li>
+    //     <li class="nav-item"><a class="nav-link" href="/">${t.home}</a></li>
+    //     <li class="nav-item"><a class="nav-link" href="/missions-overview">${t.missions}</a></li>
+    //     <li class="nav-item"><a class="nav-link" href="#" id="logoutBtn">${t.logout}</a></li>
+    //   </ul>
+    // `;
+
     navbarNav.innerHTML = `
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
-        ${isAdmin ? `<li class="nav-item"><a class="nav-link" href="/admin">${t.adminPanel}</a></li>` : ''}
-        <li class="nav-item"><a class="nav-link" href="/profile">${t.profile}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/">${t.home}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/missions-overview">${t.missions}</a></li>
-        <li class="nav-item"><a class="nav-link" href="#" id="logoutBtn">${t.logout}</a></li>
-      </ul>
-    `;
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-4">
+            ${isAdmin ? `
+              <li class="nav-item">
+                <a class="nav-link" href="/admin">
+                  <i class="bi bi-shield-lock-fill"></i>
+                  ${t.adminPanel}
+                </a>
+              </li>` : ''}
+            <li class="nav-item">
+              <a class="nav-link" href="/profile">
+                <i class="bi bi-person-circle"></i>
+                ${t.profile}
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/leaderboard">
+                <i class="bi bi-trophy-fill"></i>
+                ${t.leaderboard}
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="bi bi-house-door"></i>
+                ${t.home}
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/missions-overview">
+                <i class="bi bi-journal-check"></i>
+                ${t.missions}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="logoutBtn">
+                <i class="bi bi-box-arrow-right"></i>
+                ${t.logout}
+              </a>
+            </li>
+          </ul>
+    `
 
     document.getElementById("logoutBtn")?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -64,15 +111,41 @@ onAuthStateChanged(auth, async (user) => {
       window.location.href = "/";
     });
   } else {
-    navbarNav.innerHTML = `
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0">
-        <li class="nav-item"><a class="nav-link" href="/">${t.home}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/missions-overview">${t.missions}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/register">${t.register}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/login">${t.login}</a></li>
+      navbarNav.innerHTML = `
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-4">
+        <li class="nav-item">
+          <a class="nav-link" href="/">
+            <i class="bi bi-house-door"></i>
+            ${t.home}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/leaderboard">
+            <i class="bi bi-trophy-fill"></i>
+            ${t.leaderboard}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/missions-overview">
+            <i class="bi bi-journal-check"></i>
+            ${t.missions}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/register">
+            <i class="bi bi-person-plus"></i>
+            ${t.register}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/login">
+            <i class="bi bi-box-arrow-in-right"></i>
+            ${t.login}
+          </a>
+        </li>
       </ul>
     `;
-  }
+}
 
   if (user) {
   // Перевіряємо актуальний статус верифікації і синхронізуємо з бекендом

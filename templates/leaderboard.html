@@ -1,0 +1,275 @@
+{% extends "base.html" %} {% block title %}{{ t('leaderboard_title') }} |
+MediaMission{% endblock %} {% block content %}
+<section class="container py-5">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold display-5">
+      <i class="bi bi-trophy-fill text-warning"></i> {{ t('leaderboard_title')
+      }}
+    </h1>
+    <p class="text-muted">{{ t('leaderboard_subtitle') }}</p>
+  </div>
+
+  <!-- Карусель п'єдесталів -->
+  <div class="leaderboardSwiper position-relative mb-5">
+    <div class="swiper">
+      <div class="swiper-wrapper">
+        <!-- Слайд 1: за XP -->
+        <div class="swiper-slide">
+          <h3 class="text-center fw-bold mb-4">
+            <i class="bi bi-lightning-charge-fill text-warning"></i> {{
+            t('leaderboard_by_xp') }}
+          </h3>
+          {% if not top_by_xp %}
+          <p class="text-center text-muted">{{ t('leaderboard_empty') }}</p>
+          {% else %}
+          <div class="row justify-content-center g-3 podium-row">
+            {% for user in top_by_xp[:3] %}
+            <div class="col-6 col-md-3 order-{{ loop.index0 }}">
+              <div
+                class="podium-card podium-{{ loop.index }} {% if user.id == current_user_id %}podium-you{% endif %}"
+              >
+                <div class="podium-medal">
+                  {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else
+                  %}🥉{% endif %}
+                </div>
+                <div class="podium-avatar mx-auto">
+                  {% if user.avatar %}
+                  <img
+                    src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}"
+                    alt="{{ user.display_name }}"
+                  />
+                  {% else %}
+                  <div
+                    class="podium-avatar-placeholder"
+                    style="background-color: {{ avatar_color(user.display_name) }};"
+                  >
+                    {{ user.display_name[0]|upper if user.display_name else "U"
+                    }}
+                  </div>
+                  {% endif %}
+                </div>
+                <h5 class="fw-bold mt-2 mb-0 text-truncate">
+                  {{ user.display_name }}
+                </h5>
+                {% if user.id == current_user_id %}
+                <span class="badge bg-primary rounded-pill mt-1"
+                  >{{ t('leaderboard_you') }}</span
+                >
+                {% endif %}
+                <div class="podium-xp mt-2">{{ user.total_xp }} XP</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% if rank_xp and rank_xp > 3 %}
+          <div class="your-rank-card mt-3 mx-auto" style="max-width: 320px">
+            <span class="rank-badge">#{{ rank_xp }}</span>
+            <span class="fw-bold ms-2">{{ t('leaderboard_your_rank') }}</span>
+          </div>
+          {% endif %} {% endif %}
+        </div>
+
+        <!-- Слайд 2: за кількістю місій -->
+        <div class="swiper-slide">
+          <h3 class="text-center fw-bold mb-4">
+            <i class="bi bi-journal-check text-primary"></i> {{
+            t('leaderboard_by_missions') }}
+          </h3>
+          {% if not top_by_missions %}
+          <p class="text-center text-muted">{{ t('leaderboard_empty') }}</p>
+          {% else %}
+          <div class="row justify-content-center g-3 podium-row">
+            {% for user in top_by_missions[:3] %}
+            <div class="col-6 col-md-3 order-{{ loop.index0 }}">
+              <div
+                class="podium-card podium-{{ loop.index }} {% if user.id == current_user_id %}podium-you{% endif %}"
+              >
+                <div class="podium-medal">
+                  {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else
+                  %}🥉{% endif %}
+                </div>
+                <div class="podium-avatar mx-auto">
+                  {% if user.avatar %}
+                  <img
+                    src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}"
+                    alt="{{ user.display_name }}"
+                  />
+                  {% else %}
+                  <div
+                    class="podium-avatar-placeholder"
+                    style="background-color: {{ avatar_color(user.display_name) }};"
+                  >
+                    {{ user.display_name[0]|upper if user.display_name else "U"
+                    }}
+                  </div>
+                  {% endif %}
+                </div>
+                <h5 class="fw-bold mt-2 mb-0 text-truncate">
+                  {{ user.display_name }}
+                </h5>
+                {% if user.id == current_user_id %}
+                <span class="badge bg-primary rounded-pill mt-1"
+                  >{{ t('leaderboard_you') }}</span
+                >
+                {% endif %}
+                <div class="podium-xp mt-2">
+                  {{ user.missions_completed }} {{
+                  t('leaderboard_missions_short') }}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% if rank_missions and rank_missions > 3 %}
+          <div class="your-rank-card mt-3 mx-auto" style="max-width: 320px">
+            <span class="rank-badge">#{{ rank_missions }}</span>
+            <span class="fw-bold ms-2">{{ t('leaderboard_your_rank') }}</span>
+          </div>
+          {% endif %} {% endif %}
+        </div>
+
+        <!-- Слайд 3: за точністю -->
+        <div class="swiper-slide">
+          <h3 class="text-center fw-bold mb-4">
+            <i class="bi bi-bullseye text-success"></i> {{
+            t('leaderboard_by_accuracy') }}
+          </h3>
+          {% if not top_by_accuracy %}
+          <p class="text-center text-muted">{{ t('leaderboard_empty') }}</p>
+          {% else %}
+          <div class="row justify-content-center g-3 podium-row">
+            {% for user in top_by_accuracy[:3] %}
+            <div class="col-6 col-md-3 order-{{ loop.index0 }}">
+              <div
+                class="podium-card podium-{{ loop.index }} {% if user.id == current_user_id %}podium-you{% endif %}"
+              >
+                <div class="podium-medal">
+                  {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% else
+                  %}🥉{% endif %}
+                </div>
+                <div class="podium-avatar mx-auto">
+                  {% if user.avatar %}
+                  <img
+                    src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}"
+                    alt="{{ user.display_name }}"
+                  />
+                  {% else %}
+                  <div
+                    class="podium-avatar-placeholder"
+                    style="background-color: {{ avatar_color(user.display_name) }};"
+                  >
+                    {{ user.display_name[0]|upper if user.display_name else "U"
+                    }}
+                  </div>
+                  {% endif %}
+                </div>
+                <h5 class="fw-bold mt-2 mb-0 text-truncate">
+                  {{ user.display_name }}
+                </h5>
+                {% if user.id == current_user_id %}
+                <span class="badge bg-primary rounded-pill mt-1"
+                  >{{ t('leaderboard_you') }}</span
+                >
+                {% endif %}
+                <div class="podium-xp mt-2">
+                  {{ "%.1f"|format(user.accuracy) }}%
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% if rank_accuracy and rank_accuracy > 3 %}
+          <div class="your-rank-card mt-3 mx-auto" style="max-width: 320px">
+            <span class="rank-badge">#{{ rank_accuracy }}</span>
+            <span class="fw-bold ms-2">{{ t('leaderboard_your_rank') }}</span>
+          </div>
+          {% endif %} {% endif %}
+        </div>
+      </div>
+
+      <div class="swiper-pagination"></div>
+    </div>
+
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+  </div>
+
+  {% if not current_user_id %}
+  <div class="leaderboard-cta text-center my-4">
+    <p class="mb-1">{{ t('leaderboard_appel') }}</p>
+    <p class="text-primary fw-bold">{{ t('leaderboard_appel_2') }}</p>
+    <a href="/register" class="btn btn-primary mt-2">
+      <i class="bi bi-person-plus"></i> {{ t('nav_register') }}
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Повна таблиця за XP -->
+  {% if top_by_xp %}
+  <div class="card border-0 shadow-sm mt-4">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table leaderboard-table mb-0">
+          <thead>
+            <tr>
+              <th>{{ t('leaderboard_rank') }}</th>
+              <th>{{ t('leaderboard_user') }}</th>
+              <th class="text-end">{{ t('leaderboard_missions') }}</th>
+              <th class="text-end">{{ t('profile_streak') }}</th>
+              <th class="text-end">{{ t('leaderboard_xp') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in top_by_xp %}
+            <tr class="{% if user.id == current_user_id %}row-you{% endif %}">
+              <td class="fw-bold text-muted">{{ loop.index }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="table-avatar">
+                    {% if user.avatar %}
+                    <img
+                      src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}"
+                      alt="{{ user.display_name }}"
+                    />
+                    {% else %}
+                    <div
+                      class="table-avatar-placeholder"
+                      style="background-color: {{ avatar_color(user.display_name) }};"
+                    >
+                      {{ user.display_name[0]|upper if user.display_name else
+                      "U" }}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <span class="text-truncate">{{ user.display_name }}</span>
+                  {% if user.id == current_user_id %}
+                  <span class="badge bg-primary rounded-pill small"
+                    >{{ t('leaderboard_you') }}</span
+                  >
+                  {% endif %}
+                </div>
+              </td>
+              <td class="text-end text-muted">{{ user.missions_completed }}</td>
+              <td class="text-end text-muted">{{ user.streak }}</td>
+              <td class="text-end fw-bold text-primary">
+                {{ user.total_xp }} XP
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/authorized.js') }}"
+></script>
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/script.js') }}"
+></script>
+{% endblock %}

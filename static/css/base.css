@@ -29,54 +29,12 @@ body{
 
 
 
-
-/* Navbar 
-header {
-  position: sticky;
-  z-index: 1000;
-  background-color: var(--surface-color, #ffffff);
-  box-shadow: var(--shadow-small, 0 2px 8px rgba(0,0,0,0.05));
-  top: 0;
-}
-
-.navbar{
-    /*background:var(--surface-color);
-    background: transparent;
-    min-height: 72px; /* Задаємо мінімальну висоту замість фіксованої *
-    box-shadow:var(--shadow-small);
-    position:sticky;
-    top:0;
-    z-index:1000;
-    display:flex;
-    align-items:center;
-    padding:0 20px;
-}
-.navbar-brand{
-    color:var(--primary-color)!important;
-    font-size:1.55rem;
-    font-weight:800;
-    display:flex;
-    align-items:center;
-    gap:8px;
-}
-.navbar-brand i{
-    margin-right:6px
-}
-.nav-link{
-    color:var(--text-light)!important;
-    font-weight:600;
-    margin-left:16px
-}
-.nav-link:hover{
-    color:var(--primary-color)!important
-} 
-
 /* ===========================
    HEADER
 =========================== */
 
 .site-header{
-    background:white;
+    background: var(--surface-color);
     position:sticky;
     top:0;
     z-index:1000;
@@ -91,7 +49,7 @@ header {
 
     font-size:1.5rem;
     font-weight:800;
-    color:#0f172a !important;
+    color:var(--text-color) !important;
 
     display:flex;
     align-items:center;
@@ -110,7 +68,7 @@ header {
 
 .nav-link{
 
-    color:#475569 !important;
+    color:var(--text-light) !important;
     font-weight:600;
 
     transition:.25s;
@@ -121,8 +79,8 @@ header {
 
 .nav-link:hover{
 
-    background:#eef2ff;
-    color:#4f46e5 !important;
+    background:rgba(37, 99, 235, 0.1);
+    color:var(--primary-color) !important;
 }
 
 /* ===========================
@@ -142,13 +100,15 @@ header {
     border-radius:10px;
     text-decoration:none;
     font-size:20px;
-    background:#f4f6fb;
+    background:var(--background-color);
     transition:.2s;
+    color: var(--text-color);
 }
 
 .language-switch a:hover{
-    background:#203047;
+    background:var(--primary-color);
     transform:translateY(-2px);
+    color: white;
 }
 
 .language-switch a.active{

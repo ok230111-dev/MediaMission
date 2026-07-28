@@ -5,7 +5,7 @@
     --primary-dark:  #1D4ED8;
     --secondary-color: #6366F1;
     --background-color: #F8FAFC;
-    --surface-color: #FFFFFF;
+    --surface-color: #ffffff;
     --text-color: #1E293B;
     --text-light: #64748B;
     --border-color: #E2E8F0;
@@ -46,3 +46,51 @@
     /* Градієнт */
     --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
 }
+
+[data-theme="dark"] {
+    --primary-color: #3B82F6;
+    --primary-dark:  #2563EB;
+    --secondary-color: #818CF8;
+    --background-color: #0F1115;
+    --surface-color: #1A1D23;
+    --text-color: #E5E7EB;
+    --text-light: #9CA3AF;
+    --border-color: #2D3139;
+    --success-color: #34D399;
+    --warning-color: #FBBF24;
+    --danger-color: #F87171;
+
+    --shadow-small: 0 4px 12px rgba(0,0,0,.3);
+    --shadow-medium: 0 10px 30px rgba(0,0,0,.4);
+    --shadow-large: 0 20px 45px rgba(0,0,0,.5);
+}
+
+body {
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+.site-header {
+  transition: background-color 0.3s ease;
+}
+
+.navbar-brand,
+.nav-link {
+  color: var(--text-primary) !important;
+}
+
+.card {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary);
+  border-color: var(--border-color) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.features-section {
+  background: var(--bg-secondary);
+}
+
+

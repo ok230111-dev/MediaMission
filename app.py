@@ -138,7 +138,7 @@ class Users(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     last_login = db.Column(db.DateTime)
     admin = db.Column(db.Boolean, default=False)
-    avatar = db.Column(db.String(500), default="None", nullable=True)
+    avatar = db.Column(db.String(500), nullable=True)
     photo_url = db.Column(db.String(500))
     language = db.Column(db.String(70), default="uk")
 
@@ -296,11 +296,115 @@ def missions_overview():
 
 
 
+# @app.route("/mission/<int:id>", methods=['GET', 'POST'])
+# def mission_detail(id):
+#     mission = Missions.query.get(id)
+#     if mission is None:
+#             return "Mission not found", 404
+
+#     user_id = session.get("user_id")
+#     if user_id is not None and Users.query.get(user_id) is None:
+#         session.clear()
+#         user_id = None
+
+#     if request.method == 'POST':
+#         started_at = request.form.get("started_at")
+#         time_spent = None
+#         if started_at:
+#             try:
+#                 time_spent = int(datetime.now(timezone.utc).timestamp() - float(started_at))
+#             except ValueError:
+#                 time_spent = None
+
+#         score = 0
+#         answers_to_save = []
+
+#         for question in mission.questions:
+#             user_answer_raw = request.form.getlist(f'question_{question.id}')
+#             user_answer = set(map(int, user_answer_raw))
+#             correct_answer = set(map(int, question.correct_answer.split(",")))
+
+#             is_correct = bool(user_answer) and user_answer == correct_answer
+#             if user_answer:
+#                 if is_correct:
+#                     score += 1
+
+#             answers_to_save.append((question.id, ",".join(user_answer_raw), is_correct))
+
+#         total = len(mission.questions)
+#         print(f"DEBUG: score={score}, total={total}")
+
+#         # Зберігаємо прогрес у БД, тільки якщо користувач залогінений
+#         if user_id:
+#             user = Users.query.get(user_id)
+
+#             previous_tries = UserMissionProgress.query.filter_by(
+#                 user_id=user_id,
+#                 mission_id=mission.id
+#             ).count()
+
+#             # Перевіряємо ДО створення нового запису — чистіше і надійніше
+#             was_already_completed = UserMissionProgress.query.filter_by(
+#                 user_id=user_id,
+#                 mission_id=mission.id,
+#                 completed=True
+#             ).count() > 0
+
+#             progress = UserMissionProgress(
+#                 user_id=user_id,
+#                 mission_id=mission.id,
+#                 completed=(score == total),
+#                 score_correct_answers=score,
+#                 total_questions=total,
+#                 xp_earned=mission.xp if score == total else 0,
+#                 tries_number=previous_tries + 1,
+#                 time_spent=time_spent,
+#                 completed_at=datetime.now(timezone.utc) if score == total else None
+#             )
+#             db.session.add(progress)
+#             db.session.flush()
+
+#             for question_id, answer_text, is_correct in answers_to_save:
+#                 db.session.add(UserAnswer(
+#                     user_progress_id=progress.id,
+#                     question_id=question_id,
+#                     user_answer=answer_text,
+#                     is_correct=is_correct
+#                 ))
+
+#             db.session.flush()
+#             all_progress = UserMissionProgress.query.filter_by(user_id=user_id).all()
+#             total_correct = sum(p.score_correct_answers for p in all_progress)
+#             total_all_questions = sum(p.total_questions for p in all_progress)
+#             user.accuracy = round(total_correct / total_all_questions * 100, 1) if total_all_questions > 0 else 0.0
+
+#             if score == total and not was_already_completed:
+#                 user.total_xp += mission.xp
+#                 user.missions_completed += 1
+
+#             db.session.commit()
+
+#         return render_template("result.html", mission=mission, score=score, total=total, progress=progress)
+
+#     # Рахуємо, яка це буде спроба (для показу на сторінці перед проходженням)
+#     next_try_number = 1
+#     if user_id:
+#         previous_tries = UserMissionProgress.query.filter_by(
+#             user_id=user_id,
+#             mission_id=mission.id
+#         ).count()
+#         next_try_number = previous_tries + 1
+
+#     return render_template('mission.html', mission=mission, next_try_number=next_try_number, current_timestamp=datetime.now(timezone.utc).timestamp())
+
+
+
+
 @app.route("/mission/<int:id>", methods=['GET', 'POST'])
 def mission_detail(id):
     mission = Missions.query.get(id)
     if mission is None:
-            return "Mission not found", 404
+        return "Mission not found", 404
 
     user_id = session.get("user_id")
     if user_id is not None and Users.query.get(user_id) is None:
@@ -333,14 +437,38 @@ def mission_detail(id):
 
         total = len(mission.questions)
 
-        # Зберігаємо прогрес у БД, тільки якщо користувач залогінений
         if user_id:
-            user = Users.query.get(user_id)   # ← отримуємо ОДИН раз, на самому початку
+            user = Users.query.get(user_id)
 
+            # Перевіряємо, чи вже була пройдена місія
+            existing_completed = UserMissionProgress.query.filter_by(
+                user_id=user_id,
+                mission_id=mission.id,
+                completed=True
+            ).first()
+
+            was_already_completed = existing_completed is not None
             previous_tries = UserMissionProgress.query.filter_by(
                 user_id=user_id,
                 mission_id=mission.id
             ).count()
+
+            # --- ВИПРАВЛЕННЯ: Оновлення streak ---
+            today = datetime.now(timezone.utc).date()
+            last_mission = UserMissionProgress.query.filter_by(
+                user_id=user_id
+            ).order_by(UserMissionProgress.completed_at.desc()).first()
+
+            if last_mission and last_mission.completed_at:
+                last_date = last_mission.completed_at.date()
+                if last_date == today:
+                    pass  # вже сьогодні проходив
+                elif (today - last_date).days == 1:
+                    user.streak += 1  # продовжуємо стрік
+                else:
+                    user.streak = 1   # обнуляємо, бо була перерва
+            else:
+                user.streak = 1  # перше проходження
 
             progress = UserMissionProgress(
                 user_id=user_id,
@@ -349,12 +477,12 @@ def mission_detail(id):
                 score_correct_answers=score,
                 total_questions=total,
                 xp_earned=mission.xp if score == total else 0,
-                tries_number=previous_tries +1,
+                tries_number=previous_tries + 1,
                 time_spent=time_spent,
                 completed_at=datetime.now(timezone.utc) if score == total else None
             )
             db.session.add(progress)
-            db.session.flush()  # щоб отримати progress.id
+            db.session.flush()
 
             for question_id, answer_text, is_correct in answers_to_save:
                 db.session.add(UserAnswer(
@@ -364,29 +492,23 @@ def mission_detail(id):
                     is_correct=is_correct
                 ))
 
-             # Рахуємо загальну точність по всій історії користувача (включно з поточною спробою)
             db.session.flush()
+            
+            # Оновлюємо accuracy
             all_progress = UserMissionProgress.query.filter_by(user_id=user_id).all()
             total_correct = sum(p.score_correct_answers for p in all_progress)
             total_all_questions = sum(p.total_questions for p in all_progress)
             user.accuracy = round(total_correct / total_all_questions * 100, 1) if total_all_questions > 0 else 0.0
 
-            if score == total:
-                already_completed = UserMissionProgress.query.filter_by(
-                    user_id=user_id,
-                    mission_id=mission.id,
-                    completed=True
-                ).count()
+            # Додаємо XP та missions_completed тільки якщо місія пройдена і не була пройдена раніше
+            if score == total and not was_already_completed:
+                user.total_xp += mission.xp
+                user.missions_completed += 1
 
-                if already_completed == 0:
-                    user.total_xp += mission.xp
-                    user.missions_completed += 1
-
-            db.session.commit()  # один commit в кінці — усі зміни разом
+            db.session.commit()
 
         return render_template("result.html", mission=mission, score=score, total=total, progress=progress)
 
-    # Рахуємо, яка це буде спроба (для показу на сторінці перед проходженням)
     next_try_number = 1
     if user_id:
         previous_tries = UserMissionProgress.query.filter_by(
@@ -846,6 +968,54 @@ def delete_mission(mission_id):
 
     return {"success": True}
 
+
+
+
+@app.route("/leaderboard", methods=["GET", "POST"])
+def leaderboard():
+
+    top_by_xp = (
+        Users.query
+        .order_by(Users.total_xp.desc())
+        .limit(50)
+        .all()
+    )
+
+    top_by_missions = (
+        Users.query
+        .filter(Users.missions_completed > 0)
+        .order_by(Users.missions_completed.desc())
+        .limit(50)
+        .all()
+    )
+
+    top_by_accuracy = (
+        Users.query
+        .filter(Users.accuracy >= 3)
+        .order_by(Users.accuracy.desc())
+        .limit(50)
+        .all()
+    )
+
+    current_user_id = session.get("user_id")
+    current_user_rank = None
+
+    def get_rank(sorted_list, user_id):
+        for index, u in enumerate(sorted_list, start=1):
+            if u.id == user_id:
+                return index
+        return None
+
+    return render_template(
+        "leaderboard.html",
+        top_by_xp=top_by_xp,
+        top_by_missions=top_by_missions,
+        top_by_accuracy=top_by_accuracy,
+        current_user_id=current_user_id,
+        rank_xp=get_rank(top_by_xp, current_user_id) if current_user_id else None,
+        rank_missions=get_rank(top_by_missions, current_user_id) if current_user_id else None,
+        rank_accuracy=get_rank(top_by_accuracy, current_user_id) if current_user_id else None,
+    )
 
 
 

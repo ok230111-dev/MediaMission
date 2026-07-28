@@ -73,6 +73,7 @@ TRANSLATIONS = {
         "award": "Нагорода",
         "time": "Час",
         "min": "хв",
+        "sec": "сек",
         "ready_mission": "Завершити місію",
         "published": "Опубліковано",
         "to_mission": "Перейти до місії",
@@ -99,7 +100,6 @@ TRANSLATIONS = {
         "features_learn_media": "Вивчай медіаграмотність",
         "features_ways": "по-різному",
         "features_desc": "Новини, відео, фото, кейси та багато інших інтерактивних місій.",
-        "nav_leaderboard": "Дошка Лідерів",
         "nav_leaderboard": "Лідери",
         "leaderboard_title": "Дошка лідерів",
         "leaderboard_subtitle": "Найкращі учасники платформи за:",
@@ -110,12 +110,18 @@ TRANSLATIONS = {
         "leaderboard_you": "Це ви!",
         "leaderboard_your_rank": "Ваше місце в рейтингу",
         "leaderboard_empty": "Поки що немає жодного учасника з XP.",
-        "leaderboard_appel": "Хочеш також покорити цей подіум своїми знанням? - Реєструйся, виконуй місій і отримуй за них XP!",
+        "leaderboard_appel": "Хочеш також покорити цей подіум своїми знаннями? — Реєструйся, виконуй місії і отримуй за них XP!",
         "leaderboard_appel_2": "Покажи свій рівень медіаграмотності!",
         "leaderboard_by_xp": "За досвідом",
         "leaderboard_by_missions": "За кількістю місій",
         "leaderboard_by_accuracy": "За точністю",
         "leaderboard_missions_short": "місій",
+        "profile_click_more_info": "Натисніть щоб показати більше",
+        "time_spent": "Витрачено часу на навчання",
+        "attempt_number": "Загальна кількість спроб",
+        "good_attempt": "Успішних спроб",
+        "goodness_attempt": "Успішність спроб",
+        "profile_click_less_info": "Натисніть щоб сховати",
     },
     "de": {
         "mission": "Mission",
@@ -191,6 +197,7 @@ TRANSLATIONS = {
         "award": "Belohnung",
         "time": "Zeit",
         "min": "Min.",
+        "sec": "Sek.",
         "ready_mission": "Mission abschließen",
         "published": "Veröffentlicht",
         "to_mission": "Zur Mission",
@@ -217,8 +224,6 @@ TRANSLATIONS = {
         "features_learn_media": "Lerne Medienkompetenz",
         "features_ways": "auf verschiedene Weise",
         "features_desc": "Nachrichten, Videos, Fotos, Fallstudien und viele andere interaktive Missionen.",
-        "nav_leaderboard": "Leaderboard",
-        "nav_leaderboard": "Лідери",
         "nav_leaderboard": "Bestenliste",
         "leaderboard_title": "Bestenliste",
         "leaderboard_subtitle": "Die besten Teilnehmer der Plattform nach:",
@@ -235,6 +240,12 @@ TRANSLATIONS = {
         "leaderboard_by_missions": "Nach Missionen",
         "leaderboard_by_accuracy": "Nach Genauigkeit",
         "leaderboard_missions_short": "Missionen",
+        "profile_click_more_info": "Klicken, um mehr anzuzeigen",
+        "time_spent": "Für das Lernen aufgewendete Zeit",
+        "attempt_number": "Gesamtzahl der Versuche",
+        "good_attempt": "Erfolgreiche Versuche",
+        "goodness_attempt": "Erfolgsquote",
+        "profile_click_less_info": "Zum Ausblenden klicken",
     },
     "en": {
         "mission": "Mission",
@@ -310,6 +321,7 @@ TRANSLATIONS = {
         "award": "Reward",
         "time": "Time",
         "min": "min",
+        "sec": "sec",
         "ready_mission": "Finish mission",
         "published": "Published",
         "to_mission": "Go to mission",
@@ -337,7 +349,6 @@ TRANSLATIONS = {
         "features_ways": "in different ways",
         "features_desc": "News, videos, photos, case studies, and many other interactive missions.",
         "nav_leaderboard": "Leaderboard",
-        "nav_leaderboard": "Leaderboard",
         "leaderboard_title": "Leaderboard",
         "leaderboard_subtitle": "Top platform participants by:",
         "leaderboard_rank": "Rank",
@@ -353,6 +364,12 @@ TRANSLATIONS = {
         "leaderboard_by_missions": "By Missions",
         "leaderboard_by_accuracy": "By Accuracy",
         "leaderboard_missions_short": "missions",
+        "profile_click_more_info": "Click to show more",
+        "time_spent": "Time spent learning",
+        "attempt_number": "Total number of attempts",
+        "good_attempt": "Successful attempts",
+        "goodness_attempt": "Success rate",
+        "press to hide": "Натисніть щоб сховати",
     },
 }
 
@@ -361,6 +378,6 @@ def translate(key, lang):
     # Перевіряємо чи існує мова, якщо ні - використовуємо українську
     if lang not in TRANSLATIONS:
         lang = "uk"
-    
+
     # Отримуємо переклад або повертаємо ключ, якщо перекладу немає
     return TRANSLATIONS[lang].get(key, key)

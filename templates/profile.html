@@ -5,6 +5,8 @@ MediaMission{% endblock %} {% block content %}
   data-t-level="{{ t('profile_level') }}"
   data-t-xp-left="{{ t('xp_left_to_next_level') }}"
   data-t-xp-to-next="{{ t('xp_to_next_level') }}"
+  data-t-click-more="{{ t('profile_click_more_info') }}"
+  data-t-click-less="{{t('profile_click_less_info')}}"
 >
   <!-- Блок профілю користувача -->
   <div
@@ -21,7 +23,7 @@ MediaMission{% endblock %} {% block content %}
       >
         <i class="bi bi-person-lines-fill"></i>
         <span class="d-none d-sm-inline"
-          >{{t('profile_information_account')}}</span
+          >{{ t('profile_information_account') }}</span
         >
       </button>
     </div>
@@ -64,12 +66,11 @@ MediaMission{% endblock %} {% block content %}
 
           <div class="min-width-0">
             <h3 class="fw-bold mb-0 text-truncate" id="profileName">
-              Loading...
+              {{ user.display_name }}
             </h3>
-            <p
-              class="text-muted mb-2 small text-truncate"
-              id="profileEmail"
-            ></p>
+            <p class="text-muted mb-2 small text-truncate" id="profileEmail">
+              {{ user.email }}
+            </p>
 
             <form
               action="/upload-avatar"
@@ -81,7 +82,7 @@ MediaMission{% endblock %} {% block content %}
                 class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3"
                 style="font-size: 0.8rem"
               >
-                <i class="bi bi-camera"></i> {{t('change_avatar')}}
+                <i class="bi bi-camera"></i> {{ t('change_avatar') }}
               </label>
               <input
                 type="file"
@@ -101,19 +102,20 @@ MediaMission{% endblock %} {% block content %}
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="badge rounded-pill badge-verification-pending">
               <i class="bi bi-exclamation-triangle-fill me-1"></i>
-              {{t('email_unverified')}}
+              {{ t('email_unverified') }}
             </span>
             <button
               id="verifyEmailBtn"
               class="btn btn-sm btn-outline-warning rounded-pill px-3"
             >
-              <i class="bi bi-envelope-check"></i> {{t('verify_email')}}
+              <i class="bi bi-envelope-check"></i> {{ t('verify_email') }}
             </button>
           </div>
           <div id="verifyStatus" class="mt-2 small"></div>
           {% elif user.provider == 'google.com' or user.email_verified %}
           <span class="badge rounded-pill badge-verification-verified">
-            <i class="bi bi-patch-check-fill me-1"></i> {{t('email_verified')}}
+            <i class="bi bi-patch-check-fill me-1"></i> {{ t('email_verified')
+            }}
           </span>
           {% endif %}
         </div>
@@ -123,7 +125,7 @@ MediaMission{% endblock %} {% block content %}
       <div class="col-12 col-md-8">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold text-primary" id="currentLevel"
-            >{{ t('profile_level') }}</span
+            >{{ t('profile_level') }} 1</span
           >
           <span class="text-muted small" id="xpText"
             >{{ user.total_xp }} / 500 XP</span
@@ -137,15 +139,16 @@ MediaMission{% endblock %} {% block content %}
             class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
             role="progressbar"
             id="xpProgressBar"
-            style="width: 0%; border-radius: 10px"
-            aria-valuenow="0"
+            style="width: {{ (user.total_xp % 500) / 500 * 100 }}%; border-radius: 10px"
+            aria-valuenow="{{ (user.total_xp % 500) / 500 * 100 }}"
             aria-valuemin="0"
             aria-valuemax="100"
           ></div>
         </div>
         <small class="text-muted mt-2 d-block">
           {{ t('xp_left_to_next_level') }}
-          <strong id="xpNeeded">500 XP</strong> {{ t('xp_to_next_level') }}
+          <strong id="xpNeeded">{{ 500 - (user.total_xp % 500) }} XP</strong> {{
+          t('xp_to_next_level') }}
         </small>
       </div>
     </div>
@@ -208,9 +211,79 @@ MediaMission{% endblock %} {% block content %}
     </div>
   </div>
 
+  <div class="col-6 col-md-3" style="margin-left: auto; margin-right: auto">
+    <div
+      class="card border-0 shadow-sm text-center p-3 h-100"
+      style="border-radius: 16px"
+      id="toggleStatsBtn"
+      onclick="window.toggleStatsSmooth()"
+    >
+      <h3 class="fw-bold mb-0" id="toggleIcon">...</h3>
+      <span class="text-muted small">{{t('profile_click_more_info')}}</span>
+    </div>
+  </div>
+
+  <!-- Додаткова статистика -->
+  <div class="row g-4 mb-5 other-stats">
+    <!-- Витрачено часу -->
+    <div class="col-6 col-md-3">
+      <div
+        class="card border-0 shadow-sm text-center p-3 h-100"
+        style="border-radius: 16px"
+      >
+        <i class="bi bi-stopwatch display-5 text-primary mb-2"></i>
+        <h3 class="fw-bold mb-0">
+          {{ user_progress_time_spent }} {{t('sec')}}
+        </h3>
+        <span class="text-muted small">{{t('time_spent')}}</span>
+      </div>
+    </div>
+
+    <!-- Кількість спроб -->
+    <div class="col-6 col-md-3">
+      <div
+        class="card border-0 shadow-sm text-center p-3 h-100"
+        style="border-radius: 16px"
+      >
+        <i class="bi bi-bar-chart display-5 text-success mb-2"></i>
+        <h3 class="fw-bold mb-0">{{ total_attempts }}</h3>
+        <span class="text-muted small">{{t('attempt_number')}}</span>
+      </div>
+    </div>
+
+    <!-- Завершено місій (дублікат для краси) -->
+    <div class="col-6 col-md-3">
+      <div
+        class="card border-0 shadow-sm text-center p-3 h-100"
+        style="border-radius: 16px"
+      >
+        <i class="bi bi-trophy display-5 text-warning mb-2"></i>
+        <h3 class="fw-bold mb-0">
+          {{ completed_missions if completed_missions is defined else
+          user.missions_completed }}
+        </h3>
+        <span class="text-muted small">{{t('good_attempt')}}</span>
+      </div>
+    </div>
+
+    <!-- Відсоток успішності -->
+    <div class="col-6 col-md-3">
+      <div
+        class="card border-0 shadow-sm text-center p-3 h-100"
+        style="border-radius: 16px"
+      >
+        <i class="bi bi-graph-up display-5 text-info mb-2"></i>
+        <h3 class="fw-bold mb-0">
+          {{ success_rate if success_rate is defined else 0 }}%
+        </h3>
+        <span class="text-muted small">{{t('goodness_attempt')}}</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Блок Досягнень -->
   <div
-    class="card border-0 shadow-sm p-4"
+    class="card border-0 shadow-sm p-4 mb-4"
     style="border-radius: var(--radius-large, 16px)"
   >
     <h4 class="fw-bold mb-4">
@@ -277,32 +350,40 @@ MediaMission{% endblock %} {% block content %}
     </div>
   </div>
 
-  <div class="card border-0 shadow-sm p-4">
+  <!-- Останні результати -->
+  <div
+    class="card border-0 shadow-sm p-4 mb-4"
+    style="border-radius: var(--radius-large, 16px)"
+  >
     <h4 class="fw-bold mb-4">
-      <i class="bi bi-award text-primary me-2"></i>{{ t('profile_stats_title')
-      }}
+      <i class="bi bi-clock-history text-primary me-2"></i>{{
+      t('profile_stats_title') }}
     </h4>
-    <div class="row g-3">
-      <p>{{ t('profile_recent_results') }}</p>
 
-      {% if recent_progress %} {% for item in recent_progress %}
+    <p>{{ t('profile_recent_results') }}</p>
+
+    {% if recent_progress %} {% for item in recent_progress %}
+    <div class="mb-2">
       <p class="mb-1">
-        {{ t('mission_number') }}{{ item.mission.id }} — {{ item.mission.title
-        }}
+        <strong>{{ t('mission_number') }}{{ item.mission.id }}</strong> — {{
+        item.mission.title }}
       </p>
       {% if item.completed_at %}
-      <p class="text-muted small">
-        {{ t('profile_completed') }}: {{ item.completed_at | date_uk }}
+      <p class="text-muted small mb-0">
+        <i class="bi bi-calendar3"></i> {{
+        item.completed_at.strftime("%d.%m.%Y") }} {% if item.time_spent %} • ⏱️
+        {{ item.time_spent }}{{t('sec')}} {% endif %} • 💯 {{
+        item.score_correct_answers }}/{{ item.total_questions }}
       </p>
-      {% else %}
-      <p class="text-muted small">{{ t('profile_not_completed') }}</p>
-      {% endif %}
-      <hr />
-      {% endfor %} {% else %}
-      <p class="text-muted">{{ t('profile_no_missions') }}</p>
       {% endif %}
     </div>
+    <hr />
+    {% endfor %} {% else %}
+    <p class="text-muted">{{ t('profile_no_missions') }}</p>
+    {% endif %}
   </div>
+
+  <!-- Модальне вікно інформації про акаунт -->
   <div
     class="modal fade"
     id="accountInfoModal"

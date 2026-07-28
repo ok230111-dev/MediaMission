@@ -79,6 +79,37 @@
     line-height: 1.6;
 }
 
+.other-stats {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(-10px);
+}
+
+.other-stats.show {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#toggleStatsBtn {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+#toggleStatsBtn:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.02);
+}
+
+#toggleIcon {
+    transition: transform 0.3s ease;
+}
+
+#toggleIcon.rotated {
+    transform: rotate(90deg);
+}
+
 .form-label {
     font-weight: 600;
     font-size: 0.9rem;

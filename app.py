@@ -711,6 +711,8 @@ def login():
 
 @app.route("/profile", methods=['GET', 'POST'])
 def profile():
+    missions = Missions.query.all()
+
     user_id = session.get("user_id")
     # Якщо в сесії ще немає progress, створюємо початковий
     if user_id is None:
@@ -721,6 +723,13 @@ def profile():
     if user is None:
         session.clear()
         return redirect(url_for("login"))
+
+    user_progress_time_spent =  (
+        UserMissionProgress.query
+        .filter_by(user_id=user_id)
+        .filter(UserMissionProgress.time_spent < 4000)
+        .count()
+    )
 
     recent_progress = (
         UserMissionProgress.query
@@ -733,10 +742,14 @@ def profile():
         .all()
     )
 
+    total_attempts = UserMissionProgress.query.filter_by(user_id=user_id).count()
+
     return render_template(
         'profile.html',
         user=user,
-        recent_progress=recent_progress
+        recent_progress=recent_progress,
+        user_progress_time_spent=user_progress_time_spent,
+        total_attempts=total_attempts
     )
 
 

@@ -13,7 +13,8 @@ const firebaseConfig = {
   projectId: "mediamission-a0b70",
   storageBucket: "mediamission-a0b70.firebasestorage.app",
   messagingSenderId: "670283569215",
-  appId: "1:670283569215:web:5a27f444d9f7c4cdf9808a"
+  appId: "1:670283569215:web:5a27f444d9f7c4cdf9808a",
+  measurementId: "G-6634TK13EZ"
 };
 
 const app = initializeApp(firebaseConfig);

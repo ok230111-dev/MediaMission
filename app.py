@@ -38,6 +38,10 @@ cred_path = os.environ.get(
 )
 
 cred = credentials.Certificate(cred_path)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+
+print("Firebase initialized!")
 
 
 # 1. СПОЧАТКУ задаємо налаштування бази даних:
@@ -153,6 +157,7 @@ class Users(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     last_login = db.Column(db.DateTime)
     admin = db.Column(db.Boolean, default=False)
+    allowed_to_show = db.Column(db.Boolean, default=True, nullable=False)
     avatar = db.Column(db.String(500), nullable=True)
     photo_url = db.Column(db.String(500))
     language = db.Column(db.String(70), default="uk")
@@ -262,6 +267,24 @@ def set_language():
 @app.context_processor
 def inject_translate():
     return {"t": lambda key: translate(key, g.lang)}
+
+
+
+
+@app.route("/api/privacy", methods=["POST"])
+def update_privacy():
+
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"success": False}, 401
+
+    data = request.get_json()
+    user = db.session.get(Users, user_id)
+    user.allowed_to_show = data["allowed_to_show"]
+
+    db.session.commit()
+
+    return {"success": True}
 
 
 
@@ -937,6 +960,7 @@ def leaderboard():
 
     top_by_xp = (
         Users.query
+        .filter_by(allowed_to_show=True)
         .order_by(Users.total_xp.desc())
         .limit(50)
         .all()
@@ -944,6 +968,7 @@ def leaderboard():
 
     top_by_missions = (
         Users.query
+        .filter_by(allowed_to_show=True)
         .filter(Users.missions_completed > 0)
         .order_by(Users.missions_completed.desc())
         .limit(50)
@@ -952,6 +977,7 @@ def leaderboard():
 
     top_by_accuracy = (
         Users.query
+        .filter_by(allowed_to_show=True)
         .filter(Users.missions_completed >= 5)
         .order_by(Users.accuracy.desc())
         .limit(50)

@@ -451,6 +451,28 @@ MediaMission{% endblock %} {% block content %}
             <small class="text-muted d-block">ID акаунта</small>
             <code class="small">{{ user.firebase_uid }}</code>
           </div>
+          <div class="form-check form-switch mt-4">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="privacySwitch"
+              {%
+              if
+              user.allowed_to_show
+              %}checked{%
+              endif
+              %}
+            />
+
+            <label class="form-check-label" for="privacySwitch">
+              Показувати мене в рейтингах та спільноті
+            </label>
+          </div>
+
+          <p class="text-muted mt-2">
+            Якщо вимкнути, ваш профіль не буде показуватися в таблиці лідерів та
+            інших відкритих списках.
+          </p>
         </div>
         <div class="modal-footer border-0">
           <button
@@ -474,4 +496,19 @@ MediaMission{% endblock %} {% block content %}
   type="module"
   src="{{ url_for('static', filename='js/authorized.js') }}"
 ></script>
+<script>
+  const privacySwitch = document.getElementById("privacySwitch");
+
+  privacySwitch.addEventListener("change", async () => {
+    await fetch("/api/privacy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        allowed_to_show: privacySwitch.checked,
+      }),
+    });
+  });
+</script>
 {% endblock %}

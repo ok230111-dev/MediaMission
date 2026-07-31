@@ -28,12 +28,16 @@ UPLOAD_FOLDER = "static/uploads/avatars"
 os.makedirs(os.path.join("static", "image"), exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-cred = credentials.Certificate("./mediamission-a0b70-firebase-adminsdk-fbsvc-a1ebbce726.json")
-firebase_admin.initialize_app(cred)
+cred_path = os.environ.get(
+    "FIREBASE_CRED_PATH",
+    "./mediamission-a0b70-firebase-adminsdk-fbsvc-a1ebbce726.json"
+)
+
+cred = credentials.Certificate(cred_path)
 
 
 # 1. СПОЧАТКУ задаємо налаштування бази даних:
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mediamission.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///mediamission.db").replace("postgres://", "postgresql://", 1)  # Render іноді дає старий префікс
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex()) # Потрібно для Flask-Admin

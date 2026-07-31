@@ -266,6 +266,29 @@ def inject_translate():
 
 
 
+@app.route("/api/debug/fix_avatars/<secret>")
+def fix_avatars(secret):
+    if secret != os.environ.get("ADMIN_SETUP_SECRET"):
+        return "Forbidden", 403
+
+    users = Users.query.all()
+    output = []
+
+    for user in users:
+        avatar_value = user.avatar
+        is_valid = avatar_value and avatar_value.startswith("http")
+        output.append(f"{user.display_name}: avatar={avatar_value!r}, valid={is_valid}")
+
+        # Якщо це старий, невалідний запис — очищуємо
+        if avatar_value and not is_valid:
+            user.avatar = None
+
+    db.session.commit()
+
+    return "<br>".join(output)
+
+
+
 @app.route("/api/set_language", methods=["POST"])
 def set_language_api():
     data = request.get_json()

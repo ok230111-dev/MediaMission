@@ -256,24 +256,6 @@ def inject_translate():
 
 
 
-@app.route("/api/make_me_admin/<secret>")
-def make_me_admin(secret):
-    if secret != os.environ.get("ADMIN_SETUP_SECRET"):
-        return "Forbidden", 403
-
-    user_id = session.get("user_id")
-    if not user_id:
-        return "Спочатку увійдіть у свій акаунт", 401
-
-    user = db.session.get(Users, user_id)
-    user.admin = True
-    db.session.commit()
-
-    return f"Готово! {user.email} тепер адмін."
-
-
-
-
 @app.route("/api/set_language", methods=["POST"])
 def set_language_api():
     data = request.get_json()

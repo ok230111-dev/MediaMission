@@ -15,10 +15,14 @@ import time
 from flask_sqlalchemy import SQLAlchemy
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
+import cloudinary
+import cloudinary.uploader
 
 
 
 app = Flask(__name__)
+
+load_dotenv()
 
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
@@ -41,6 +45,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex()) # Потрібно для Flask-Admin
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET")
+)
 
 # 2. І ТІЛЬКИ ПОТІМ передаємо app у SQLAlchemy:
 db = SQLAlchemy(app)
@@ -727,29 +737,21 @@ def upload_avatar():
         return redirect("/profile")
 
     filename = secure_filename(file.filename)
-
     if not allowed_file(filename):
         return redirect("/profile")
 
-    ext = filename.rsplit(".", 1)[1].lower()
-    new_filename = f"{uuid.uuid4()}.{ext}"
-
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)  # переконуємось, що папка існує
-    file.save(os.path.join(app.config["UPLOAD_FOLDER"], new_filename))
+    result = cloudinary.uploader.upload(
+        file,
+        folder="mediamission_avatars",
+        public_id=str(uuid.uuid4()),
+        overwrite=True
+    )
 
     user = db.session.get(Users, user_id)
-
-    # Видаляємо старий файл аватарки, якщо він не дефолтний (щоб не накопичувати сміття на диску)
-    if user.avatar and user.avatar != "dafault-avatar.png":
-        old_path = os.path.join(app.config["UPLOAD_FOLDER"], user.avatar)
-        if os.path.exists(old_path):
-            os.remove(old_path)
-
-    user.avatar = new_filename
+    user.avatar = result["secure_url"]
     db.session.commit()
 
     return redirect("/profile")
-
 
 
 def get_avatar_color(name):

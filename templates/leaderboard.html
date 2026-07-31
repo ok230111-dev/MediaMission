@@ -228,7 +228,7 @@ MediaMission{% endblock %} {% block content %}
                   <div class="table-avatar">
                     {% if user.avatar %}
                     <img
-                      src="{{ url_for('static', filename='uploads/avatars/' ~ user.avatar) }}"
+                      src="{{ user.avatar }}"
                       alt="{{ user.display_name }}"
                     />
                     {% else %}

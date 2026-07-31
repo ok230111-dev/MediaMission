@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, g
 from translations import translate
 import requests
 import smtplib
+from flask_migrate import Migrate
 import os
 import uuid
 import json
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 import time
 from flask_sqlalchemy import SQLAlchemy
-from flask_admin import Admin
+from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 
 
@@ -35,7 +36,7 @@ firebase_admin.initialize_app(cred)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mediamission.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config['SECRET_KEY'] = 'your-secret-key' # Потрібно для Flask-Admin
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex()) # Потрібно для Flask-Admin
 
 # 2. І ТІЛЬКИ ПОТІМ передаємо app у SQLAlchemy:
 db = SQLAlchemy(app)
@@ -142,12 +143,34 @@ class Users(db.Model):
     photo_url = db.Column(db.String(500))
     language = db.Column(db.String(70), default="uk")
 
-class UserAdminView(ModelView):
-    column_searchable_list = ['email'] # Пошук за email
-    column_list = ['id', 'email']      # Що показувати у списку
+class SecureAdminIndexView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return redirect(url_for('login'))
+        user = db.session.get(Users, user_id)
+        if not user or not user.admin:
+            return "Forbidden", 403
+        return super().index()
+
+class SecureModelView(ModelView):
+    def is_accessible(self):
+        user_id = session.get("user_id")
+        if not user_id:
+            return False
+        user = db.session.get(Users, user_id)
+        return user is not None and user.admin
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login'))
+
+class UserAdminView(SecureModelView):
+    column_searchable_list = ['email']
+    column_list = ['id', 'email']
 
 # 3. Ініціалізація адмінки
-admin = Admin(app, name='MediaMission Admin')
+admin = Admin(app, name='MediaMission Admin', index_view=SecureAdminIndexView())
 
 # 4. РЕЄСТРАЦІЯ МОДЕЛІ (Обов'язково викликати!)
 admin.add_view(UserAdminView(Users, db.session))
@@ -192,9 +215,6 @@ class UserAnswer(db.Model):
     user_answer = db.Column(db.String(700), nullable=False)
     is_correct = db.Column(db.Boolean)
 
-
-app.secret_key = "sessionKey"  # Обов'язково для роботи session
-
 UKRAINIAN_MONTHS = [
     "січня", "лютого", "березня", "квітня", "травня", "червня",
     "липня", "серпня", "вересня", "жовтня", "листопада", "грудня"
@@ -205,6 +225,8 @@ AVATAR_COLORS = [
     "#339AF0", "#22B8CF", "#20C997", "#51CF66", "#94D82D",
     "#FCC419", "#FF922B", "#FF8787", "#748FFC", "#63E6BE",
 ]
+
+migrate = Migrate(app, db)
 
 
 @app.before_request
@@ -293,109 +315,6 @@ def missions_overview():
     missions = Missions.query.all()
     return render_template('missions.html', missions=missions)
 
-
-
-
-# @app.route("/mission/<int:id>", methods=['GET', 'POST'])
-# def mission_detail(id):
-#     mission = Missions.query.get(id)
-#     if mission is None:
-#             return "Mission not found", 404
-
-#     user_id = session.get("user_id")
-#     if user_id is not None and Users.query.get(user_id) is None:
-#         session.clear()
-#         user_id = None
-
-#     if request.method == 'POST':
-#         started_at = request.form.get("started_at")
-#         time_spent = None
-#         if started_at:
-#             try:
-#                 time_spent = int(datetime.now(timezone.utc).timestamp() - float(started_at))
-#             except ValueError:
-#                 time_spent = None
-
-#         score = 0
-#         answers_to_save = []
-
-#         for question in mission.questions:
-#             user_answer_raw = request.form.getlist(f'question_{question.id}')
-#             user_answer = set(map(int, user_answer_raw))
-#             correct_answer = set(map(int, question.correct_answer.split(",")))
-
-#             is_correct = bool(user_answer) and user_answer == correct_answer
-#             if user_answer:
-#                 if is_correct:
-#                     score += 1
-
-#             answers_to_save.append((question.id, ",".join(user_answer_raw), is_correct))
-
-#         total = len(mission.questions)
-#         print(f"DEBUG: score={score}, total={total}")
-
-#         # Зберігаємо прогрес у БД, тільки якщо користувач залогінений
-#         if user_id:
-#             user = Users.query.get(user_id)
-
-#             previous_tries = UserMissionProgress.query.filter_by(
-#                 user_id=user_id,
-#                 mission_id=mission.id
-#             ).count()
-
-#             # Перевіряємо ДО створення нового запису — чистіше і надійніше
-#             was_already_completed = UserMissionProgress.query.filter_by(
-#                 user_id=user_id,
-#                 mission_id=mission.id,
-#                 completed=True
-#             ).count() > 0
-
-#             progress = UserMissionProgress(
-#                 user_id=user_id,
-#                 mission_id=mission.id,
-#                 completed=(score == total),
-#                 score_correct_answers=score,
-#                 total_questions=total,
-#                 xp_earned=mission.xp if score == total else 0,
-#                 tries_number=previous_tries + 1,
-#                 time_spent=time_spent,
-#                 completed_at=datetime.now(timezone.utc) if score == total else None
-#             )
-#             db.session.add(progress)
-#             db.session.flush()
-
-#             for question_id, answer_text, is_correct in answers_to_save:
-#                 db.session.add(UserAnswer(
-#                     user_progress_id=progress.id,
-#                     question_id=question_id,
-#                     user_answer=answer_text,
-#                     is_correct=is_correct
-#                 ))
-
-#             db.session.flush()
-#             all_progress = UserMissionProgress.query.filter_by(user_id=user_id).all()
-#             total_correct = sum(p.score_correct_answers for p in all_progress)
-#             total_all_questions = sum(p.total_questions for p in all_progress)
-#             user.accuracy = round(total_correct / total_all_questions * 100, 1) if total_all_questions > 0 else 0.0
-
-#             if score == total and not was_already_completed:
-#                 user.total_xp += mission.xp
-#                 user.missions_completed += 1
-
-#             db.session.commit()
-
-#         return render_template("result.html", mission=mission, score=score, total=total, progress=progress)
-
-#     # Рахуємо, яка це буде спроба (для показу на сторінці перед проходженням)
-#     next_try_number = 1
-#     if user_id:
-#         previous_tries = UserMissionProgress.query.filter_by(
-#             user_id=user_id,
-#             mission_id=mission.id
-#         ).count()
-#         next_try_number = previous_tries + 1
-
-#     return render_template('mission.html', mission=mission, next_try_number=next_try_number, current_timestamp=datetime.now(timezone.utc).timestamp())
 
 
 
@@ -1004,7 +923,7 @@ def leaderboard():
 
     top_by_accuracy = (
         Users.query
-        .filter(Users.accuracy >= 3)
+        .filter(Users.missions_completed >= 5)
         .order_by(Users.accuracy.desc())
         .limit(50)
         .all()
@@ -1033,8 +952,8 @@ def leaderboard():
 
 
 
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

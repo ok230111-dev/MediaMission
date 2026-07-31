@@ -11,6 +11,8 @@ venv/
 # SQLite
 *.db
 
+instance/
+
 # VS Code
 .vscode/
 
@@ -26,3 +28,7 @@ Thumbs.db
 serviceAccountKey.json
 
 *firebase-adminsdk*.json
+
+READ_ME.txt
+
+node_modules/

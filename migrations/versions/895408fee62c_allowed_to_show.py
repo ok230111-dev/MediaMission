@@ -18,7 +18,7 @@ depends_on = None
 def upgrade():
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column('allowed_to_show', sa.Boolean(), nullable=False, server_default=sa.text('1'))
+            sa.Column('allowed_to_show', sa.Boolean(), nullable=False, server_default=sa.text('true'))
         )
 
 

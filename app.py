@@ -416,6 +416,9 @@ def mission_detail(id):
 
         total = len(mission.questions)
 
+        progress = None
+        user = None
+
         if user_id:
             user = Users.query.get(user_id)
 
@@ -486,7 +489,9 @@ def mission_detail(id):
 
             db.session.commit()
 
-        return render_template("result.html", mission=mission, score=score, total=total, progress=progress)
+            user = Users.query.get(session["user_id"])
+
+        return render_template("result.html", mission=mission, score=score, total=total, progress=progress, user=user)
 
     next_try_number = 1
     if user_id:

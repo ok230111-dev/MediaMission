@@ -1,74 +1,261 @@
-{% extends "base.html" %} {% block title %} Результат | MediaMission{% endblock
+{% extends "base.html" %} {% block title %}Результат | MediaMission{% endblock
 %} {% block content %}
+<!-- Обчислюємо відсоток на початку, щоб уникнути помилок в умовах вище -->
+{% set percent = ((score / total) * 100)|int if total > 0 else 0 %}
 
-<div class="container py-5">
-  <!-- Заголовок -->
-  <div class="text-center mb-5">
-    <h1 class="display-4 fw-bold">🎉 Місію завершено!</h1>
+<style>
+  .result-card {
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+  }
 
-    <p class="lead text-muted">Подивись, як ти впорався.</p>
+  .stat-card-custom {
+    background: #f8f9fa;
+    border-radius: 18px;
+    padding: 1.25rem;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
+  .stat-card-custom:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .icon-square {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  .question-item {
+    border-radius: 14px !important;
+    border: 1px solid #f0f0f0 !important;
+    margin-bottom: 8px;
+    transition: background-color 0.2s ease;
+  }
+
+  .question-item:hover {
+    background-color: #fafafa;
+  }
+
+  .xp-badge-card {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+    border: 1px solid #ffe69c;
+    border-radius: 20px;
+  }
+
+  .progress-thin {
+    height: 12px;
+    border-radius: 10px;
+    background-color: #e9ecef;
+    overflow: hidden;
+  }
+</style>
+
+<div class="container py-4 py-md-5" style="max-width: 860px">
+  <!-- Header Section -->
+  <div class="text-center mb-4">
+    <span
+      class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-2 fs-6"
+    >
+      🎮 {{ t('ready_mission') }}!
+    </span>
+    <h1 class="display-5 fw-bold mb-1">{{ t('your_result') }}</h1>
+    {% if progress %}
+    <p class="text-muted fs-6">
+      {{ t('try_number') }}{{ progress.tries_number }}
+    </p>
+    {% endif %}
   </div>
 
-  <!-- Основна картка -->
-  <div class="card-without-shadow shadow-lg border-0 rounded-4">
-    <div class="card-body p-5">
-      <div class="text-center">
-        <h2 class="mb-4">Результат {{progress.tries_number}}. Спроби</h2>
+  <!-- Main Card -->
+  <div class="result-card p-4 p-md-5 mb-4">
+    <!-- XP Alert (Якщо 100%) -->
+    {% if percent == 100 %}
+    <div
+      class="xp-badge-card p-4 mb-4 text-dark text-center position-relative overflow-hidden"
+    >
+      <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+        <span class="fs-4">⭐</span>
+        <h4 class="fw-bold mb-0">{{ t('perfect_result') }}</h4>
+      </div>
+      <p class="mb-3 text-secondary">
+        {{ t('you_receive') }}
+        <strong>+{{ mission.xp }} {{ t('xp') or 'XP' }}</strong> {{
+        t('for_perfect_result') }}
+      </p>
 
-        <h1 class="display-2 fw-bold text-primary">{{ score }}/{{ total }}</h1>
+      <div
+        class="d-inline-flex align-items-center gap-2 bg-white px-3 py-1-5 rounded-pill shadow-sm"
+      >
+        <i class="bi bi-fire text-danger fs-5"></i>
+        <span class="fw-bold fs-5" id="streakDays">{{ user.streak }}</span>
+        <span class="text-muted small"
+          >{{ t('profile_streak') or 'днів поспіль' }}</span
+        >
+      </div>
+    </div>
+    {% endif %}
 
-        <p class="fs-4 text-muted">правильних відповідей</p>
+    <!-- Score & Motivation -->
+    <div class="text-center mb-4">
+      <h3 class="fw-bold mb-3">
+        {% if percent == 100 %} 🏆 {{ t('excellent') }} {% elif percent >= 70 %}
+        👍 {{ t('good') }} {% elif percent >= 40 %} 🙂 {{ t('not_bad') }} {%
+        else %} 📚 {{ t('learn_more') }} {% endif %}
+      </h3>
 
-        <p class="fs-4 text-muted">
-          Виконано за {{progress.time_spent}} секунд
-        </p>
+      <div
+        class="display-1 fw-black text-primary mb-1"
+        style="font-weight: 800"
+      >
+        {{ score }}<span class="fs-2 text-muted fw-normal">/{{ total }}</span>
+      </div>
+      <p class="text-muted fw-medium mb-3">{{ t('right_answers') }}</p>
 
-        <hr class="my-4" />
+      <!-- 1. Обчислюємо на самому початку -->
+      {% set percent = ((score / total) * 100)|int if total > 0 else 0 %}
+      <!-- Dynamic Progress Bar -->
+      <div class="progress-thin mb-2">
+        <div
+          class="progress-bar rounded-pill {% if percent >= 70 %} bg-success {% elif percent >= 40 %} bg-warning {% else %} bg-danger {% endif %}"
+          role="progressbar"
+          style="width: {{ percent }}%;"
+          aria-valuenow="{{ percent }}"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        ></div>
+      </div>
+      <div class="text-end small fw-bold text-muted">{{ percent }}%</div>
+    </div>
 
-        <!-- Відсоток -->
-        {% set percent = ((score / total) * 100)|int %}
-
-        <h4 class="mb-3">
-          {% if percent == 100 %} 🏆 Відмінно! {% elif percent >= 70 %} 👍 Дуже
-          добре! {% elif percent >= 40 %} 🙂 Непогано. {% else %} 📚 Варто ще
-          потренуватися. {% endif %}
-        </h4>
-
-        <!-- Progress Bar -->
-
-        <div class="progress mb-4" style="height: 30px">
-          <div
-            class="progress-bar {% if percent >= 70 %} bg-success {% elif percent >= 40 %} bg-warning {% else %} bg-danger {% endif %}"
-            style="width: {{ percent }}%;"
-          >
-            {{ percent }}%
+    <!-- Quick Stats Grid -->
+    <div class="row g-3 mb-5">
+      <div class="col-6">
+        <div class="stat-card-custom d-flex align-items-center gap-3">
+          <div class="icon-square bg-primary-subtle text-primary">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div>
+            <div class="text-muted small">{{ t('time_going') }}</div>
+            <div class="fw-bold fs-5">
+              {{ progress.time_spent }} {{ t('sec') }}
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- XP -->
-
-        {%if percent == 100 %}
-        <div class="alert alert-warning">
-          ⭐ Ти отримав
-          <strong> {{ mission.xp }} </strong>
-          XP
+      <div class="col-6">
+        <div class="stat-card-custom d-flex align-items-center gap-3">
+          <div class="icon-square bg-warning-subtle text-warning">
+            <i class="bi bi-stars"></i>
+          </div>
+          <div>
+            <div class="text-muted small">{{ t('total_xp') }}</div>
+            <div class="fw-bold fs-5">{{ user.total_xp }}</div>
+          </div>
         </div>
-        {% endif %}
+      </div>
+    </div>
 
-        <!-- Кнопки -->
-
-        <div class="mt-5 d-flex justify-content-center gap-3">
-          <a href="/missions-overview" class="btn btn-outline-primary btn-lg">
-            ← До всіх місій
-          </a>
-
-          <a href="/mission/{{ mission.id }}" class="btn btn-primary btn-lg">
-            🔄 Пройти ще раз
-          </a>
+    <!-- Achievements Section -->
+    {% if user.achievements %}
+    <div class="mb-5">
+      <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-trophy text-warning"></i> {{ t('new_achievements') }}
+      </h5>
+      <div class="d-flex flex-wrap gap-2">
+        {% for achievement in user.achievements %}
+        <div
+          class="badge bg-light text-dark border p-2 px-3 d-flex align-items-center gap-2 rounded-pill fs-6 fw-normal"
+        >
+          <i class="bi bi-award-fill text-warning fs-5"></i>
+          <span>{{ achievement.name }}</span>
         </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Questions Overview -->
+    <div class="mb-5">
+      <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-list-check text-primary"></i> {{ t('see_answers') }}
+      </h5>
+
+      <div class="list-group list-group-flush border-0">
+        {% for question in mission.questions %}
+        <div
+          class="list-group-item question-item p-3 d-flex align-items-center justify-content-between gap-3"
+        >
+          <div class="d-flex align-items-center gap-3">
+            <span class="text-muted fw-bold small">#{{ loop.index }}</span>
+            <span class="fw-medium text-dark">{{ question.text }}</span>
+          </div>
+
+          <div>
+            {% if question.id in user_answers %} {% if user_answers[question.id]
+            == question.correct_answer %}
+            <span
+              class="badge bg-success-subtle text-success rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1"
+            >
+              <i class="bi bi-check-circle-fill"></i> {{ t('right') }}
+            </span>
+            {% else %}
+            <span
+              class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1"
+            >
+              <i class="bi bi-x-circle-fill"></i> {{ t('wrong') }}
+            </span>
+            {% endif %} {% else %}
+            <span
+              class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1"
+            >
+              <i class="bi bi-dash-circle-fill"></i> {{ t('skipped') }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row g-2 pt-2">
+      <div class="col-12 col-md-4 order-2 order-md-1">
+        <a
+          href="/missions-overview"
+          class="btn btn-light border btn-lg w-100 fw-medium fs-6 py-3"
+        >
+          <i class="bi bi-arrow-left me-1"></i> {{t('to_missions')}}
+        </a>
+      </div>
+      <div class="col-12 col-md-5 order-1 order-md-2">
+        <a
+          href="/mission/{{ mission.id }}"
+          class="btn btn-primary btn-lg w-100 fw-bold fs-6 py-3 shadow-sm"
+        >
+          <i class="bi bi-arrow-repeat me-1"></i> {{ t('try_again') }}
+        </a>
+      </div>
+      <div class="col-12 col-md-3 order-3 order-md-3">
+        <a
+          href="/profile"
+          class="btn btn-outline-secondary btn-lg w-100 fw-medium fs-6 py-3"
+        >
+          <i class="bi bi-person me-1"></i> {{ t('profile') }}
+        </a>
       </div>
     </div>
   </div>
 </div>
-
 {% endblock %}

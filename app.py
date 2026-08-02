@@ -405,7 +405,11 @@ def mission_detail(id):
         for question in mission.questions:
             user_answer_raw = request.form.getlist(f'question_{question.id}')
             user_answer = set(map(int, user_answer_raw))
-            correct_answer = set(map(int, question.correct_answer.split(",")))
+
+            if question.correct_answer:
+                correct_answer = set(map(int, question.correct_answer.split(",")))
+            else:
+                correct_answer = set()
 
             is_correct = bool(user_answer) and user_answer == correct_answer
             if user_answer:
@@ -415,6 +419,14 @@ def mission_detail(id):
             answers_to_save.append((question.id, ",".join(user_answer_raw), is_correct))
 
         total = len(mission.questions)
+
+        # Словник для порівняння відповідей у result.html — доступний завжди, навіть для гостей
+        answer_lookup = {}
+        for question_id, answer_text, is_correct in answers_to_save:
+            answer_lookup[question_id] = {
+                "answered": bool(answer_text),
+                "is_correct": is_correct
+            }
 
         progress = None
         user = None
@@ -491,8 +503,9 @@ def mission_detail(id):
 
             user = Users.query.get(session["user_id"])
 
-        return render_template("result.html", mission=mission, score=score, total=total, progress=progress, user=user)
+        print(f"DEBUG: user={user}, user.total_xp={user.total_xp if user else None}, progress={progress}, time_spent={progress.time_spent if progress else None}")
 
+        return render_template("result.html", mission=mission, score=score, total=total, progress=progress, user=user, answer_lookup=answer_lookup)
     next_try_number = 1
     if user_id:
         previous_tries = UserMissionProgress.query.filter_by(
@@ -548,18 +561,14 @@ def allowed_file(filename):
 
 @app.route("/api/admin/add_mission", methods=["POST"])
 def add_mission():
-
     user_id = session.get("user_id")
-
     if user_id is None:
         return {"error": "Unauthorized"}, 401
 
     user = Users.query.get(user_id)
-
     if not user or not user.admin:
         return {"error": "Forbidden"}, 403
 
-    # Тепер дані НЕ JSON, а form-data
     title = request.form["title"]
     subtitle = request.form["subtitle"]
     exercise = request.form["exercise"]
@@ -571,15 +580,16 @@ def add_mission():
     contents = json.loads(request.form["contents"])
     questions = json.loads(request.form["questions"])
 
-    # Обробка файлу зображення
+    # Обкладинка місії
     image_filename = None
     if "image" in request.files:
         file = request.files["image"]
         if file and file.filename and allowed_file(file.filename):
             ext = file.filename.rsplit(".", 1)[1].lower()
-            image_filename = f"{uuid.uuid4().hex}.{ext}"  # унікальне ім'я, щоб не було конфліктів
+            image_filename = f"{uuid.uuid4().hex}.{ext}"
             file.save(os.path.join("static", "image", image_filename))
 
+    # Створюємо саму місію ОДИН раз, першою
     mission = Missions(
         title=title,
         subtitle=subtitle,
@@ -591,18 +601,42 @@ def add_mission():
         time=time_val,
         image=image_filename
     )
-
     db.session.add(mission)
     db.session.commit()
 
+    # Тепер mission.id вже існує — обробляємо контент ОДИН раз
     for paragraph in contents:
+        text_value = paragraph["text"]
+
+        if "PENDING_UPLOAD_" in text_value:
+            order = paragraph["order"]
+            file_key = f"content_file_{order}"
+
+            if file_key in request.files:
+                file = request.files[file_key]
+                if file and file.filename:
+                    is_video = text_value.startswith("[VIDEO]")
+                    result = cloudinary.uploader.upload(
+                        file,
+                        folder="mediamission_content",
+                        resource_type="video" if is_video else "image"
+                    )
+                    marker = "[VIDEO]" if is_video else "[IMAGE]"
+                    rest = text_value.split("\n", 1)
+                    caption = rest[1] if len(rest) > 1 else ""
+                    text_value = f"{marker}{result['secure_url']}" + (f"\n{caption}" if caption else "")
+
         db.session.add(MissionContent(
             mission_id=mission.id,
             paragraph_order=paragraph["order"],
-            text=paragraph["text"]
+            text=text_value
         ))
 
+    # Питання
     for q in questions:
+        if not q.get("correct_answer"):
+            return {"error": f"Питання '{q.get('question')}' не має правильних відповідей"}, 400
+
         question = Questions(
             mission_id=mission.id,
             type=q["type"],

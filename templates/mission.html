@@ -1,88 +1,229 @@
-{% extends "base.html" %} {% block title %}{{t('mission')}} №{{ mission.id }}{{ mission.title }} | MediaMission{% endblock %} {%
-block content %}
+{% extends "base.html" %} {% block title %}{{ t('mission') }} №{{ mission.id }}:
+{{ mission.title }} | MediaMission{% endblock %} {% block content %}
+<!-- Визначаємо колір бордера для картки залежно від складності -->
+{% set diff = mission.difficulty|int %} {% set border_color = 'border-success'
+if diff == 1 else ('border-info' if diff == 2 else ('border-warning' if diff ==
+3 else ('border-danger' if diff == 4 else 'border-dark'))) %}
 
-<div class="container py-5">
-  <div class="mb-5">
-    <h1 class="fw-bold">{{t('mission')}} {{ mission.id }}</h1>
-    <div class="card-without-hover shadow-sm mb-5">
-      <div class="card-body">
-        <h3 class="fw-bold">{{t('try')}} №{{ next_try_number }}</h3>
-        <h3 class="fw-bold">{{ mission.title }}</h3>
-        {% for paragraph in mission.contents %}
-          <p>{{ paragraph.text }}</p>
-        {% endfor %}
+<style>
+  .mission-header-card {
+    background: #ffffff;
+    border-radius: 20px;
+  }
+
+  .meta-badge-box {
+    background: #f8f9fa;
+    border-radius: 14px;
+    padding: 12px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
+  .content-article p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #333333;
+    margin-bottom: 1.2rem;
+  }
+
+  .content-article p:last-child {
+    margin-bottom: 0;
+  }
+
+  .question-card {
+    border-radius: 18px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .option-item {
+    border: 1.5px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .option-item:hover {
+    background-color: #f8f9fa;
+    border-color: #cbd5e1;
+  }
+
+  .form-check-input:checked + .form-check-label {
+    font-weight: 600;
+  }
+</style>
+
+<div class="container py-4 py-md-5" style="max-width: 860px">
+  <!-- Заголовок та шапка місії (з кольоровою рамкою) -->
+  <div
+    class="mission-header-card border border-2 {{ border_color }} shadow-sm p-4 p-md-5 mb-4"
+  >
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <span
+        class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill fs-6"
+      >
+        {{ t('mission') }} #{{ mission.id }}
+      </span>
+
+      <span class="text-muted fw-semibold small">
+        {{ t('try') }} №{{ next_try_number }}
+      </span>
+    </div>
+
+    <h1 class="fw-bold display-6 mb-2">{{ mission.title }}</h1>
+    {% if mission.subtitle %}
+    <p class="text-muted fs-5 mb-0">{{ mission.subtitle }}</p>
+    {% endif %}
+
+    <!-- Блок з мета-інформацією -->
+    <div class="row text-center g-2 mt-4">
+      <div class="col-6 col-md-3">
+        <div class="meta-badge-box border border-2 border-dark">
+          <div class="text-muted small mb-1">{{ t('type') }}</div>
+          <span class="fw-bold text-dark">
+            {% if mission.type == 'news' %} {{ t('new') }} {% elif mission.type
+            == 'video' %} {{ t('video') }} {% elif mission.type == 'image' %} {{
+            t('image') }} {% elif mission.type == 'web' %} {{ t('web') }} {%
+            elif mission.type == 'case' %} {{ t('case') }} {% elif mission.type
+            == 'ai' %} {{ t('ai') }} {% else %} {{ mission.type }} {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        {% set diff = mission.difficulty|int %}
+        <div
+          class="meta-badge-box border {% if diff == 1 %}border-success {% elif diff == 2 %}border-info {% elif diff == 3 %}border-warning {% elif diff == 4 %}border-danger {% else %}border-dark{% endif %}"
+        >
+          <div class="text-muted small mb-1">{{ t('complexity') }}</div>
+          <span class="fw-bold">
+            {% if diff == 1 %} {{ t('very_easy') }} {% elif diff == 2 %} {{
+            t('easy') }} {% elif diff == 3 %} {{ t('medium') }} {% elif diff ==
+            4 %} {{ t('hard') }} {% else %} {{ t('very_hard') }} {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="meta-badge-box border border-2 border-warning">
+          <div class="text-muted small mb-1">{{ t('award') }}</div>
+          <span class="fw-bold text-warning-emphasis">{{ mission.xp }} XP</span>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="meta-badge-box border border-2 border-info">
+          <div class="text-muted small mb-1">{{ t('time') }}</div>
+          <span class="fw-bold text-secondary"
+            >{{ mission.time }} {{ t('min') }}</span
+          >
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="card-without-hover shadow-sm mb-4">
-    <div class="card-body">
-      <div class="row text-center">
-        <div class="col-md-3">
-          <h6 class="text-muted">{{t('type')}}</h6>
+  <!-- Блок вправи (exercise) -->
+  {% if mission.exercise %}
+  <div class="card question-card shadow-sm mb-4">
+    <div class="card-body p-4 text-center content-article">
+      <h4 class="text-muted fs-5 mb-0">{{ mission.exercise }}</h4>
+    </div>
+  </div>
+  {% endif %}
 
-          <span class="badge bg-primary"> {%if mission.type == 'news' %} 📰 {{t('new')}} {% else %} додати в missions {% endif %} </span>
-        </div>
+  <!-- Текстовий контент місії --
+  <div class="card question-card shadow-sm mb-5">
+    <div class="card-body p-4 p-md-5 content-article">
+      {% for paragraph in mission.contents %}
+      <p>{{ paragraph.text }}</p>
+      {% endfor %}
+    </div>
+  </div> -->
 
-        <div class="col-md-3">
-          <h6 class="text-muted">{{t('complexity')}}</h6>
+  <div class="card question-card shadow-sm mb-5">
+    <div class="card-body p-4 p-md-5 content-article">
+      {% for block in mission.contents %} {% set lines = block.text.split('\n',
+      1) %} {% set first_line = lines[0] %} {% set caption = lines[1] if
+      lines|length > 1 else '' %} {% if first_line.startswith('[IMAGE]') %}
+      <figure class="mb-4">
+        <img src="{{ first_line[7:] }}" class="img-fluid rounded-3" alt="" />
+        {% if caption %}
+        <figcaption class="text-muted small mt-2">{{ caption }}</figcaption>
+        {% endif %}
+      </figure>
 
-          <span class="badge bg-success"> {%if mission.difficulty == 'easy' %} 🟢 {{t('easy')}} {% elif mission.difficulty == 'medium' %} 🟡 {{t('medium')}} {% else %} 🔴 {{t('hard')}} {% endif %} </span>
-        </div>
-
-        <div class="col-md-3">
-          <h6 class="text-muted">{{t('award')}}</h6>
-
-          <span class="badge bg-warning text-dark"> ⭐ {{ mission.xp }} XP </span>
-        </div>
-
-        <div class="col-md-3">
-          <h6 class="text-muted">{{t('time')}}</h6>
-
-          <span class="badge bg-secondary"> {{ mission.time }} {{t('min')}}</span>
-        </div>
+      {% elif first_line.startswith('[VIDEO]') %}
+      <div class="ratio ratio-16x9 mb-4 rounded-3 overflow-hidden">
+        <video controls src="{{ first_line[7:] }}"></video>
       </div>
+      {% if caption %}
+      <p class="text-muted small">{{ caption }}</p>
+      {% endif %} {% elif first_line.startswith('[WEBSITE]') %}
+      <div class="border rounded-3 p-3 mb-4 bg-light">
+        <i class="bi bi-globe text-primary me-2"></i>
+        <a href="{{ first_line[9:] }}" target="_blank" rel="noopener noreferrer"
+          >{{ first_line[9:] }}</a
+        >
+        {% if caption %}
+        <p class="text-muted small mt-2 mb-0">{{ caption }}</p>
+        {% endif %}
+      </div>
+
+      {% else %}
+      <p>{{ block.text }}</p>
+      {% endif %} {% endfor %}
     </div>
   </div>
 
-      <form method="POST">
+  <!-- Блок запитань -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">{{ t('questions_block') }}</h2>
+    <p class="text-muted">Дайте відповіді на запитання для завершення місії</p>
+  </div>
 
-        <input type="hidden" name="started_at" value="{{current_timestamp}}">
+  <form method="POST">
+    <input type="hidden" name="started_at" value="{{ current_timestamp }}" />
 
-        {% for question in mission.questions %}
-        <div class="card shadow-sm mb-4">
-          <div class="card-body">
-            <h4 class="mb-4">{{ question.question }}</h4>
+    {% for question in mission.questions %}
+    <div class="card question-card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3 d-flex align-items-start gap-2">
+          <span class="text-primary">#{{ loop.index }}</span>
+          <span>{{ question.question }}</span>
+        </h5>
 
-            {% for option in question.options %}
-
-            <div class="form-check">
-                  <input
-                      class="form-check-input"
-                      type= "{% if question.type == 'single_choice' %}radio{% else %}checkbox{% endif %}"
-                      name="question_{{ question.id }}"
-                      value="{{ option.option_order }}">
-
-                  <label>{{ option.option_text }}</label>
-            </div>
-
-            {% endfor %}
-            </div>
-        </div>
-
-            {% endfor %}
-      <!-- ==========================
-         Кнопка
-    =========================== -->
-
-        <div class="text-center mt-5">
-          <button class="btn btn-primary">
-              {{t('ready_mission')}}
-          </button>
+        <div class="d-flex flex-column gap-2 mt-3">
+          {% for option in question.options %} {% if option.option_text and
+          option.option_text.strip() %}
+          <label
+            class="option-item d-flex align-items-center gap-3 m-0"
+            for="opt_{{ question.id }}_{{ loop.index }}"
+          >
+            <input
+              class="form-check-input mt-0"
+              type="{% if question.type == 'single_choice' %}radio{% else %}checkbox{% endif %}"
+              name="question_{{ question.id }}"
+              id="opt_{{ question.id }}_{{ loop.index }}"
+              value="{{ option.option_order }}"
+            />
+            <span class="form-check-label text-dark flex-grow-1">
+              {{ option.option_text }}
+            </span>
+          </label>
+          {% endif %} {% endfor %}
         </div>
       </div>
-    </form>
+    </div>
+    {% endfor %}
 
-    {% endblock %}
-  </div>
+    <!-- Кнопка відправки -->
+    <div class="text-center mt-5 mb-4">
+      <button
+        type="submit"
+        class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow"
+      >
+        {{ t('ready_mission') }}
+      </button>
+    </div>
+  </form>
 </div>
+{% endblock %}

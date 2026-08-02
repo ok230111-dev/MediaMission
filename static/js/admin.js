@@ -1,29 +1,54 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // --- ОБРОБНИК ЗМІНИ ТИПУ АБЗАЦУ (ФРАГМЕНТ) ---
+  document.addEventListener("change", (e) => {
+    if (e.target.classList.contains("paragraph-type")) {
+      const row = e.target.closest(".paragraph-row");
+      const fileInput = row.querySelector(".paragraph-file");
+      const urlInput = row.querySelector(".paragraph-url");
+
+      fileInput.classList.add("d-none");
+      urlInput.classList.add("d-none");
+
+      if (e.target.value === "image" || e.target.value === "video") {
+        fileInput.classList.remove("d-none");
+      } else if (e.target.value === "website") {
+        urlInput.classList.remove("d-none");
+      }
+    }
+  });
+
   // Автоматично додаємо перше питання при завантаженні
   addQuestion();
 
-  document
-    .getElementById("saveMissionBtn")
-    .addEventListener("click", saveMission);
+  const saveBtn = document.getElementById("saveMissionBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", saveMission);
+  }
 });
 
 // --- РОБОТА З АБЗАЦАМИ ---
 function addParagraph() {
   const container = document.getElementById("paragraphs-container");
-  const count = container.querySelectorAll(".paragraph-row").length + 1;
 
   const paragraphDiv = document.createElement("div");
-  paragraphDiv.className = "mb-3 position-relative paragraph-row";
+  paragraphDiv.className = "mb-3 paragraph-row border rounded-3 p-3";
   paragraphDiv.innerHTML = `
-    <div class="d-flex align-items-start gap-2">
-      <textarea class="form-control" rows="3" name="paragraph" placeholder="Абзац ${count}"></textarea>
-      <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeParagraph(this)" title="Видалити">
-        &times;
-      </button>
-    </div>
+    <select class="form-select mb-2 paragraph-type">
+      <option value="text">📝 Текст</option>
+      <option value="image">🖼️ Фото</option>
+      <option value="video">🎬 Відео</option>
+      <option value="website">🌐 Посилання на сайт</option>
+    </select>
+
+    <textarea class="form-control mb-2 paragraph-text" rows="3" placeholder="Текст абзацу / підпис"></textarea>
+    <input type="file" class="form-control mb-2 paragraph-file d-none" accept="image/*,video/*" />
+    <input type="url" class="form-control mb-2 paragraph-url d-none" placeholder="https://..." />
+
+    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeParagraph(this)">Видалити</button>
   `;
 
   container.appendChild(paragraphDiv);
+  reindexParagraphs();
 }
 
 function removeParagraph(btn) {
@@ -123,7 +148,6 @@ function toggleOptionInputType(selectElem, qIndex) {
 async function saveMission() {
   const saveBtn = document.getElementById("saveMissionBtn");
 
-  // 1. Проста валідація
   const title = document.getElementById("missionTitle").value.trim();
   const subtitle = document.getElementById("missionSubTitle").value.trim();
 
@@ -132,23 +156,36 @@ async function saveMission() {
     return;
   }
 
-  // 2. Збираємо абзаци
   const contentsArray = [];
-  document.querySelectorAll("[name='paragraph']").forEach((textarea, index) => {
-    const text = textarea.value.trim();
-    if (text) {
+  const filesToUpload = [];
+
+  document.querySelectorAll('.paragraph-row').forEach((row, index) => {
+    const type = row.querySelector('.paragraph-type').value;
+    const textInput = row.querySelector('.paragraph-text').value;
+    const fileInput = row.querySelector('.paragraph-file');
+    const urlInput = row.querySelector('.paragraph-url');
+
+    if (type === 'website') {
       contentsArray.push({
         order: index + 1,
-        text: text,
+        text: `[WEBSITE]${urlInput.value}${textInput ? '\n' + textInput : ''}`
       });
+    } else if ((type === 'image' || type === 'video') && fileInput.files[0]) {
+      const marker = type === 'image' ? '[IMAGE]' : '[VIDEO]';
+      filesToUpload.push({ key: `content_file_${index + 1}`, file: fileInput.files[0] });
+      contentsArray.push({
+        order: index + 1,
+        text: `${marker}PENDING_UPLOAD_${index + 1}${textInput ? '\n' + textInput : ''}`
+      });
+    } else {
+      contentsArray.push({ order: index + 1, text: textInput });
     }
   });
 
-  // 3. Збираємо питання
   const questionsArray = [];
   let validQuestions = true;
 
-  document.querySelectorAll(".question-card").forEach((card, index) => {
+  document.querySelectorAll(".question-card").forEach((card) => {
     const qText = card.querySelector(".question-text").value.trim();
     const qType = card.querySelector(".question-type").value;
 
@@ -164,7 +201,7 @@ async function saveMission() {
     const correct = [];
     card.querySelectorAll(".correct").forEach((input, optIndex) => {
       if (input.checked) {
-        correct.push(optIndex); // Індекс правильної відповіді (0, 1, 2, 3)
+        correct.push(optIndex);
       }
     });
 
@@ -181,7 +218,6 @@ async function saveMission() {
     return;
   }
 
-  // 4. Формуємо FormData
   const formData = new FormData();
   formData.append("title", title);
   formData.append("subtitle", subtitle);
@@ -196,10 +232,13 @@ async function saveMission() {
     formData.append("image", imageInput.files[0]);
   }
 
+  filesToUpload.forEach(({ key, file }) => {
+    formData.append(key, file);
+  });
+
   formData.append("contents", JSON.stringify(contentsArray));
   formData.append("questions", JSON.stringify(questionsArray));
 
-  // 5. Відправка на сервер
   try {
     saveBtn.disabled = true;
     saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Збереження...`;
@@ -226,29 +265,29 @@ async function saveMission() {
   }
 }
 
-// Додайте цю функцію у ваш admin.js
+// --- ВИДАЛЕННЯ КОРИСТУВАЧА ---
 function deleteUser(userId) {
-    if (!confirm('Ви впевнені, що хочете видалити цього користувача?')) {
-        return;
+  if (!confirm('Ви впевнені, що хочете видалити цього користувача?')) {
+    return;
+  }
+  
+  fetch(`/api/admin/delete_user/${userId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
     }
-    
-    fetch(`/api/admin/delete_user/${userId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Користувача видалено!');
-            location.reload();
-        } else {
-            alert('Помилка: ' + (data.error || 'Невідома помилка'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Сталася помилка при видаленні користувача');
-    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Користувача видалено!');
+      location.reload();
+    } else {
+      alert('Помилка: ' + (data.error || 'Невідома помилка'));
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Сталася помилка при видаленні користувача');
+  });
 }

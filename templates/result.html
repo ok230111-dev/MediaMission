@@ -1,5 +1,6 @@
-{% extends "base.html" %} {% block title %}Результат | MediaMission{% endblock
-%} {% block content %}
+{% extends "base.html" %} {% block title %}{{ t('result') }} | MediaMission{%
+endblock %} {% block content %}
+
 <!-- Обчислюємо відсоток на початку, щоб уникнути помилок в умовах вище -->
 {% set percent = ((score / total) * 100)|int if total > 0 else 0 %}
 
@@ -58,6 +59,18 @@
     border-radius: 10px;
     background-color: #e9ecef;
     overflow: hidden;
+    transition: width 1.2s ease;
+  }
+
+  .progress-bar-animated-fill {
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes fadeUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>
 
@@ -67,12 +80,12 @@
     <span
       class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-2 fs-6"
     >
-      🎮 {{ t('ready_mission') }}!
+      {{ t('mission_completed') }}!
     </span>
     <h1 class="display-5 fw-bold mb-1">{{ t('your_result') }}</h1>
     {% if progress %}
     <p class="text-muted fs-6">
-      {{ t('try_number') }}{{ progress.tries_number }}
+      {{ t('try_number') }} {{ progress.tries_number }}
     </p>
     {% endif %}
   </div>
@@ -89,20 +102,19 @@
         <h4 class="fw-bold mb-0">{{ t('perfect_result') }}</h4>
       </div>
       <p class="mb-3 text-secondary">
-        {{ t('you_receive') }}
-        <strong>+{{ mission.xp }} {{ t('xp') or 'XP' }}</strong> {{
+        {{ t('you_receive') }} <strong>+{{ mission.xp }} XP</strong> {{
         t('for_perfect_result') }}
       </p>
 
+      {% if user and user.streak is defined %}
       <div
         class="d-inline-flex align-items-center gap-2 bg-white px-3 py-1-5 rounded-pill shadow-sm"
       >
         <i class="bi bi-fire text-danger fs-5"></i>
-        <span class="fw-bold fs-5" id="streakDays">{{ user.streak }}</span>
-        <span class="text-muted small"
-          >{{ t('profile_streak') or 'днів поспіль' }}</span
-        >
+        <span class="fw-bold fs-5">{{ user.streak }}</span>
+        <span class="text-muted small">{{ t('profile_streak') }}</span>
       </div>
+      {% endif %}
     </div>
     {% endif %}
 
@@ -110,8 +122,8 @@
     <div class="text-center mb-4">
       <h3 class="fw-bold mb-3">
         {% if percent == 100 %} 🏆 {{ t('excellent') }} {% elif percent >= 70 %}
-        👍 {{ t('good') }} {% elif percent >= 40 %} 🙂 {{ t('not_bad') }} {%
-        else %} 📚 {{ t('learn_more') }} {% endif %}
+        ✅ {{ t('good') }} {% elif percent >= 40 %} 📚 {{ t('not_bad') }} {%
+        else %} 💪 {{ t('learn_more') }} {% endif %}
       </h3>
 
       <div
@@ -122,14 +134,14 @@
       </div>
       <p class="text-muted fw-medium mb-3">{{ t('right_answers') }}</p>
 
-      <!-- 1. Обчислюємо на самому початку -->
-      {% set percent = ((score / total) * 100)|int if total > 0 else 0 %}
-      <!-- Dynamic Progress Bar -->
-      <div class="progress-thin mb-2">
+      <!-- Progress Bar -->
+      <div class="progress progress-thin mb-2">
         <div
-          class="progress-bar rounded-pill {% if percent >= 70 %} bg-success {% elif percent >= 40 %} bg-warning {% else %} bg-danger {% endif %}"
+          class="progress-bar rounded-pill progress-bar-animated-fill {% if percent >= 70 %} bg-success {% elif percent >= 40 %} bg-warning {% else %} bg-danger {% endif %}"
           role="progressbar"
-          style="width: {{ percent }}%;"
+          id="scoreProgressBar"
+          style="width: 0%"
+          data-target-width="{{ percent }}"
           aria-valuenow="{{ percent }}"
           aria-valuemin="0"
           aria-valuemax="100"
@@ -140,35 +152,40 @@
 
     <!-- Quick Stats Grid -->
     <div class="row g-3 mb-5">
-      <div class="col-6">
-        <div class="stat-card-custom d-flex align-items-center gap-3">
+      <div class="col-6 col-md-6">
+        <div
+          class="stat-card-custom d-flex align-items-center gap-3 border border-2 border-info"
+        >
           <div class="icon-square bg-primary-subtle text-primary">
             <i class="bi bi-clock-history"></i>
           </div>
           <div>
             <div class="text-muted small">{{ t('time_going') }}</div>
             <div class="fw-bold fs-5">
-              {{ progress.time_spent }} {{ t('sec') }}
+              {% if progress and progress.time_spent %} {{ progress.time_spent
+              }} {{ t('sec') }} {% else %} — {% endif %}
             </div>
           </div>
         </div>
       </div>
 
-      <div class="col-6">
-        <div class="stat-card-custom d-flex align-items-center gap-3">
+      <div class="col-6 col-md-6">
+        <div
+          class="stat-card-custom d-flex align-items-center gap-3 border border-2 border-warning"
+        >
           <div class="icon-square bg-warning-subtle text-warning">
             <i class="bi bi-stars"></i>
           </div>
           <div>
             <div class="text-muted small">{{ t('total_xp') }}</div>
-            <div class="fw-bold fs-5">{{ user.total_xp }}</div>
+            <div class="fw-bold fs-5">{{ user.total_xp if user else "—" }}</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Achievements Section -->
-    {% if user.achievements %}
+    {% if user and user.achievements and user.achievements|length > 0 %}
     <div class="mb-5">
       <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
         <i class="bi bi-trophy text-warning"></i> {{ t('new_achievements') }}
@@ -199,12 +216,12 @@
         >
           <div class="d-flex align-items-center gap-3">
             <span class="text-muted fw-bold small">#{{ loop.index }}</span>
-            <span class="fw-medium text-dark">{{ question.text }}</span>
+            <span class="fw-medium text-dark">{{ question.question }}</span>
           </div>
 
           <div>
-            {% if question.id in user_answers %} {% if user_answers[question.id]
-            == question.correct_answer %}
+            {% set qa = answer_lookup.get(question.id) if answer_lookup else
+            None %} {% if qa and qa.answered %} {% if qa.is_correct %}
             <span
               class="badge bg-success-subtle text-success rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1"
             >
@@ -236,7 +253,7 @@
           href="/missions-overview"
           class="btn btn-light border btn-lg w-100 fw-medium fs-6 py-3"
         >
-          <i class="bi bi-arrow-left me-1"></i> {{t('to_missions')}}
+          <i class="bi bi-arrow-left me-1"></i> {{ t('to_missions') }}
         </a>
       </div>
       <div class="col-12 col-md-5 order-1 order-md-2">
@@ -258,4 +275,48 @@
     </div>
   </div>
 </div>
-{% endblock %}
+
+<!-- Confetti Animation (тільки при 100% правильних відповідей) -->
+{% if total > 0 and score == total %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Анімація прогресс-бару
+    const bar = document.getElementById("scoreProgressBar");
+    if (bar) {
+      setTimeout(() => {
+        bar.style.width = bar.dataset.targetWidth + "%";
+      }, 150);
+    }
+
+    // Запуск конфетті
+    function fireConfettiBurst() {
+      const duration = 2000;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ["#F0B93D", "#FF7A59", "#34D399"],
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ["#F0B93D", "#FF7A59", "#34D399"],
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
+    }
+
+    fireConfettiBurst();
+  });
+</script>
+{% endif %} {% endblock %}

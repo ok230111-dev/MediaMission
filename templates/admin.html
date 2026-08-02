@@ -196,7 +196,10 @@
                   <select class="form-select" id="missionType">
                     <option value="news">📰 Новина</option>
                     <option value="video">🎬 Відео</option>
-                    <option value="image">🖼️ Зображення</option>
+                    <option value="image">🖼️ Фото</option>
+                    <option value="web">🌐 Вебсайт</option>
+                    <option value="case">🕵 Життєва ситуація</option>
+                    <option value="ai">🤖 ШІ</option>
                   </select>
                 </div>
 
@@ -256,12 +259,28 @@
             <div class="card-body">
               <div id="paragraphs-container">
                 <div class="mb-3 position-relative paragraph-row">
+                  <div class="col-md-2">
+                    <label class="form-label fw-bold"
+                      >Фото до місії/абзацу</label
+                    >
+                    <!--<input
+                      type="file"
+                      class="form-control"
+                      id="image"
+                      accept="image/png, image/jpeg, image/webp"
+                    />
+                  </div>
                   <textarea
                     class="form-control"
                     rows="3"
                     name="paragraph"
                     placeholder="Абзац 1"
-                  ></textarea>
+                  ></textarea>-->
+                  <textarea class="form-control mb-2 paragraph-text" rows="3" placeholder="Текст абзацу"></textarea>
+                  <input type="file" class="form-control mb-2 paragraph-file d-none" accept="image/*,video/*" />
+                  <input type="url" class="form-control mb-2 paragraph-url d-none" placeholder="https://..." />
+
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.paragraph-row').remove()">Видалити</button>
                 </div>
               </div>
               <button

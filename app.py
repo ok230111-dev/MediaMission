@@ -992,28 +992,6 @@ def delete_user(target_id):
 # ----------------------------------------------------
 # ADMIN API ROUTE: Отримання списку місій та їх видалення
 # ----------------------------------------------------
-@app.route("/api/admin/delete_mission/<int:mission_id>", methods=["DELETE"])
-def delete_mission(mission_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"error": "Unauthorized"}, 401
-    
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return {"error": "Forbidden"}, 403
-
-    mission = Missions.query.get(mission_id)
-    if not mission:
-        return {"success": False, "error": "Місію не знайдено"}, 404
-
-    db.session.delete(mission)
-    db.session.commit()
-
-    return {"success": True}
-
-
-
-
 @app.route("/leaderboard", methods=["GET", "POST"])
 def leaderboard():
 
@@ -1091,42 +1069,42 @@ def get_admin_missions_list():
         
     return jsonify({'success': True, 'missions': result})
 
-# 2. Видалити місію
-from flask import jsonify, request
+@app.route("/api/admin/delete_mission/<int:mission_id>", methods=["DELETE"])
+def delete_mission(mission_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
 
-@app.route('/api/admin/delete_mission/<int:mission_id>', methods=['DELETE'])
-def api_delete_mission(mission_id):
+    mission = Missions.query.get(mission_id)
+    if not mission:
+        return {"success": False, "error": "Місію не знайдено"}, 404
+
     try:
-        mission = Missions.query.get(mission_id)
-        if not mission:
-            return jsonify({'success': False, 'error': 'Місію не знайдено'}), 404
-
-        # 1. Отримуємо всі питання цієї місії
+        # 1. Знаходимо всі ID питань, які належать цій місії
         questions = Questions.query.filter_by(mission_id=mission_id).all()
         question_ids = [q.id for q in questions]
 
-        # 2. Видаляємо відповіді користувачів на ці питання (якщо є модель UserAnswer)
-        if question_ids and 'UserAnswer' in globals():
+        if question_ids:
+            # 2. Спочатку видаляємо відповіді користувачів (user_answers), які посилаються на ці питання
             UserAnswer.query.filter(UserAnswer.question_id.in_(question_ids)).delete(synchronize_session=False)
 
-        # 3. Видаляємо прогрес користувачів по цій місії (якщо є модель UserProgress)
-        if 'UserProgress' in globals():
-            UserMissionProgress.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
+        # 3. Видаляємо всі прогреси користувачів (user_mission_progress) по цій місії
+        UserMissionProgress.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
 
-        # 4. Видаляємо самі питання місії
-        Questions.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
-
-        # 5. Видаляємо саму місію
+        # 4. Тепер безпечно видаляємо саму місію (SQLAlchemy каскадом видалить MissionContent, Questions та Options)
         db.session.delete(mission)
         db.session.commit()
 
-        return jsonify({'success': True, 'message': 'Місію успішно видалено'}), 200
+        return {"success": True}
 
     except Exception as e:
-        db.session.rollback()  # Обов'язково скасовуємо транзакцію в базі даних!
-        print(f"ПОМИЛКА ВИДАЛЕННЯ МІСІЇ: {str(e)}")
-        # Повертаємо JSON з помилкою замість вильоту 500 HTML
-        return jsonify({'success': False, 'error': f"Помилка сервера: {str(e)}"}), 500
+        db.session.rollback()
+        print(f"Помилка видалення місії: {e}")
+        return {"success": False, "error": str(e)}, 500
 
 
 

@@ -1,5 +1,5 @@
 import { auth } from "./firebase-config.js";
-import { sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
 // ============================================
 // ОБРОБКА СТАНУ АВТОРИЗАЦІЇ
@@ -65,31 +65,50 @@ function updateXPProgress() {
 }
 
 // ============================================
-// ВЕРИФІКАЦІЯ EMAIL
+// ВЕРИФІКАЦІЯ EMAIL ЧЕРЕЗ FLASK (CUSTOM)
 // ============================================
 document.getElementById("verifyEmailBtn")?.addEventListener("click", async () => {
   const btn = document.getElementById("verifyEmailBtn");
   const statusEl = document.getElementById("verifyStatus");
 
-  if (!auth.currentUser) {
+  if (!auth.currentUser || !auth.currentUser.email) {
+    if (statusEl) {
+      statusEl.textContent = "Користувач не авторизований або email відсутній.";
+      statusEl.className = "text-danger small mt-2";
+    }
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Sending...";
+  btn.textContent = "Надсилання...";
 
   try {
-    await sendEmailVerification(auth.currentUser);
-    statusEl.textContent = "Лист надіслано! Перевірте пошту (і папку «Спам»).";
-    statusEl.className = "text-success small mt-2";
-  } catch (error) {
-    console.error(error);
-    if (error.code === "auth/too-many-requests") {
-      statusEl.textContent = "Забагато спроб. Спробуйте пізніше.";
+    // Надсилаємо запит на кастомний Flask API ендпоінт
+    const response = await fetch('/api/auth/custom_verify_email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: auth.currentUser.email })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      if (statusEl) {
+        statusEl.textContent = "Лист надіслано! Перевірте пошту.";
+        statusEl.className = "alert alert-success small mt-2"; // Стандартні класи Bootstrap
+      }
     } else {
-      statusEl.textContent = "Помилка надсилання листа.";
+      if (statusEl) {
+        statusEl.textContent = "Помилка: " + (result.error || "Не вдалося надіслати лист.");
+        statusEl.className = "alert alert-danger small mt-2";
+      }
     }
-    statusEl.className = "text-danger small mt-2";
+  } catch (error) {
+    console.error("Помилка при відправці запиту на верифікацію:", error);
+    if (statusEl) {
+      statusEl.textContent = "Помилка з'єднання з сервером.";
+      statusEl.className = "alert alert-danger small mt-2";
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = "Надіслати лист підтвердження";
@@ -97,7 +116,7 @@ document.getElementById("verifyEmailBtn")?.addEventListener("click", async () =>
 });
 
 // ============================================
-// ПЕРЕВІРКА СТАТУСУ ВЕРИФІКАЦІЇ (ОДИН РАЗ)
+// ПЕРЕВІРКА СТАТУСУ ВЕРИФІКАЦІЇ (ОДИН РАЗ / ІНТЕРВАЛ)
 // ============================================
 setInterval(async () => {
   if (auth.currentUser) {
@@ -173,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleBtn = document.getElementById('toggleStatsBtn');
     
     if (toggleBtn) {
-        // Використовуємо addEventListener замість onclick
         toggleBtn.addEventListener('click', toggleStatsSmooth);
     }
     
@@ -199,9 +217,32 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
+// СКИДАННЯ ПАРОЛЯ ЧЕРЕЗ FLASK
+// ============================================
+async function sendResetPasswordEmail(email) {
+  try {
+    const response = await fetch('/api/auth/custom_reset_password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert("Перевірте вашу пошту! Ми надіслали email для підтвердження.");
+    } else {
+      alert("Помилка: " + result.error);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Помилка з'єднання з сервером.");
+  }
+}
+
+// ============================================
 // ДОДАТКОВО: ОНОВЛЕННЯ XP ПРИ ЗМІНІ totalXp
 // ============================================
-// Стежимо за змінами totalXp через MutationObserver
 const observer = new MutationObserver(function() {
     updateXPProgress();
 });
@@ -218,6 +259,5 @@ if (totalXpElement) {
 // Також оновлюємо при завантаженні сторінки
 window.addEventListener('load', function() {
     updateXPProgress();
-
-window.toggleStatsSmooth = toggleStatsSmooth;
+    window.toggleStatsSmooth = toggleStatsSmooth;
 });

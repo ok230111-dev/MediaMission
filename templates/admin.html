@@ -1,49 +1,61 @@
-{% extends "base.html" %} {% block title %} Панель адміністратора {% endblock %}
+{% extends "base.html" %} {% block title %}Панель адміністратора{% endblock %}
 {% block content %}
-<div class="container py-4 admin-page">
+
+<div class="container py-3 py-md-4 admin-page">
   <!-- ==========================================
        1. ПАНЕЛЬ З КНОПКАМИ (ПЕРЕМИКАЧ)
   =========================================== -->
-  <div class="d-flex justify-content-center mb-4">
-    <div class="admin-header">
-      <div class="container">
-        <h1><i class="bi bi-shield-lock-fill me-2"></i>Адмін-панель</h1>
-        <p>Створення нової освітньої місії для платформи MediaMission</p>
-        <div class="btn-group btn-admin-header" role="tablist">
-          <button
-            class="btn btn-outline-info active"
-            id="users-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#users-pane"
-            type="button"
-            role="tab"
-          >
-            <i class="bi bi-people-fill me-1"></i> База даних користувачів
-          </button>
+  <div class="admin-header">
+    <div class="container-fluid px-3 px-md-4">
+      <h1><i class="bi bi-shield-lock-fill me-2"></i>Адмін-панель</h1>
+      <p class="mb-2">
+        Створення нової освітньої місії для платформи MediaMission
+      </p>
 
-          <button
-            class="btn btn-outline-info"
-            id="create-mission-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#create-mission-pane"
-            type="button"
-            role="tab"
-          >
-            <i class="bi bi-plus-circle-fill me-1"></i> Створити місію
-          </button>
+      <div class="btn-admin-header" role="tablist">
+        <button
+          class="btn active"
+          id="users-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#users-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-people-fill me-1"></i> БД Користувачів
+        </button>
 
-          <!-- Нова кнопка для статистики -->
-          <button
-            class="btn btn-outline-info"
-            id="stats-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#stats-pane"
-            type="button"
-            role="tab"
-          >
-            <i class="bi bi-graph-up-arrow me-1"></i> Статистика
-          </button>
-        </div>
+        <button
+          class="btn"
+          id="create-mission-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#create-mission-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-plus-circle-fill me-1"></i> Створити місію
+        </button>
+
+        <button
+          class="btn"
+          id="missions-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#missions-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-database-fill me-1"></i> БД Місій
+        </button>
+
+        <button
+          class="btn"
+          id="stats-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#stats-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-graph-up-arrow me-1"></i> Статистика
+        </button>
       </div>
     </div>
   </div>
@@ -54,12 +66,12 @@
   <div class="tab-content">
     <!-- ВКЛАДКА 1: Користувачі -->
     <div class="tab-pane fade show active" id="users-pane" role="tabpanel">
-      <div class="card shadow-sm p-4">
-        <h3 class="mb-3">Користувачі та пошук</h3>
+      <div class="card shadow-sm p-3 p-md-4">
+        <h3 class="mb-3 fs-4">Користувачі та пошук</h3>
 
         <!-- Форма пошуку -->
         <form method="GET" action="/admin" class="mb-4">
-          <div class="input-group">
+          <div class="search-group d-flex gap-2">
             <input
               type="email"
               name="search_email"
@@ -68,11 +80,11 @@
               id="search_email"
               value="{{ request.args.get('search_email', '') }}"
             />
-            <button class="btn btn-primary" type="submit">
+            <button class="btn btn-primary flex-shrink-0" type="submit">
               <i class="bi bi-search"></i> Шукати
             </button>
             {% if request.args.get('search_email') %}
-            <a href="/admin" class="btn btn-outline-secondary">
+            <a href="/admin" class="btn btn-outline-secondary flex-shrink-0">
               <i class="bi bi-x-circle"></i> Очистити
             </a>
             {% endif %}
@@ -94,18 +106,18 @@
 
         <!-- Таблиця користувачів -->
         <div class="table-responsive">
-          <table class="table table-hover align-middle">
+          <table class="table table-hover align-middle table-users">
             <thead class="table-light">
               <tr>
                 <th>ID</th>
                 <th>Нікнейм</th>
                 <th>Email</th>
-                <th>Email верифіковано?</th>
+                <th>Вериф.</th>
                 <th>Дії</th>
                 <th>XP</th>
-                <th>Виконано Місій</th>
-                <th>Точність відповідей</th>
-                <th>Зареєстровано</th>
+                <th>Місій</th>
+                <th>Точність</th>
+                <th>Реєстр.</th>
                 <th>Останній вхід</th>
               </tr>
             </thead>
@@ -114,22 +126,27 @@
               <tr>
                 <td>{{ user.id }}</td>
                 <td>{{ user.display_name }}</td>
-                <td>{{ user.email }}</td>
+                <td class="text-truncate" style="max-width: 150px">
+                  {{ user.email }}
+                </td>
                 <td>
-                  {% if user.email_verified == False %}Ні{% else %}Так{% endif
-                  %}
+                  {% if user.email_verified == False %}
+                  <span class="badge bg-danger">Ні</span>
+                  {% else %}
+                  <span class="badge bg-success">Так</span>
+                  {% endif %}
                 </td>
                 <td>
                   <button
                     class="btn btn-sm btn-outline-danger"
                     onclick="deleteUser({{ user.id }})"
                   >
-                    Видалити
+                    <i class="bi bi-trash"></i>
                   </button>
                 </td>
                 <td>{{ user.total_xp }}</td>
                 <td>{{ user.missions_completed }}</td>
-                <td>{{ user.accuracy }}</td>
+                <td>{{ user.accuracy }}%</td>
                 <td>{{ user.created_at.strftime("%d.%m.%Y") }}</td>
                 <td>{{ user.last_login.strftime("%d.%m.%Y") }}</td>
               </tr>
@@ -149,270 +166,340 @@
 
     <!-- ВКЛАДКА 2: Створення місії -->
     <div class="tab-pane fade" id="create-mission-pane" role="tabpanel">
-      <div class="container pb-5">
-        <form id="missionForm" onsubmit="return false;">
-          <!-- Основна інформація -->
-          <div class="card admin-card mb-4">
-            <div class="card-header">
-              <span class="step-badge">1</span>
-              <h3>Основна інформація</h3>
-            </div>
-            <div class="card-body">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Назва місії *</label>
-                  <input
-                    type="text"
-                    id="missionTitle"
-                    class="form-control"
-                    placeholder="Наприклад: Перевір новину"
-                    required
-                  />
-                </div>
+      <form id="missionForm" onsubmit="return false;" class="mission-form">
+        <!-- Основна інформація -->
+        <div class="card admin-card mb-4">
+          <div class="card-header">
+            <span class="step-badge">1</span>
+            <h3>Основна інформація</h3>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Назва місії *</label>
+                <input
+                  type="text"
+                  id="missionTitle"
+                  class="form-control"
+                  placeholder="Наприклад: Перевір новину"
+                  required
+                />
+              </div>
 
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Підзаголовок *</label>
-                  <input
-                    type="text"
-                    id="missionSubTitle"
-                    class="form-control"
-                    placeholder="Короткий опис місії"
-                    required
-                  />
-                </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Підзаголовок *</label>
+                <input
+                  type="text"
+                  id="missionSubTitle"
+                  class="form-control"
+                  placeholder="Короткий опис місії"
+                  required
+                />
+              </div>
 
-                <div class="col-12">
-                  <label class="form-label fw-bold">Завдання</label>
-                  <textarea
-                    class="form-control"
-                    id="missionExercise"
-                    rows="3"
-                    placeholder="Що має зробити користувач у цій місії?"
-                  ></textarea>
-                </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Завдання</label>
+                <textarea
+                  class="form-control"
+                  id="missionExercise"
+                  rows="3"
+                  placeholder="Що має зробити користувач у цій місії?"
+                ></textarea>
+              </div>
 
-                <div class="col-md-3">
-                  <label class="form-label fw-bold">Тип</label>
-                  <select class="form-select" id="missionType">
-                    <option value="news">📰 Новина</option>
-                    <option value="video">🎬 Відео</option>
-                    <option value="image">🖼️ Фото</option>
-                    <option value="web">🌐 Вебсайт</option>
-                    <option value="case">🕵 Життєва ситуація</option>
-                    <option value="ai">🤖 ШІ</option>
-                  </select>
-                </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label fw-bold">Тип</label>
+                <select class="form-select" id="missionType">
+                  <option value="news">📰 Новина</option>
+                  <option value="video">🎬 Відео</option>
+                  <option value="image">🖼️ Фото</option>
+                  <option value="web">🌐 Вебсайт</option>
+                  <option value="case">🕵 Кейс</option>
+                  <option value="ai">🤖 ШІ</option>
+                </select>
+              </div>
 
-                <div class="col-md-3">
-                  <label class="form-label fw-bold">Складність (1–5)</label>
-                  <input
-                    type="number"
-                    id="missionDifficulty"
-                    class="form-control"
-                    min="1"
-                    max="5"
-                    value="1"
-                  />
-                </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label fw-bold">Складність (1–5)</label>
+                <input
+                  type="number"
+                  id="missionDifficulty"
+                  class="form-control"
+                  min="1"
+                  max="5"
+                  value="1"
+                />
+              </div>
 
-                <div class="col-md-2">
-                  <label class="form-label fw-bold">XP</label>
-                  <input
-                    type="number"
-                    id="missionXP"
-                    class="form-control"
-                    placeholder="20"
-                    value="20"
-                  />
-                </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-bold">XP</label>
+                <input
+                  type="number"
+                  id="missionXP"
+                  class="form-control"
+                  placeholder="20"
+                  value="20"
+                />
+              </div>
 
-                <div class="col-md-2">
-                  <label class="form-label fw-bold">Час (хв)</label>
-                  <input
-                    type="number"
-                    id="missionTime"
-                    class="form-control"
-                    placeholder="5"
-                    value="5"
-                  />
-                </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-bold">Час (хв)</label>
+                <input
+                  type="number"
+                  id="missionTime"
+                  class="form-control"
+                  placeholder="5"
+                  value="5"
+                />
+              </div>
 
-                <div class="col-md-2">
-                  <label class="form-label fw-bold">Обкладинка</label>
-                  <input
-                    type="file"
-                    class="form-control"
-                    id="image"
-                    accept="image/png, image/jpeg, image/webp"
-                  />
-                </div>
+              <div class="col-12 col-md-2">
+                <label class="form-label fw-bold">Обкладинка</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="image"
+                  accept="image/png, image/jpeg, image/webp"
+                />
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Контент місії -->
-          <div class="card admin-card mb-4">
-            <div class="card-header">
-              <span class="step-badge">2</span>
-              <h3>Текст місії</h3>
-            </div>
-            <div class="card-body">
-              <div id="paragraphs-container">
-                <div class="mb-3 position-relative paragraph-row">
-                  <div class="col-md-2">
-                    <label class="form-label fw-bold"
-                      >Фото до місії/абзацу</label
-                    >
-                    <!--<input
-                      type="file"
-                      class="form-control"
-                      id="image"
-                      accept="image/png, image/jpeg, image/webp"
-                    />
-                  </div>
-                  <textarea
-                    class="form-control"
-                    rows="3"
-                    name="paragraph"
-                    placeholder="Абзац 1"
-                  ></textarea>-->
-                  <textarea class="form-control mb-2 paragraph-text" rows="3" placeholder="Текст абзацу"></textarea>
-                  <input type="file" class="form-control mb-2 paragraph-file d-none" accept="image/*,video/*" />
-                  <input type="url" class="form-control mb-2 paragraph-url d-none" placeholder="https://..." />
+        <!-- Контент місії -->
+        <div class="card admin-card mb-4">
+          <div class="card-header">
+            <span class="step-badge">2</span>
+            <h3>Текст місії</h3>
+          </div>
+          <div class="card-body">
+            <div id="paragraphs-container">
+              <!-- Початковий абзац -->
+              <div class="mb-3 paragraph-row border rounded-3 p-3">
+                <select class="form-select mb-2 paragraph-type">
+                  <option value="text">📝 Текст</option>
+                  <option value="image">🖼️ Фото</option>
+                  <option value="video">🎬 Відео</option>
+                  <option value="website">🌐 Посилання на сайт</option>
+                </select>
 
-                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.paragraph-row').remove()">Видалити</button>
-                </div>
+                <textarea
+                  class="form-control mb-2 paragraph-text"
+                  rows="3"
+                  placeholder="Текст абзацу / підпис"
+                ></textarea>
+                <input
+                  type="file"
+                  class="form-control mb-2 paragraph-file d-none"
+                  accept="image/*,video/*"
+                />
+                <input
+                  type="url"
+                  class="form-control mb-2 paragraph-url d-none"
+                  placeholder="https://..."
+                />
+
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  onclick="removeParagraph(this)"
+                >
+                  <i class="bi bi-trash me-1"></i>Видалити
+                </button>
               </div>
-              <button
-                type="button"
-                class="btn btn-outline-primary btn-sm"
-                onclick="addParagraph()"
-              >
-                <i class="bi bi-plus-lg me-1"></i>Додати абзац
-              </button>
             </div>
-          </div>
 
-          <!-- Питання -->
-          <div class="card admin-card mb-4">
-            <div class="card-header">
-              <span class="step-badge">3</span>
-              <h3>Питання та відповіді</h3>
-            </div>
-            <div class="card-body">
-              <div id="questions-container"></div>
-
-              <button
-                type="button"
-                class="btn btn-outline-primary btn-sm"
-                onclick="addQuestion()"
-              >
-                <i class="bi bi-plus-lg me-1"></i>Додати питання
-              </button>
-            </div>
-          </div>
-
-          <!-- Кнопка збереження -->
-          <div class="save-bar text-center my-4">
             <button
               type="button"
-              class="btn btn-success btn-lg px-5"
-              id="saveMissionBtn"
+              class="btn btn-outline-primary btn-add-row"
+              onclick="addParagraph()"
             >
-              <i class="bi bi-check-circle-fill me-2"></i>Зберегти місію
+              <i class="bi bi-plus-lg me-1"></i>Додати абзац
             </button>
           </div>
-        </form>
+        </div>
+
+        <!-- Питання -->
+        <div class="card admin-card mb-4">
+          <div class="card-header">
+            <span class="step-badge">3</span>
+            <h3>Питання та відповіді</h3>
+          </div>
+          <div class="card-body">
+            <div id="questions-container"></div>
+
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-add-row"
+              onclick="addQuestion()"
+            >
+              <i class="bi bi-plus-lg me-1"></i>Додати питання
+            </button>
+          </div>
+        </div>
+
+        <!-- Кнопка збереження -->
+        <div class="save-bar text-center my-4">
+          <button
+            type="button"
+            class="btn btn-success btn-lg px-4 px-md-5"
+            id="saveMissionBtn"
+          >
+            <i class="bi bi-check-circle-fill me-2"></i>Зберегти місію
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ВКЛАДКА 3: БД Місій -->
+    <div class="tab-pane fade" id="missions-pane" role="tabpanel">
+      <div class="card shadow-sm mb-5">
+        <div
+          class="card-header bg-white py-3 d-flex justify-content-between align-items-center"
+        >
+          <h4 class="m-0 fw-bold">📋 Список усіх місій</h4>
+          <button
+            class="btn btn-sm btn-outline-primary"
+            onclick="loadAdminMissions()"
+          >
+            <i class="bi bi-arrow-clockwise me-1"></i> Оновити
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">ID</th>
+                  <th>Назва</th>
+                  <th>Тип</th>
+                  <th>Складність</th>
+                  <th>Нагорода</th>
+                  <th class="text-end pe-3">Дії</th>
+                </tr>
+              </thead>
+              <tbody id="adminMissionsTableBody">
+                <!-- Сюди JS підвантажить місії -->
+                <tr>
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    Завантаження...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- ВКЛАДКА 3: Статистика -->
+    <!-- ВКЛАДКА 4: Статистика -->
     <div class="tab-pane fade" id="stats-pane" role="tabpanel">
-      <div class="card shadow-sm p-4">
-        <h3 class="mb-4">
+      <div class="card shadow-sm p-3 p-md-4">
+        <h3 class="mb-4 fs-4">
           <i class="bi bi-graph-up-arrow me-2"></i>Статистика платформи
         </h3>
 
-        <div class="row g-4">
-          <!-- Картка: Користувачі -->
-          <div class="col-md-3">
-            <div class="card text-white bg-primary h-100">
-              <div class="card-body">
+        <div class="row g-3 g-md-4">
+          <!-- Користувачі -->
+          <div class="col-6 col-md-3">
+            <div class="card text-white bg-primary stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <h6 class="card-title text-uppercase">Користувачі</h6>
-                    <h2 class="display-4 mb-0">{{ users_count }}</h2>
+                    <h6 class="card-title text-uppercase small">Користувачі</h6>
+                    <h2 class="display-5 display-md-4 mb-0">
+                      {{ users_count }}
+                    </h2>
                   </div>
-                  <i class="bi bi-people-fill display-1 opacity-50"></i>
+                  <i
+                    class="bi bi-people-fill display-6 display-md-1 opacity-50"
+                  ></i>
                 </div>
-                <div class="mt-3">
+                <div class="mt-2">
                   <small>Підтверджено: {{ user_count_verified }}</small>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Картка: Місії -->
-          <div class="col-md-3">
-            <div class="card text-white bg-success h-100">
-              <div class="card-body">
+          <!-- Місії -->
+          <div class="col-6 col-md-3">
+            <div class="card text-white bg-success stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <h6 class="card-title text-uppercase">Місії</h6>
-                    <h2 class="display-4 mb-0">{{ missions_count }}</h2>
-                  </div>
-                  <i class="bi bi-journal-check display-1 opacity-50"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Картка: Спроби -->
-          <div class="col-md-3">
-            <div class="card text-white bg-warning h-100">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 class="card-title text-uppercase">Всього спроб</h6>
-                    <h2 class="display-4 mb-0">{{ attempts_count }}</h2>
-                  </div>
-                  <i class="bi bi-clipboard-check display-1 opacity-50"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Картка: Загальний XP -->
-          <div class="col-md-4">
-            <div class="card text-white bg-info h-100">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 class="card-title text-uppercase">Загальний XP</h6>
-                    <h2 class="display-4 mb-0">{{ total_xp }}</h2>
-                  </div>
-                  <i class="bi bi-star-fill display-1 opacity-50"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Картка: Відсоток верифікованих -->
-          <div class="col-md-4">
-            <div class="card text-white bg-dark h-100">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h6 class="card-title text-uppercase">Верифіковані</h6>
-                    <h2 class="display-4 mb-0">
-                      {% if users_count > 0 %} {{ (user_count_verified /
-                      users_count * 100) | round(1) }}% {% else %} 0% {% endif
-                      %}
+                    <h6 class="card-title text-uppercase small">Місії</h6>
+                    <h2 class="display-5 display-md-4 mb-0">
+                      {{ missions_count }}
                     </h2>
                   </div>
-                  <i class="bi bi-check-circle-fill display-1 opacity-50"></i>
+                  <i
+                    class="bi bi-journal-check display-6 display-md-1 opacity-50"
+                  ></i>
                 </div>
-                <div class="progress mt-3" style="height: 10px">
+              </div>
+            </div>
+          </div>
+
+          <!-- Спроби -->
+          <div class="col-6 col-md-3">
+            <div class="card text-white bg-warning stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase small">
+                      Всього спроб
+                    </h6>
+                    <h2 class="display-5 display-md-4 mb-0">
+                      {{ attempts_count }}
+                    </h2>
+                  </div>
+                  <i
+                    class="bi bi-clipboard-check display-6 display-md-1 opacity-50"
+                  ></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Загальний XP -->
+          <div class="col-6 col-md-3">
+            <div class="card text-white bg-info stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase small">
+                      Загальний XP
+                    </h6>
+                    <h2 class="display-5 display-md-4 mb-0">{{ total_xp }}</h2>
+                  </div>
+                  <i
+                    class="bi bi-star-fill display-6 display-md-1 opacity-50"
+                  ></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Відсоток верифікованих -->
+          <div class="col-6 col-md-4">
+            <div class="card text-white bg-dark stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase small">
+                      Верифіковані
+                    </h6>
+                    <h2 class="display-5 display-md-4 mb-0">
+                      {% if users_count > 0 %}{{ (user_count_verified /
+                      users_count * 100) | round(1) }}%{% else %}0%{% endif %}
+                    </h2>
+                  </div>
+                  <i
+                    class="bi bi-check-circle-fill display-6 display-md-1 opacity-50"
+                  ></i>
+                </div>
+                <div class="progress mt-2" style="height: 8px">
                   <div
                     class="progress-bar bg-success"
                     style="width: {% if users_count > 0 %}{{ (user_count_verified / users_count * 100) }}{% else %}0{% endif %}%;"
@@ -422,19 +509,42 @@
             </div>
           </div>
 
-          <!-- Картка: Середній XP на користувача -->
-          <div class="col-md-4">
-            <div class="card text-white bg-secondary h-100">
-              <div class="card-body">
+          <!-- Середній XP -->
+          <div class="col-6 col-md-4">
+            <div class="card text-white bg-secondary stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <h6 class="card-title text-uppercase">Середній XP</h6>
-                    <h2 class="display-4 mb-0">
-                      {% if users_count > 0 %} {{ (total_xp / users_count) |
-                      round(0) }} {% else %} 0 {% endif %}
+                    <h6 class="card-title text-uppercase small">Середній XP</h6>
+                    <h2 class="display-5 display-md-4 mb-0">
+                      {% if users_count > 0 %}{{ (total_xp / users_count) |
+                      round(0) }}{% else %}0{% endif %}
                     </h2>
                   </div>
-                  <i class="bi bi-award-fill display-1 opacity-50"></i>
+                  <i
+                    class="bi bi-award-fill display-6 display-md-1 opacity-50"
+                  ></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Активні користувачі (останній вхід) -->
+          <div class="col-12 col-md-4">
+            <div class="card text-white bg-danger stats-card-mini h-100">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="card-title text-uppercase small">
+                      Активні (30 днів)
+                    </h6>
+                    <h2 class="display-5 display-md-4 mb-0">
+                      {{ active_users }}
+                    </h2>
+                  </div>
+                  <i
+                    class="bi bi-person-check-fill display-6 display-md-1 opacity-50"
+                  ></i>
                 </div>
               </div>
             </div>
@@ -444,13 +554,13 @@
         <!-- Детальна таблиця статистики -->
         <div class="card mt-4">
           <div class="card-header">
-            <h5 class="mb-0">
+            <h5 class="mb-0 fs-6">
               <i class="bi bi-table me-2"></i>Детальна статистика
             </h5>
           </div>
-          <div class="card-body">
+          <div class="card-body p-2 p-md-3">
             <div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover mb-0">
                 <thead>
                   <tr>
                     <th>Показник</th>
@@ -471,19 +581,19 @@
                     <td><strong>{{ missions_count }}</strong></td>
                   </tr>
                   <tr>
-                    <td>Всього спроб пройти місії</td>
+                    <td>Всього спроб</td>
                     <td><strong>{{ attempts_count }}</strong></td>
                   </tr>
                   <tr>
-                    <td>Загальний XP на платформі</td>
+                    <td>Загальний XP</td>
                     <td><strong>{{ total_xp }}</strong></td>
                   </tr>
                   <tr>
                     <td>Середній XP на користувача</td>
                     <td>
                       <strong>
-                        {% if users_count > 0 %} {{ (total_xp / users_count) |
-                        round(0) }} {% else %} 0 {% endif %}
+                        {% if users_count > 0 %}{{ (total_xp / users_count) |
+                        round(0) }}{% else %}0{% endif %}
                       </strong>
                     </td>
                   </tr>
@@ -491,11 +601,14 @@
                     <td>Відсоток верифікованих</td>
                     <td>
                       <strong>
-                        {% if users_count > 0 %} {{ (user_count_verified /
-                        users_count * 100) | round(1) }}% {% else %} 0% {% endif
-                        %}
+                        {% if users_count > 0 %}{{ (user_count_verified /
+                        users_count * 100) | round(1) }}%{% else %}0%{% endif %}
                       </strong>
                     </td>
+                  </tr>
+                  <tr>
+                    <td>Активні користувачі (30 днів)</td>
+                    <td><strong>{{ active_users }}</strong></td>
                   </tr>
                 </tbody>
               </table>
@@ -505,8 +618,8 @@
       </div>
     </div>
   </div>
+
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+  {% endblock %}
 </div>
-
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-
-{% endblock %}

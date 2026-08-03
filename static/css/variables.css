@@ -6,12 +6,21 @@
     --secondary-color: #6366F1;
     --background-color: #F8FAFC;
     --surface-color: #ffffff;
+    --surface-alt: #F1F5F9;      /* вкладені картки: question-card, meta-badge-box, stat-card-custom */
     --text-color: #1E293B;
     --text-light: #64748B;
     --border-color: #E2E8F0;
     --success-color: #10B981;
     --warning-color: #F59E0B;
     --danger-color: #EF4444;
+
+    /* Бейджі-акценти (badge-verification-*, xp-badge-card) */
+    --badge-warning-bg: #fff3cd;
+    --badge-warning-color: #856404;
+    --badge-warning-border: #ffe69c;
+    --badge-success-bg: #d1e7dd;
+    --badge-success-color: #0f5132;
+    --badge-success-border: #a3cfbb;
 
     /* Шрифт */
     --font-main: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
@@ -45,6 +54,20 @@
 
     /* Градієнт */
     --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+
+    /* Bootstrap variable bridge — щоб нативні bs-компоненти (table, form-control,
+       dropdown, modal, badge...) теж реагували на тему */
+    --bs-body-bg: var(--background-color);
+    --bs-body-color: var(--text-color);
+    --bs-border-color: var(--border-color);
+    --bs-card-bg: var(--surface-color);
+    --bs-card-color: var(--text-color);
+    --bs-secondary-bg: var(--surface-alt);
+    --bs-tertiary-bg: var(--surface-alt);
+    --bs-secondary-color: var(--text-light);
+    --bs-emphasis-color: var(--text-color);
+    --bs-link-color: var(--primary-color);
+    --bs-link-hover-color: var(--primary-dark);
 }
 
 [data-theme="dark"] {
@@ -53,6 +76,7 @@
     --secondary-color: #818CF8;
     --background-color: #0F1115;
     --surface-color: #1A1D23;
+    --surface-alt: #22262E;
     --text-color: #E5E7EB;
     --text-light: #9CA3AF;
     --border-color: #2D3139;
@@ -60,37 +84,40 @@
     --warning-color: #FBBF24;
     --danger-color: #F87171;
 
-    --shadow-small: 0 4px 12px rgba(0,0,0,.3);
-    --shadow-medium: 0 10px 30px rgba(0,0,0,.4);
-    --shadow-large: 0 20px 45px rgba(0,0,0,.5);
+    /* Пастельні бейджі в темній темі стають напівпрозорими чипами,
+       щоб не світити білим плямою на темному фоні */
+    --badge-warning-bg: rgba(251, 191, 36, .16);
+    --badge-warning-color: #FBBF24;
+    --badge-warning-border: rgba(251, 191, 36, .35);
+    --badge-success-bg: rgba(52, 211, 153, .16);
+    --badge-success-color: #34D399;
+    --badge-success-border: rgba(52, 211, 153, .35);
+
+    --shadow-small: 0 4px 14px rgba(0,0,0,.45);
+    --shadow-medium: 0 10px 30px rgba(0,0,0,.55);
+    --shadow-large: 0 20px 45px rgba(0,0,0,.65);
+
+    --bs-body-bg: var(--background-color);
+    --bs-body-color: var(--text-color);
+    --bs-border-color: var(--border-color);
+    --bs-card-bg: var(--surface-color);
+    --bs-card-color: var(--text-color);
+    --bs-secondary-bg: var(--surface-alt);
+    --bs-tertiary-bg: var(--surface-alt);
+    --bs-secondary-color: var(--text-light);
+    --bs-emphasis-color: var(--text-color);
+    --bs-link-color: var(--primary-color);
+    --bs-link-hover-color: var(--primary-dark);
 }
 
-body {
-    transition: background-color var(--transition-normal), color var(--transition-normal);
+/* Плавний перехід кольорів при перемиканні теми */
+body,
+.site-header,
+.card,
+.card-without-hover,
+.admin-card,
+.form-control,
+.form-select,
+.table {
+    transition: background-color var(--transition-normal), color var(--transition-normal), border-color var(--transition-normal);
 }
-
-.site-header {
-  transition: background-color 0.3s ease;
-}
-
-.navbar-brand,
-.nav-link {
-  color: var(--text-primary) !important;
-}
-
-.card {
-  background-color: var(--bg-card) !important;
-  color: var(--text-primary);
-  border-color: var(--border-color) !important;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.text-muted {
-  color: var(--text-muted) !important;
-}
-
-.features-section {
-  background: var(--bg-secondary);
-}
-
-

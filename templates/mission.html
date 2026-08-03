@@ -5,54 +5,7 @@
 if diff == 1 else ('border-info' if diff == 2 else ('border-warning' if diff ==
 3 else ('border-danger' if diff == 4 else 'border-dark'))) %}
 
-<style>
-  .mission-header-card {
-    background: #ffffff;
-    border-radius: 20px;
-  }
-
-  .meta-badge-box {
-    background: #f8f9fa;
-    border-radius: 14px;
-    padding: 12px 8px;
-    border: 1px solid rgba(0, 0, 0, 0.03);
-  }
-
-  .content-article p {
-    font-size: 1.1rem;
-    line-height: 1.7;
-    color: #333333;
-    margin-bottom: 1.2rem;
-  }
-
-  .content-article p:last-child {
-    margin-bottom: 0;
-  }
-
-  .question-card {
-    border-radius: 18px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .option-item {
-    border: 1.5px solid #e9ecef;
-    border-radius: 12px;
-    padding: 12px 16px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-
-  .option-item:hover {
-    background-color: #f8f9fa;
-    border-color: #cbd5e1;
-  }
-
-  .form-check-input:checked + .form-check-label {
-    font-weight: 600;
-  }
-</style>
-
-<div class="container py-4 py-md-5" style="max-width: 860px">
+<div class="container py-4 py-md-5 mission-page" style="max-width: 860px">
   <!-- Заголовок та шапка місії (з кольоровою рамкою) -->
   <div
     class="mission-header-card border border-2 {{ border_color }} shadow-sm p-4 p-md-5 mb-4"

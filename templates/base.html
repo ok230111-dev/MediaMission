@@ -1,14 +1,13 @@
 <!doctype html>
-<html lang="uk">
+<html lang="{{ g.lang if g.lang else 'uk' }}">
   <head>
     <!-- ==========================================================
          ОСНОВНІ НАЛАШТУВАННЯ СТОРІНКИ
     =========================================================== -->
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Завантажуємо тему ЯКНАЙРАНІШЕ, до рендеру видимого контенту -->
+    <!-- Завантажуємо тему ЯКНАЙРАНІШЕ до рендеру контенту -->
     <script>
       (function () {
         const savedTheme = localStorage.getItem("theme") || "light";
@@ -16,14 +15,9 @@
       })();
     </script>
 
-    <!--
-        Кожна сторінка може встановлювати власний title.
-        Якщо не встановлено - використовується "MediaMission".
-    -->
     <title>{% block title %} MediaMission {% endblock %}</title>
 
     <!-- FAVICON -->
-
     <link
       rel="apple-touch-icon"
       sizes="180x180"
@@ -51,60 +45,36 @@
       type="image/x-icon"
     />
 
+    <!-- BOOTSTRAP CSS (лишено лише одне підключення) -->
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
 
-    <!-- ==========================================================
-         BOOTSTRAP CSS
-         Готові стилі та компоненти (navbar, buttons, grid...)
-    =========================================================== -->
-
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-
-    <!-- ==========================================================
-         BOOTSTRAP ICONS
-         Бібліотека іконок
-    =========================================================== -->
-
+    <!-- BOOTSTRAP ICONS -->
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
 
-    <!-- ==========================================================
-         GOOGLE FONTS
-         Основний шрифт сайту
-    =========================================================== -->
-
+    <!-- GOOGLE FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
-    />
-
-    <!-- ==========================================================
-         ВЛАСНІ СТИЛІ
-         Підключаються після Bootstrap,
-         щоб можна було перевизначати його стилі.
-    =========================================================== -->
-
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
     />
 
     <!-- Swiper.js -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+    />
+
+    <!-- ВЛАСНІ СТИЛІ (підключаються останніми) -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
     />
   </head>
 
@@ -124,83 +94,81 @@
   >
     <!-- ==========================================================
          HEADER / NAVBAR
-         Верхня навігаційна панель сайту
     =========================================================== -->
-
     <header class="site-header shadow-sm">
       <nav class="navbar navbar-expand-lg container py-3">
-        <a class="navbar-brand fw-bold" href="/"> MediaMission </a>
+        <a class="navbar-brand fw-bold" href="/">MediaMission</a>
 
-        <div class="d-flex align-items-center ms-auto">
-          <div class="language-switch me-3">
+        <div class="d-flex align-items-center ms-auto order-lg-last gap-2">
+          <!-- Перемикач мови -->
+          <div class="language-switch me-2">
             <a
               href="/set_language/uk"
               class="{% if g.lang=='uk' %}active{% endif %}"
+              >ua</a
             >
-              ua
-            </a>
             <a
               href="/set_language/de"
               class="{% if g.lang=='de' %}active{% endif %}"
+              >de</a
             >
-              de
-            </a>
             <a
               href="/set_language/en"
               class="{% if g.lang=='en' %}active{% endif %}"
+              >en</a
             >
-              en
-            </a>
           </div>
 
-          <!-- В навігації, поруч з вибором мови -->
-          <li class="nav-item">
-            <button
-              class="nav-link btn btn-link"
-              id="themeToggle"
-              onclick="toggleTheme()"
-            >
-              <i class="bi bi-moon-fill" id="themeIcon"></i>
-            </button>
-          </li>
-
+          <!-- Перемикач теми -->
           <button
-            class="navbar-toggler"
+            class="btn btn-theme-toggle p-1"
+            id="themeToggle"
+            onclick="toggleTheme()"
+            aria-label="Toggle theme"
+          >
+            <i class="bi bi-moon-fill" id="themeIcon"></i>
+          </button>
+
+          <!-- Кнопка мобільного меню -->
+          <button
+            class="navbar-toggler ms-2"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
           >
             <span class="navbar-toggler-icon"></span>
           </button>
         </div>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-4">
-            <li class="nav-item">
-              <a class="nav-link" href="/profile">
-                <i class="bi bi-person-circle"></i>
-                {{ t('nav_profile') }}
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a class="nav-link" href="/leaderboard">
-                <i class="bi bi-trophy-fill"></i>
-                {{ t('nav_leaderboard') }}
-              </a>
-            </li>
-
+          <ul
+            class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0"
+          >
             <li class="nav-item">
               <a class="nav-link" href="/">
-                <i class="bi bi-house-door"></i>
+                <i class="bi bi-house-door me-1"></i>
                 {{ t('nav_home') }}
               </a>
             </li>
-
             <li class="nav-item">
               <a class="nav-link" href="/missions-overview">
-                <i class="bi bi-journal-check"></i>
+                <i class="bi bi-journal-check me-1"></i>
                 {{ t('nav_missions') }}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/leaderboard">
+                <i class="bi bi-trophy-fill me-1"></i>
+                {{ t('nav_leaderboard') }}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/profile">
+                <i class="bi bi-person-circle me-1"></i>
+                {{ t('nav_profile') }}
               </a>
             </li>
           </ul>
@@ -209,31 +177,21 @@
     </header>
 
     <!-- ==========================================================
-         MAIN
-         Основний контейнер.
-         Тут Flask підставляє контент інших сторінок.
+         MAIN CONTENT
     =========================================================== -->
-
-    <main>{% block content %} {% endblock %}</main>
+    <main class="main-content">{% block content %} {% endblock %}</main>
 
     <!-- ==========================================================
          FOOTER
-
-    <footer class="footer">
-      <div class="container">
-        <p>© 2026 MediaMission</p>
+    =========================================================== -->
+    <footer class="site-footer py-4 mt-auto">
+      <div class="container text-center text-muted">
+        <p class="mb-0">© 2026 MediaMission. Всі права захищено.</p>
       </div>
     </footer>
 
-  =========================================================== -->
-
-    <!-- ==========================================================
-         BOOTSTRAP JAVASCRIPT
-         Потрібний для dropdown, navbar,
-         модальних вікон тощо.
-    =========================================================== -->
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JAVASCRIPT -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script
       type="module"

@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, session, g
+from flask import Flask, render_template, request, redirect, url_for, session, g, jsonify
 from translations import translate
+from flask_mail import Mail, Message
 import requests
 import smtplib
 from flask_migrate import Migrate
@@ -9,8 +10,9 @@ import json
 from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
+from firebase_admin import auth
 from dotenv import load_dotenv
-from datetime import datetime, timezone
+from datetime import datetime, timezone,timedelta
 import time
 from flask_sqlalchemy import SQLAlchemy
 from flask_admin import Admin, AdminIndexView, expose
@@ -20,10 +22,9 @@ import cloudinary.uploader
 
 
 
-app = Flask(__name__)
-
 load_dotenv()
 
+app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
@@ -49,6 +50,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex()) # Потрібно для Flask-Admin
+
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+# os.getenv повертає рядок, тому для bool робимо перевірку:
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() in ['true', 'on', '1']
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = ('MediaMission', os.getenv('MAIL_USERNAME'))
+
+mail = Mail(app)
 
 cloudinary.config(
     cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
@@ -519,10 +530,10 @@ def mission_detail(id):
 
 
 
+from datetime import datetime, timezone, timedelta
+
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    users = Users.query.all()
-    missions = Missions.query.all()
     user_id = session.get("user_id")
 
     if user_id is None:
@@ -530,28 +541,58 @@ def admin():
 
     user = Users.query.get(user_id)
 
-    if not user.admin:
+    if not user or not user.admin:
         return "Forbidden", 403
 
-    # Обробка пошуку за email
-    search_email = request.args.get('search_email', '').strip()
-    searched_user = None
+     # --- ОТРИМУЄМО ДАНІ ---
+    users = Users.query.all()  # ← Додаємо цей рядок!
+    missions = Missions.query.all()  # ← Додаємо цей рядок!
 
+    # --- СТАТИСТИКА ---
     users_count = Users.query.count()
     missions_count = Missions.query.count()
     attempts_count = UserMissionProgress.query.count()
     user_count_verified = Users.query.filter_by(email_verified=True).count()
     total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
     
+    # Активні користувачі (останні 30 днів)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    
+    # Варіант 1: Через last_login
+    active_users = Users.query.filter(
+        Users.last_login >= thirty_days_ago
+    ).count()
+    
+    # Варіант 2: Через прогрес (якщо немає last_login)
+    # active_users = db.session.query(
+    #     UserMissionProgress.user_id
+    # ).filter(
+    #     UserMissionProgress.completed_at >= thirty_days_ago
+    # ).distinct().count()
+    
+    # Обробка пошуку
+    search_email = request.args.get('search_email', '').strip()
+    users = Users.query.all()
+    
     if search_email:
         searched_user = Users.query.filter_by(email=search_email).first()
         if searched_user:
-            # Якщо знайдено, показуємо тільки цього користувача
             users = [searched_user]
         else:
-            users = []  # Якщо не знайдено, показуємо порожній список
+            users = []
     
-    return render_template('admin.html', users=users, missions=missions, searched_user=searched_user, search_email=search_email, users_count=users_count, user_count_verified=user_count_verified, missions_count=missions_count, attempts_count=attempts_count, total_xp=total_xp)
+    return render_template(
+        'admin.html',
+        users=users,
+        missions=missions,
+        search_email=search_email,
+        users_count=users_count,
+        user_count_verified=user_count_verified,
+        missions_count=missions_count,
+        attempts_count=attempts_count,
+        total_xp=total_xp,
+        active_users=active_users  # ← Важливо!
+    )
 
 
 
@@ -951,27 +992,6 @@ def delete_user(target_id):
 # ----------------------------------------------------
 # ADMIN API ROUTE: Отримання списку місій та їх видалення
 # ----------------------------------------------------
-@app.route("/api/admin/missions", methods=["GET"])
-def get_admin_missions():
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"error": "Unauthorized"}, 401
-    
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return {"error": "Forbidden"}, 403
-
-    missions = Missions.query.all()
-    result = [{
-        "id": m.id,
-        "title": m.title,
-        "xp": m.xp,
-        "difficulty": m.difficulty
-    } for m in missions]
-
-    return {"success": True, "missions": result}
-
-
 @app.route("/api/admin/delete_mission/<int:mission_id>", methods=["DELETE"])
 def delete_mission(mission_id):
     user_id = session.get("user_id")
@@ -1045,6 +1065,80 @@ def leaderboard():
 
 
 
+@app.route('/api/admin/missions', methods=['GET'])
+def get_admin_missions_list():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+    
+    missions = Missions.query.order_by(Missions.id.desc()).all()
+    
+    result = []
+    for m in missions:
+        result.append({
+            'id': m.id,
+            'title': m.title,
+            'subtitle': getattr(m, 'subtitle', ''),
+            'type': getattr(m, 'type', 'Невідомо'),  # ← ОСЬ ТУТ
+            'difficulty': str(getattr(m, 'difficulty', '1')),
+            'xp': getattr(m, 'xp', 0),
+            'time': getattr(m, 'time', 0)
+        })
+        
+    return jsonify({'success': True, 'missions': result})
+
+# 2. Видалити місію
+@app.route('/api/admin/delete_mission/<int:mission_id>', methods=['DELETE'])
+def api_delete_mission(mission_id):
+    mission = Missions.query.get(mission_id)
+    if not mission:
+        return jsonify({'success': False, 'error': 'Місію не знайдено'}), 404
+        
+    try:
+        # Видаляємо пов'язані контенти/питання, якщо у вас не налаштовано CASCADE
+        # ParagraphContent.query.filter_by(mission_id=mission_id).delete()
+        # Question.query.filter_by(mission_id=mission_id).delete()
+        
+        db.session.delete(mission)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
+
+@app.route('/api/auth/custom_verify_email', methods=['POST'])
+def custom_verify_email():
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
+
+    try:
+        # Генеруємо посилання підтвердження email через Firebase Admin SDK
+        verify_link = auth.generate_email_verification_link(email)
+
+        # Рендеримо HTML-шаблон для верифікації
+        html_body = render_template('emails/verify_email.html', verify_link=verify_link)
+
+        msg = Message(
+            subject="Verify your email | MediaMission",
+            recipients=[email],
+            html=html_body
+        )
+        mail.send(msg)
+
+        return jsonify({'success': True, 'message': 'Лист верифікації надіслано!'})
+    except Exception as e:
+        print(f"Помилка відправки листа верифікації: {e}")
+        return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
 
 # with app.app_context():
 #     db.create_all()

@@ -37,7 +37,7 @@
 }
 
 .btn-admin-header {
-    background-color: #374151;
+    background-color: var(--surface-alt);
     border-radius: 1.2rem;
 }
 
@@ -98,7 +98,7 @@
 }
 
 #toggleStatsBtn:hover {
-    background-color: #f8f9fa;
+    background-color: var(--surface-alt);
     transform: scale(1.02);
 }
 
@@ -113,21 +113,21 @@
 .form-label {
     font-weight: 600;
     font-size: 0.9rem;
-    color: #374151;
+    color: var(--text-color);
 }
 
 .badge-verification-pending {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffe69c;
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-color);
+  border: 1px solid var(--badge-warning-border);
   padding: 0.5rem 0.9rem;
   font-weight: 600;
 }
 
 .badge-verification-verified {
-  background-color: #d1e7dd;
-  color: #0f5132;
-  border: 1px solid #a3cfbb;
+  background-color: var(--badge-success-bg);
+  color: var(--badge-success-color);
+  border: 1px solid var(--badge-success-border);
   padding: 0.5rem 0.9rem;
   font-weight: 600;
 }
@@ -140,11 +140,11 @@
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-large);
 }
 
 .progress {
-    background-color: rgba(255,255,255,0.2);
+    background-color: var(--surface-alt);
 }
 
 .progress-bar {
@@ -286,7 +286,7 @@
 }
 
 .leaderboard-table thead {
-  background: var(--background-color);
+  background: var(--surface-alt);
 }
 
 .leaderboard-table th {
@@ -307,11 +307,11 @@
 }
 
 .leaderboard-table tbody tr:hover {
-  background: var(--background-color);
+  background: var(--surface-alt);
 }
 
 .leaderboard-table tr.row-you {
-  background: rgba(37, 99, 235, 0.06);
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .table-avatar,
@@ -340,7 +340,7 @@
 
 .leaderboard-cta {
   padding: 1.5rem;
-  background: var(--background-color);
+  background: var(--surface-alt);
   border-radius: var(--radius-medium);
 }
 
@@ -367,6 +367,6 @@
 .section-divider {
     width: 100%;
     height: 1px;
-    background: #E5E7EB;
+    background: var(--border-color);
     margin: 40px 0;
 }

@@ -1095,7 +1095,7 @@ def get_admin_missions_list():
 from flask import jsonify, request
 
 @app.route('/api/admin/delete_mission/<int:mission_id>', methods=['DELETE'])
-def delete_mission(mission_id):
+def api_delete_mission(mission_id):
     try:
         mission = Missions.query.get(mission_id)
         if not mission:

@@ -370,3 +370,10 @@
     background: var(--border-color);
     margin: 40px 0;
 }
+
+/* PROFILE */
+[data-theme="dark"] .info-account {
+    font-size: 0.9rem;
+    color: white;
+    margin-left: 8px;
+}

@@ -1,5 +1,128 @@
 {% extends "base.html" %} {% block title %}{{ t('profile_title') }} |
-MediaMission{% endblock %} {% block content %}
+MediaMission{% endblock %} {% block style %}
+<style>
+  /* Стилі для темної теми */
+  .dark-theme {
+    /* Фони */
+    .dark-bg-dark {
+      background-color: #2d2d3f !important;
+    }
+
+    .dark-bg-darker {
+      background-color: #1e1e2e !important;
+    }
+
+    /* Текст - виправлено на світлі кольори для темної теми */
+    .dark-text-light {
+      color: #000000 !important;
+    }
+
+    .dark-text-secondary {
+      color: #000000 !important;
+    }
+
+    /* Межі */
+    .dark-border {
+      border-color: #3d3d4f !important;
+    }
+
+    /* Картки */
+    .card.dark-bg-darker {
+      background-color: #1e1e2e !important;
+      border-color: #3d3d4f !important;
+    }
+
+    /* Ховер ефекти для заблокованих досягнень */
+    .dark-opacity-hover {
+      opacity: 0.6 !important;
+    }
+
+    .dark-opacity-hover:hover {
+      opacity: 0.8 !important;
+    }
+
+    /* Кнопки та елементи */
+    .btn-outline-secondary.dark-theme-btn {
+      color: #a8a8b3;
+      border-color: #3d3d4f;
+    }
+
+    .btn-outline-secondary.dark-theme-btn:hover {
+      background-color: #3d3d4f;
+      color: #e4e6eb;
+    }
+  }
+
+  /* Адаптація для модального вікна в темній темі */
+  .dark-theme .modal-content {
+    background-color: #1e1e2e !important;
+    color: #e4e6eb !important;
+  }
+
+  .dark-theme .modal-header,
+  .dark-theme .modal-footer {
+    border-color: #3d3d4f !important;
+  }
+
+  .dark-theme .btn-close {
+    filter: invert(1);
+  }
+
+  /* Додаткові стилі для темної теми */
+  .dark-theme .card {
+    background-color: #1e1e2e !important;
+    color: #e4e6eb !important;
+    border-color: #3d3d4f !important;
+  }
+
+  .dark-theme .text-muted {
+    color: #000000 !important;
+  }
+
+  .dark-theme .border {
+    border-color: #3d3d4f !important;
+  }
+
+  .dark-theme .bg-light {
+    background-color: #2d2d3f !important;
+  }
+
+  .dark-theme .progress {
+    background-color: #3d3d4f !important;
+  }
+
+  .dark-theme hr {
+    border-color: #3d3d4f !important;
+  }
+
+  .dark-theme .form-check-label {
+    color: #e4e6eb !important;
+  }
+
+  /* Стилі для модального вікна в темній темі */
+  .dark-theme .modal-body strong {
+    color: #e4e6eb !important;
+  }
+
+  .dark-theme .modal-body .text-muted {
+    color: #a8a8b3 !important;
+  }
+
+  .dark-theme .modal-body code {
+    color: #e4e6eb !important;
+    background-color: #2d2d3f !important;
+  }
+
+  .dark-theme .modal-body .text-success {
+    color: #4caf50 !important;
+  }
+
+  .dark-theme .modal-body .text-warning {
+    color: #ffa726 !important;
+  }
+</style>
+
+{% endblock %} {% block content %}
 <section
   class="container py-5"
   data-t-level="{{ t('profile_level') }}"
@@ -21,8 +144,8 @@ MediaMission{% endblock %} {% block content %}
         data-bs-toggle="modal"
         data-bs-target="#accountInfoModal"
       >
-        <i class="bi bi-person-lines-fill"></i>
-        <span class="d-none d-sm-inline"
+        <i class="bi bi-person-lines-fill info-account"></i>
+        <span class="d-none d-sm-inline info-account"
           >{{ t('profile_information_account') }}</span
         >
       </button>
@@ -292,7 +415,9 @@ MediaMission{% endblock %} {% block content %}
 
     <div class="row g-3">
       <div class="col-md-4">
-        <div class="d-flex align-items-center p-3 border rounded-3 bg-light">
+        <div
+          class="d-flex align-items-center p-3 border rounded-3 bg-light dark-bg-dark"
+        >
           <div
             class="bg-success text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center"
             style="width: 50px; height: 50px"
@@ -300,8 +425,15 @@ MediaMission{% endblock %} {% block content %}
             <i class="bi bi-flag-fill fs-4"></i>
           </div>
           <div>
-            <h6 class="fw-bold mb-1">{{ t('achievement_first_steps') }}</h6>
-            <small class="text-muted"
+            <h6
+              class="fw-bold mb-1 dark-text-light"
+              style="color: #000000 !important"
+            >
+              {{ t('achievement_first_steps') }}
+            </h6>
+            <small
+              class="text-muted dark-text-secondary"
+              style="color: #000000 !important"
               >{{ t('achievement_first_steps_text') }}</small
             >
           </div>
@@ -310,7 +442,7 @@ MediaMission{% endblock %} {% block content %}
 
       <div class="col-md-4">
         <div
-          class="d-flex align-items-center p-3 border rounded-3 bg-light opacity-75"
+          class="d-flex align-items-center p-3 border rounded-3 bg-light dark-bg-dark opacity-75 dark-opacity-hover"
         >
           <div
             class="bg-secondary text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center"
@@ -319,9 +451,17 @@ MediaMission{% endblock %} {% block content %}
             <i class="bi bi-search fs-4"></i>
           </div>
           <div>
-            <h6 class="fw-bold mb-1">{{ t('achievement_fake_detective') }}</h6>
-            <small class="text-muted"
-              >{{ t('achievement_fake_detective_text') }}</small
+            <h6
+              class="fw-bold mb-1 dark-text-light"
+              style="color: #000000 !important"
+            >
+              {{ t('achievement_fake_detective') }}
+            </h6>
+            <small
+              class="text-muted dark-text-secondary"
+              style="color: #000000 !important"
+            >
+              {{ t('achievement_fake_detective_text') }}</small
             >
           </div>
         </div>
@@ -329,7 +469,7 @@ MediaMission{% endblock %} {% block content %}
 
       <div class="col-md-4">
         <div
-          class="d-flex align-items-center p-3 border rounded-3 bg-light opacity-75"
+          class="d-flex align-items-center p-3 border rounded-3 bg-light dark-bg-dark opacity-75 dark-opacity-hover"
         >
           <div
             class="bg-secondary text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center"
@@ -338,10 +478,15 @@ MediaMission{% endblock %} {% block content %}
             <i class="bi bi-shield-check fs-4"></i>
           </div>
           <div>
-            <h6 class="fw-bold mb-1">
+            <h6
+              class="fw-bold mb-1 dark-text-light"
+              style="color: #000000 !important"
+            >
               {{ t('achievement_unbreakable_logic') }}
             </h6>
-            <small class="text-muted"
+            <small
+              class="text-muted dark-text-secondary"
+              style="color: #000000 !important"
               >{{ t('achievement_unbreakable_logic_text') }}</small
             >
           </div>
@@ -360,16 +505,16 @@ MediaMission{% endblock %} {% block content %}
       t('profile_stats_title') }}
     </h4>
 
-    <p>{{ t('profile_recent_results') }}</p>
+    <p class="dark-text-light">{{ t('profile_recent_results') }}</p>
 
     {% if recent_progress %} {% for item in recent_progress %}
     <div class="mb-2">
-      <p class="mb-1">
+      <p class="mb-1 dark-text-light">
         <strong>{{ t('mission_number') }}{{ item.mission.id }}</strong> — {{
         item.mission.title }}
       </p>
       {% if item.completed_at %}
-      <p class="text-muted small mb-0">
+      <p class="text-muted small mb-0 dark-text-secondary">
         <i class="bi bi-calendar3"></i> {{
         item.completed_at.strftime("%d.%m.%Y") }} {% if item.time_spent %} • ⏱️
         {{ item.time_spent }}{{t('sec')}} {% endif %} • 💯 {{
@@ -377,9 +522,9 @@ MediaMission{% endblock %} {% block content %}
       </p>
       {% endif %}
     </div>
-    <hr />
+    <hr class="dark-border" />
     {% endfor %} {% else %}
-    <p class="text-muted">{{ t('profile_no_missions') }}</p>
+    <p class="text-muted dark-text-secondary">{{ t('profile_no_missions') }}</p>
     {% endif %}
   </div>
 

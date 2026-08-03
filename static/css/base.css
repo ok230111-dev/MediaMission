@@ -33,54 +33,110 @@ body{
    HEADER
 =========================== */
 
-.site-header{
+.site-header {
     background: var(--surface-color);
-    position:sticky;
-    top:0;
-    z-index:1000;
-    border-bottom:1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--border-color);
 }
 
 /* ===========================
-   LOGO
+   LOGO & TOGGLER
 =========================== */
-
-.navbar-brand{
-
-    font-size:1.5rem;
-    font-weight:800;
-    color:var(--text-color) !important;
-
-    display:flex;
-    align-items:center;
-    gap:.6rem;
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-color) !important;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
 }
 
-.navbar-brand i{
+.navbar-brand i {
+    color: #4f46e5;
+    font-size: 1.4rem;
+}
 
-    color:#4f46e5;
-    font-size:1.4rem;
+/* Гамбургер у темній темі */
+[data-theme="dark"] .navbar-toggler {
+    border-color: var(--border-color);
+    color: var(--text-color);
 }
 
 /* ===========================
-   NAV LINKS
+   NAV LINKS & ICONS
 =========================== */
-
-.nav-link{
-
-    color:var(--text-light) !important;
-    font-weight:600;
-
-    transition:.25s;
-
-    padding:.55rem 1rem !important;
-    border-radius:12px;
+.nav-link {
+    color: var(--text-light) !important;
+    font-weight: 600;
+    transition: var(--transition-fast, .25s);
+    padding: .55rem 1rem !important;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 
-.nav-link:hover{
+.nav-link:hover {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color) !important;
+}
 
-    background:rgba(37, 99, 235, 0.1);
-    color:var(--primary-color) !important;
+.nav-link .nav-icon {
+    display: block;
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+}
+
+/* ===========================
+   RESPONSIVE BREAKPOINTS
+=========================== */
+
+/* При ширині екрана менше 1200px ховаємо іконки меню */
+@media (max-width: 1199.98px) {
+    .nav-link .nav-icon {
+        display: none !important;
+    }
+    
+    .nav-link {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+/* Мобільна адаптація (до 991px) */
+@media (max-width: 991.98px) {
+    .collapse.show, .collapsing {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .nav-link {
+        flex-direction: row;
+        justify-content: flex-start;
+        padding: .75rem 1rem !important;
+    }
+
+    /* Повертаємо іконки в мобільному меню для зручності */
+    .nav-link .nav-icon {
+        display: inline-block !important;
+        margin-bottom: 0;
+        margin-right: 12px;
+    }
+}
+
+/* Media Query: приховуємо іконки, якщо ширина екрана менше 1200px (xl) */
+@media (max-width: 1199.98px) {
+  .nav-link .nav-icon {
+    display: none !important; /* Іконка ховається */
+  }
+
+  .nav-link {
+    flex-direction: row; /* Текст повертається в звичайний рядок */
+  }
 }
 
 /* ===========================

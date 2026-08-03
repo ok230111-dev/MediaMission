@@ -97,11 +97,14 @@
     =========================================================== -->
     <header class="site-header shadow-sm">
       <nav class="navbar navbar-expand-lg container py-3">
+        <!-- 1. Логотип -->
         <a class="navbar-brand fw-bold" href="/">MediaMission</a>
 
-        <div class="d-flex align-items-center ms-auto order-lg-last gap-2">
-          <!-- Перемикач мови -->
-          <div class="language-switch me-2">
+        <!-- 2. Права частина: Перемикач мови + Тема (Завжди видимі) -->
+        <div
+          class="d-flex align-items-center gap-2 ms-lg-4 me-lg-auto order-lg-2"
+        >
+          <div class="language-switch">
             <a
               href="/set_language/uk"
               class="{% if g.lang=='uk' %}active{% endif %}"
@@ -119,56 +122,50 @@
             >
           </div>
 
-          <!-- Перемикач теми -->
           <button
             class="btn btn-theme-toggle p-1"
             id="themeToggle"
             onclick="toggleTheme()"
-            aria-label="Toggle theme"
           >
             <i class="bi bi-moon-fill" id="themeIcon"></i>
           </button>
 
-          <!-- Кнопка мобільного меню -->
+          <!-- Гамбургер для мобілок -->
           <button
-            class="navbar-toggler ms-2"
+            class="navbar-toggler ms-auto"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
           >
-            <span class="navbar-toggler-icon"></span>
+            <i class="bi bi-list fs-1"></i>
           </button>
         </div>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul
-            class="navbar-nav ms-auto align-items-lg-center gap-lg-3 mt-3 mt-lg-0"
-          >
+        <!-- 3. Основне меню (На десктопі йде ПІСЛЯ перемикача мови) -->
+        <div class="collapse navbar-collapse order-lg-3" id="navbarNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
             <li class="nav-item">
               <a class="nav-link" href="/">
-                <i class="bi bi-house-door me-1"></i>
-                {{ t('nav_home') }}
+                <i class="bi bi-house-door nav-icon"></i>
+                <span>{{ t('nav_home') }}</span>
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/missions-overview">
-                <i class="bi bi-journal-check me-1"></i>
-                {{ t('nav_missions') }}
+                <i class="bi bi-journal-check nav-icon"></i>
+                <span>{{ t('nav_missions') }}</span>
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/leaderboard">
-                <i class="bi bi-trophy-fill me-1"></i>
-                {{ t('nav_leaderboard') }}
+                <i class="bi bi-trophy-fill nav-icon"></i>
+                <span>{{ t('nav_leaderboard') }}</span>
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/profile">
-                <i class="bi bi-person-circle me-1"></i>
-                {{ t('nav_profile') }}
+                <i class="bi bi-person-circle nav-icon"></i>
+                <span>{{ t('nav_profile') }}</span>
               </a>
             </li>
           </ul>

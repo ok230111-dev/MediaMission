@@ -1094,20 +1094,26 @@ def get_admin_missions_list():
 # 2. Видалити місію
 @app.route('/api/admin/delete_mission/<int:mission_id>', methods=['DELETE'])
 def api_delete_mission(mission_id):
-    mission = Missions.query.get(mission_id)
-    if not mission:
-        return jsonify({'success': False, 'error': 'Місію не знайдено'}), 404
-        
     try:
-        # Видаляємо пов'язані контенти/питання, якщо у вас не налаштовано CASCADE
-        # ParagraphContent.query.filter_by(mission_id=mission_id).delete()
-        # Question.query.filter_by(mission_id=mission_id).delete()
-        
+        mission = Missions.query.get(mission_id)
+        if not mission:
+            return jsonify({'success': False, 'error': 'Місію не знайдено'}), 404
+
+        # 1. Отримуємо ID всіх питань цієї місії
+        question_ids = [q.id for q in mission.questions]
+
+        if question_ids:
+            # 2. Спочатку видаляємо всі відповіді користувачів на ці питання
+            UserAnswer.query.filter(UserAnswer.question_id.in_(question_ids)).delete(synchronize_session=False)
+
+        # 3. Тепер видаляємо саму місію (і її питання)
         db.session.delete(mission)
         db.session.commit()
-        return jsonify({'success': True})
+
+        return jsonify({'success': True, 'message': 'Місію та всі пов\'язані дані видалено'}), 200
+
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback() # Обов'язково робимо відкат при помилці!
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

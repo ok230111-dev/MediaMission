@@ -412,50 +412,45 @@ function deleteUser(userId) {
 
 // --- ВИДАЛЕННЯ МІСІЇ ---
 async function deleteMission(missionId, missionTitle, hasNotifications, notificationsCount) {
-  let confirmMessage = `Ви дійсно бажаєте видалити місію "${missionTitle || '#' + missionId}"?`;
-  
-  if (hasNotifications) {
-    confirmMessage = `⚠️ УВАГА!\n\nМісія "${missionTitle || '#' + missionId}" має ${notificationsCount} пов'язаних сповіщень.\n\nПри видаленні місії всі ці сповіщення будуть видалені.\n\nПродовжити?`;
-  } else {
-    confirmMessage = `Ви дійсно бажаєте видалити місію "${missionTitle || '#' + missionId}"? Цю дію неможливо скасувати!`;
-  }
-
-  if (!confirm(confirmMessage)) {
-    return;
-  }
-
-  // Показуємо індикатор завантаження
-  const buttons = document.querySelectorAll(`[onclick*="deleteMission(${missionId}"]`);
-  buttons.forEach(btn => {
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
-  });
-
-  try {
-    const response = await fetch(`/api/admin/delete_mission/${missionId}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" }
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      const message = result.message || `Місію #${missionId} успішно видалено!`;
-      showToast('✅ Успіх', message, 'success');
-      loadAdminMissions(); // Оновлюємо список
-    } else {
-      showToast('❌ Помилка', result.error || 'Не вдалося видалити місію', 'danger');
+    let confirmMessage = `Ви дійсно бажаєте видалити місію "${missionTitle || '#' + missionId}"?`;
+    
+    if (hasNotifications) {
+        confirmMessage = `⚠️ УВАГА!\n\nМісія "${missionTitle || '#' + missionId}" має ${notificationsCount} пов'язаних сповіщень.\n\nПри видаленні місії всі ці сповіщення та їх отримувачі будуть видалені.\n\nПродовжити?`;
     }
-  } catch (err) {
-    console.error(err);
-    showToast('❌ Помилка', 'Сталася помилка при відправці запиту', 'danger');
-  } finally {
-    // Відновлюємо кнопки
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    const buttons = document.querySelectorAll(`[onclick*="deleteMission(${missionId}"]`);
     buttons.forEach(btn => {
-      btn.disabled = false;
-      btn.innerHTML = `<i class="bi bi-trash"></i>`;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
     });
-  }
+
+    try {
+        const response = await fetch(`/api/admin/delete_mission/${missionId}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('✅ Успіх', result.message || `Місію #${missionId} успішно видалено!`, 'success');
+            loadAdminMissions(); // Оновлюємо список
+        } else {
+            showToast('❌ Помилка', result.error || 'Не вдалося видалити місію', 'danger');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('❌ Помилка', 'Сталася помилка при відправці запиту', 'danger');
+    } finally {
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-trash"></i>`;
+        });
+    }
 }
 
 // --- ФУНКЦІЯ ДЛЯ ПОКАЗУ TOAST ПОВІДОМЛЕНЬ ---

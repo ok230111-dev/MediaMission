@@ -1214,6 +1214,82 @@ def get_admin_missions_list():
         
     return jsonify({'success': True, 'missions': result})
 
+
+
+
+def cascade_delete_notification(notification_id):
+    """Допоміжна функція для безпечного видалення сповіщення з усіма залежностями"""
+    try:
+        # Видаляємо всіх отримувачів
+        NotificationRecipient.query.filter_by(notification_id=notification_id).delete()
+        # Видаляємо сповіщення
+        Notification.query.filter_by(id=notification_id).delete()
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка каскадного видалення сповіщення {notification_id}: {e}")
+        return False
+
+
+
+
+@app.route("/api/admin/mission_dependencies/<int:mission_id>", methods=["GET"])
+def get_mission_dependencies(mission_id):
+    """Перевіряє залежності місії перед видаленням"""
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    try:
+        # Рахуємо всі залежності
+        notifications = Notification.query.filter_by(mission_id=mission_id).all()
+        notification_ids = [n.id for n in notifications]
+        
+        recipient_count = 0
+        if notification_ids:
+            recipient_count = NotificationRecipient.query.filter(
+                NotificationRecipient.notification_id.in_(notification_ids)
+            ).count()
+        
+        questions = Questions.query.filter_by(mission_id=mission_id).all()
+        question_ids = [q.id for q in questions]
+        
+        answers_count = 0
+        if question_ids:
+            answers_count = UserAnswer.query.filter(
+                UserAnswer.question_id.in_(question_ids)
+            ).count()
+        
+        progress_count = UserMissionProgress.query.filter_by(mission_id=mission_id).count()
+        
+        return jsonify({
+            'success': True,
+            'dependencies': {
+                'notifications': len(notifications),
+                'notification_recipients': recipient_count,
+                'questions': len(questions),
+                'user_answers': answers_count,
+                'user_progress': progress_count
+            },
+            'has_dependencies': any([
+                len(notifications) > 0,
+                recipient_count > 0,
+                len(questions) > 0,
+                answers_count > 0,
+                progress_count > 0
+            ])
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
 @app.route("/api/admin/delete_mission/<int:mission_id>", methods=["DELETE"])
 def delete_mission(mission_id):
     user_id = session.get("user_id")
@@ -1229,27 +1305,36 @@ def delete_mission(mission_id):
         return {"success": False, "error": "Місію не знайдено"}, 404
 
     try:
-        # 1. Видаляємо сповіщення, пов'язані з місією (НОВЕ!)
+        # 1. Знаходимо всі сповіщення, пов'язані з місією
         notifications = Notification.query.filter_by(mission_id=mission_id).all()
-        for notification in notifications:
-            db.session.delete(notification)
+        notification_ids = [n.id for n in notifications]
         
-        # 2. Знаходимо всі ID питань, які належать цій місії
+        # 2. Якщо є сповіщення, видаляємо записи з notification_recipient
+        if notification_ids:
+            # Видаляємо всіх отримувачів для цих сповіщень
+            NotificationRecipient.query.filter(
+                NotificationRecipient.notification_id.in_(notification_ids)
+            ).delete(synchronize_session=False)
+            
+            # Тепер безпечно видаляємо самі сповіщення
+            Notification.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
+        
+        # 3. Знаходимо всі ID питань, які належать цій місії
         questions = Questions.query.filter_by(mission_id=mission_id).all()
         question_ids = [q.id for q in questions]
 
         if question_ids:
-            # 3. Видаляємо відповіді користувачів (user_answers)
+            # 4. Видаляємо відповіді користувачів
             UserAnswer.query.filter(UserAnswer.question_id.in_(question_ids)).delete(synchronize_session=False)
 
-        # 4. Видаляємо всі прогреси користувачів (user_mission_progress)
+        # 5. Видаляємо прогрес користувачів
         UserMissionProgress.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
 
-        # 5. Видаляємо саму місію
+        # 6. Видаляємо саму місію
         db.session.delete(mission)
         db.session.commit()
 
-        return {"success": True, "message": "Місію успішно видалено"}
+        return {"success": True, "message": f"Місію #{mission_id} успішно видалено разом з усіма залежностями"}
 
     except Exception as e:
         db.session.rollback()
@@ -1283,6 +1368,35 @@ def send_notification():
     ])
     db.session.commit()
     return redirect(url_for("admin"))
+
+
+
+@app.route("/api/admin/delete_notification/<int:notification_id>", methods=["DELETE"])
+def delete_notification(notification_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+    
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    try:
+        # 1. Спочатку видаляємо всіх отримувачів
+        NotificationRecipient.query.filter_by(notification_id=notification_id).delete(synchronize_session=False)
+        
+        # 2. Потім видаляємо саме сповіщення
+        notification = Notification.query.get(notification_id)
+        if notification:
+            db.session.delete(notification)
+            db.session.commit()
+            return {"success": True, "message": "Сповіщення видалено"}
+        else:
+            return {"success": False, "error": "Сповіщення не знайдено"}, 404
+            
+    except Exception as e:
+        db.session.rollback()
+        return {"success": False, "error": str(e)}, 500
 
 
 

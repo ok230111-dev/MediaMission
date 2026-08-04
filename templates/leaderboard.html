@@ -1,5 +1,24 @@
 {% extends "base.html" %} {% block title %}{{ t('leaderboard_title') }} |
 MediaMission{% endblock %} {% block content %}
+
+<head>
+  <meta
+    name="description"
+    content="See the best MediaMission players. Compare XP, achievements, streaks and compete with other users in media literacy challenges."
+  />
+  <!-- Open Graph -->
+  <meta property="og:title" content="MediaMission | Leaderboard" />
+
+  <meta
+    property="og:description"
+    content="Compete with other players and climb the MediaMission rankings."
+  />
+
+  <meta
+    property="og:image"
+    content="https://mediamission.onrender.com/static/img/og-leaderboard.png"
+  />
+</head>
 <section class="container py-5">
   <div class="text-center mb-5">
     <h1 class="fw-bold display-5">

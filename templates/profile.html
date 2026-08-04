@@ -123,6 +123,24 @@ MediaMission{% endblock %} {% block style %}
 </style>
 
 {% endblock %} {% block content %}
+<head>
+  <meta
+    name="description"
+    content="View your MediaMission profile, XP, completed missions, achievements, streaks and personal progress in media literacy."
+  />
+  <!-- Open Graph -->
+  <meta property="og:title" content="MediaMission | Profile" />
+
+  <meta
+    property="og:description"
+    content="Track your XP, achievements and progress."
+  />
+
+  <meta
+    property="og:image"
+    content="https://mediamission.onrender.com/static/img/og-profile.png"
+  />
+</head>
 <section
   class="container py-5"
   data-t-level="{{ t('profile_level') }}"

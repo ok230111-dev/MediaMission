@@ -40,10 +40,6 @@
       href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}"
     />
     <link
-      rel="manifest"
-      href="{{ url_for('static', filename='favicon/site.webmanifest') }}"
-    />
-    <link
       rel="shortcut icon"
       href="{{ url_for('static', filename='favicon/favicon.ico') }}"
       type="image/x-icon"
@@ -81,11 +77,109 @@
       href="{{ url_for('static', filename='css/style.css') }}"
     />
 
+    <!--manifest, щоб додати сайт на головний екран мобільного пристрою -->
+    <link
+      rel="manifest"
+      href="{{ url_for('static', filename='manifest.json') }}"
+    />
+
     <!-- Google Site Verification -->
     <meta
       name="google-site-verification"
       content="wv096CnnJnKYDg_K9wXFEosMRoQIo3DtQi4JfezKsB4"
     />
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="MediaMission" />
+
+    <meta
+      property="og:description"
+      content="Learn media literacy through interactive missions."
+    />
+
+    <meta
+      property="og:image"
+      content="https://mediamission.onrender.com/static/image/og-image.png"
+    />
+
+    <meta property="og:url" content="https://mediamission.onrender.com/" />
+
+    <link
+      rel="canonical"
+      href="https://mediamission.onrender.com{{ request.path }}"
+    />
+
+    <meta name="robots" content="index, follow" />
+
+    <meta name="author" content="Oksana Kucheruk" />
+
+    <meta
+      property="og:image"
+      content="https://mediamission.onrender.com/static/image/og-image.png"
+    />
+
+    <meta property="og:url" content="https://mediamission.onrender.com" />
+
+    <meta property="og:site_name" content="MediaMission" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <meta name="twitter:title" content="MediaMission" />
+
+    <meta
+      name="twitter:description"
+      content="Interaktive Missionen zur Medienkompetenz"
+    />
+
+    <meta
+      name="twitter:image"
+      content="https://mediamission.onrender.com/static/image/og-image.png"
+    />
+    <!-- Покращує підтримку соцмиереж -->
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="MediaMission — Interaktive Plattform für Medienkompetenz"
+    />
+
+    <meta name="theme-color" content="#0d6efd" />
+
+    <meta
+      name="keywords"
+      content="MediaMission, Zukunft Ukraine, DAAD, Oksana Kucheruk, Oleksandr Kucheruk, Medienkompetenz, Fake News, Medienbildung, Quiz, Lernen, Schule, Deutschland, Ukraine, interaktive Missionen, kritisches Denken, Medienanalyse, digitale Bildung, Online-Lernen, Medienkompetenz-Training, Medienkompetenz-Plattform, Medienkompetenz-Entwicklung, Medienkompetenz-Förderung, Medienkompetenz-Programme, Medienkompetenz-Workshops, Medienkompetenz-Kurse, Medienkompetenz-Schulungen"
+    />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <meta name="apple-mobile-web-app-title" content="MediaMission" />
+
+    <meta property="og:locale" content="de_DE" />
+
+    <!--Schema.org, щоб допомогти пошуковим системам краще розуміти контент сторінки -->
+    <script type="application/ld+json">
+            {
+              {
+       "@context":"https://schema.org",
+       "@type":"WebSite",
+       "name":"MediaMission",
+       "url":"https://mediamission.onrender.com",
+       "description":"Interactive platform for media literacy",
+       "publisher":{
+         "@type":"Organization",
+         "name":"MediaMission"
+       },
+       "potentialAction":{
+         "@type":"SearchAction",
+         "target":"https://mediamission.onrender.com/search?q={search_term_string}",
+         "query-input":"required name=search_term_string"
+       }
+      }
+            }
+    </script>
   </head>
 
   <body

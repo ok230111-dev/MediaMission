@@ -1,5 +1,6 @@
 {% extends "base.html" %} {% block title %}{{ t('mission') }} №{{ mission.id }}:
 {{ mission.title }} | MediaMission{% endblock %} {% block content %}
+
 <!-- Визначаємо колір бордера для картки залежно від складності -->
 {% set diff = mission.difficulty|int %} {% set border_color = 'border-success'
 if diff == 1 else ('border-info' if diff == 2 else ('border-warning' if diff ==

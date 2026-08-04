@@ -1,5 +1,11 @@
-{% extends "base.html" %} {% block title %}MediaMission — Головна{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}{{t('nav_home')}} | MediaMission{%
+endblock %} {% block content %}
+<head>
+  <meta
+    name="description"
+    content="MediaMission is an interactive platform where you learn media literacy, critical thinking and fact-checking through engaging missions, quizzes and real-life challenges."
+  />
+</head>
 <!-- HERO SECTION -->
 <section class="hero py-5">
   <div class="container text-center py-4">

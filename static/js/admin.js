@@ -357,14 +357,14 @@ async function saveMission() {
     const result = await response.json();
 
     if (result.success) {
-      alert("Місію успішно створено!");
-      window.location.reload();
+      showToast('✅ Успіх', 'Місію успішно створено!', 'success');
+      setTimeout(() => window.location.reload(), 1500);
     } else {
-      alert("Помилка при збереженні: " + (result.error || "Невідома помилка"));
+      showToast('❌ Помилка', result.error || 'Невідома помилка при збереженні', 'danger');
     }
   } catch (err) {
     console.error(err);
-    alert("Сталася мережева помилка при збереженні місії.");
+    showToast('❌ Помилка', 'Сталася мережева помилка при збереженні місії.', 'danger');
   } finally {
     saveBtn.disabled = false;
     saveBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Зберегти місію`;
@@ -377,6 +377,12 @@ function deleteUser(userId) {
     return;
   }
   
+  const buttons = document.querySelectorAll(`[onclick*="deleteUser(${userId}"]`);
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
+  });
+  
   fetch(`/api/admin/delete_user/${userId}`, {
     method: 'DELETE',
     headers: {
@@ -386,19 +392,133 @@ function deleteUser(userId) {
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      alert('Користувача видалено!');
-      location.reload();
+      showToast('✅ Успіх', 'Користувача успішно видалено!', 'success');
+      setTimeout(() => location.reload(), 1500);
     } else {
-      alert('Помилка: ' + (data.error || 'Невідома помилка'));
+      showToast('❌ Помилка', data.error || 'Не вдалося видалити користувача', 'danger');
     }
   })
   .catch(error => {
     console.error('Error:', error);
-    alert('Сталася помилка при видаленні користувача');
+    showToast('❌ Помилка', 'Сталася помилка при видаленні користувача', 'danger');
+  })
+  .finally(() => {
+    buttons.forEach(btn => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="bi bi-trash"></i>`;
+    });
   });
 }
 
-// 1. Завантаження та вивід списку місій
+// --- ВИДАЛЕННЯ МІСІЇ ---
+async function deleteMission(missionId, missionTitle, hasNotifications, notificationsCount) {
+  let confirmMessage = `Ви дійсно бажаєте видалити місію "${missionTitle || '#' + missionId}"?`;
+  
+  if (hasNotifications) {
+    confirmMessage = `⚠️ УВАГА!\n\nМісія "${missionTitle || '#' + missionId}" має ${notificationsCount} пов'язаних сповіщень.\n\nПри видаленні місії всі ці сповіщення будуть видалені.\n\nПродовжити?`;
+  } else {
+    confirmMessage = `Ви дійсно бажаєте видалити місію "${missionTitle || '#' + missionId}"? Цю дію неможливо скасувати!`;
+  }
+
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  // Показуємо індикатор завантаження
+  const buttons = document.querySelectorAll(`[onclick*="deleteMission(${missionId}"]`);
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
+  });
+
+  try {
+    const response = await fetch(`/api/admin/delete_mission/${missionId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      const message = result.message || `Місію #${missionId} успішно видалено!`;
+      showToast('✅ Успіх', message, 'success');
+      loadAdminMissions(); // Оновлюємо список
+    } else {
+      showToast('❌ Помилка', result.error || 'Не вдалося видалити місію', 'danger');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Помилка', 'Сталася помилка при відправці запиту', 'danger');
+  } finally {
+    // Відновлюємо кнопки
+    buttons.forEach(btn => {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="bi bi-trash"></i>`;
+    });
+  }
+}
+
+// --- ФУНКЦІЯ ДЛЯ ПОКАЗУ TOAST ПОВІДОМЛЕНЬ ---
+function showToast(title, message, type = 'info') {
+  // Перевіряємо чи існує контейнер
+  let toastContainer = document.getElementById('toastContainer');
+  
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    toastContainer.style.zIndex = '1050';
+    document.body.appendChild(toastContainer);
+  }
+  
+  const toastId = 'toast-' + Date.now();
+  const iconMap = {
+    'success': 'bi-check-circle-fill text-white',
+    'danger': 'bi-x-circle-fill text-white',
+    'warning': 'bi-exclamation-triangle-fill text-white',
+    'info': 'bi-info-circle-fill text-white'
+  };
+  
+  const iconClass = iconMap[type] || iconMap.info;
+  const bgClass = `bg-${type}`;
+  
+  const toastEl = document.createElement('div');
+  toastEl.id = toastId;
+  toastEl.className = `toast align-items-center text-white ${bgClass} border-0`;
+  toastEl.role = 'alert';
+  toastEl.ariaLive = 'assertive';
+  toastEl.ariaAtomic = 'true';
+  
+  toastEl.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center">
+        <i class="bi ${iconClass} me-2 fs-5"></i>
+        <div>
+          <strong>${title}</strong>
+          ${message ? `<br><small>${message}</small>` : ''}
+        </div>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  `;
+  
+  toastContainer.appendChild(toastEl);
+  
+  // Ініціалізуємо Bootstrap Toast
+  const bsToast = new bootstrap.Toast(toastEl, { 
+    delay: 5000,
+    autohide: true
+  });
+  
+  bsToast.show();
+  
+  // Видаляємо елемент після закриття
+  toastEl.addEventListener('hidden.bs.toast', () => {
+    toastEl.remove();
+  });
+}
+
+// --- ЗАВАНТАЖЕННЯ СПИСКУ МІСІЙ ---
 async function loadAdminMissions() {
   const tbody = document.getElementById("adminMissionsTableBody");
   if (!tbody) return;
@@ -408,12 +528,12 @@ async function loadAdminMissions() {
     const data = await response.json();
 
     if (!data.success) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Помилка: ${data.error}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-3">Помилка: ${data.error}</td></tr>`;
       return;
     }
 
     if (data.missions.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Місій поки немає. Створіть першу!</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Місій поки немає. Створіть першу!</td></tr>`;
       return;
     }
 
@@ -429,12 +549,17 @@ async function loadAdminMissions() {
           ${m.difficulty === '1' ? '🟢 Легка' : (m.difficulty === '2' ? '🟡 Середня' : '🔴 Складна')}
         </td>
         <td><span class="fw-bold text-warning-emphasis">${m.xp} XP</span></td>
+        <td>
+          ${m.has_notifications ? `<span class="badge bg-warning text-dark" title="Має ${m.notifications_count} сповіщень">
+            <i class="bi bi-bell"></i> ${m.notifications_count}
+          </span>` : '<span class="badge bg-secondary">Немає сповіщень</span>'}
+        </td>
         <td class="text-end pe-3">
           <div class="btn-group btn-group-sm">
             <a href="/mission/${m.id}" target="_blank" class="btn btn-outline-secondary" title="Переглянути">
               👁️
             </a>
-            <button class="btn btn-outline-danger" onclick="deleteMission(${m.id})" title="Видалити">
+            <button class="btn btn-outline-danger" onclick="deleteMission(${m.id}, '${escapeHtml(m.title)}', ${m.has_notifications || false}, ${m.notifications_count || 0})" title="Видалити">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -444,43 +569,25 @@ async function loadAdminMissions() {
 
   } catch (err) {
     console.error("Помилка завантаження місій:", err);
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Мережева помилка при завантаженні.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-3">Мережева помилка при завантаженні.</td></tr>`;
   }
 }
 
-// 2. Видалення місії
-async function deleteMission(missionId) {
-  if (!confirm(`Ви дійсно бажаєте видалити місію #${missionId}? Цю дію неможливо скасувати!`)) {
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/admin/delete_mission/${missionId}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" }
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      alert(`Місію #${missionId} успішно видалено!`);
-      loadAdminMissions(); // Оновлюємо список
-    } else {
-      alert("Помилка видалення: " + (result.error || "Невідома помилка"));
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Сталася помилка при відправці запиту.");
-  }
-}
-
-// Допоміжна функція для захисту від XSS
+// --- ДОПОМІЖНА ФУНКЦІЯ ДЛЯ ЗАХИСТУ ВІД XSS ---
 function escapeHtml(text) {
   if (!text) return '';
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// --- ДОДАТКОВА ФУНКЦІЯ ДЛЯ ОНОВЛЕННЯ СПИСКУ ---
+function refreshMissions() {
+  loadAdminMissions();
+  showToast('🔄 Оновлення', 'Список місій оновлено', 'info');
 }

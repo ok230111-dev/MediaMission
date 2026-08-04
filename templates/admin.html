@@ -56,6 +56,16 @@
         >
           <i class="bi bi-graph-up-arrow me-1"></i> Статистика
         </button>
+        <button
+          class="btn"
+          id="notify-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#notify-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-megaphone-fill me-1"></i> Розсилка
+        </button>
       </div>
     </div>
   </div>
@@ -617,9 +627,57 @@
         </div>
       </div>
     </div>
+    <!-- 5. Вкладка Розсилка -->
+    <div class="tab-pane fade" id="notify-pane" role="tabpanel">
+      <form method="POST" action="/admin/notifications">
+        <div class="card admin-card mb-4">
+          <div class="card-header">
+            <span class="step-badge">1</span>
+            <h3>Нове повідомлення</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Заголовок</label>
+              <input type="text" name="title" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Текст</label>
+              <textarea
+                name="body"
+                class="form-control"
+                rows="3"
+                required
+              ></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Кому надіслати</label>
+              <select class="form-select" name="target" id="notifyTarget">
+                <option value="all">Усім користувачам</option>
+                <option value="selected">Обраним користувачам</option>
+              </select>
+            </div>
+            <div id="userPickerBox" class="d-none">
+              <!-- тут можна перевикористати таблицю користувачів з вкладки "БД Користувачів",
+               додавши чекбокс у перший стовпець -->
+            </div>
+          </div>
+        </div>
+        <div class="save-bar text-center">
+          <button type="submit" class="btn btn-success btn-lg">
+            Надіслати
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-
+  <script>
+    document.getElementById("notifyTarget").addEventListener("change", (e) => {
+      document
+        .getElementById("userPickerBox")
+        .classList.toggle("d-none", e.target.value !== "selected");
+    });
+  </script>
   {% endblock %}
 </div>

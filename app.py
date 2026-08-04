@@ -1,4 +1,4 @@
-from flask import Flask, Response, render_template, request, redirect, url_for, session, g, jsonify
+from flask import Flask, Response, render_template, request, redirect, url_for, session, g, abort, jsonify
 from translations import translate
 from flask_mail import Mail, Message
 import requests
@@ -19,6 +19,7 @@ from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 import cloudinary
 import cloudinary.uploader
+from functools import wraps
 
 
 
@@ -227,7 +228,6 @@ class UserMissionProgress(db.Model):
     tries_number = db.Column(db.Integer, default=1)
     time_spent = db.Column(db.Integer)
     mission = db.relationship("Missions")
-
 class UserAnswer(db.Model):
     __tablename__ = "user_answers"
 
@@ -244,6 +244,25 @@ class UserAnswer(db.Model):
     )
     user_answer = db.Column(db.String(700), nullable=False)
     is_correct = db.Column(db.Boolean)
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+class NotificationRecipient(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    read_at = db.Column(db.DateTime, nullable=True)
+
+    notification = db.relationship("Notification")  # тепер n.notification.title працює
+
+
 
 UKRAINIAN_MONTHS = [
     "січня", "лютого", "березня", "квітня", "травня", "червня",
@@ -278,6 +297,26 @@ def set_language():
 @app.context_processor
 def inject_translate():
     return {"t": lambda key: translate(key, g.lang)}
+
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user_id = session.get("user_id")
+        if user_id is None:
+            return redirect(url_for("login"))
+
+        user = db.session.get(Users, user_id)
+        if user is None:
+            session.clear()
+            return redirect(url_for("login"))
+
+        if not getattr(user, "is_admin", False):
+            abort(403)
+
+        return f(*args, **kwargs)
+    return decorated
 
 
 
@@ -1174,6 +1213,80 @@ def delete_mission(mission_id):
         db.session.rollback()
         print(f"Помилка видалення місії: {e}")
         return {"success": False, "error": str(e)}, 500
+
+
+
+
+@app.route("/admin/notifications", methods=["POST"])
+@admin_required
+def send_notification():
+    admin_id = session.get("user_id")
+
+    title = request.form["title"]
+    body = request.form["body"]
+    mission_id = request.form.get("mission_id") or None
+    target = request.form.get("target")
+
+    notif = Notification(title=title, body=body, mission_id=mission_id, created_by=admin_id)
+    db.session.add(notif)
+    db.session.flush()
+
+    if target == "all":
+        user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
+    else:
+        user_ids = request.form.getlist("user_ids")
+
+    db.session.bulk_insert_mappings(NotificationRecipient, [
+        {"notification_id": notif.id, "user_id": uid} for uid in user_ids
+    ])
+    db.session.commit()
+    return redirect(url_for("admin"))
+
+
+
+
+@app.context_processor
+def inject_notifications():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {}
+
+    unread_count = NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).count()
+    latest_notifications = (
+        NotificationRecipient.query
+        .filter_by(user_id=user_id)
+        .join(Notification)
+        .order_by(Notification.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    return dict(unread_count=unread_count, latest_notifications=latest_notifications)
+
+
+
+@app.route('/notifications')
+def notifications():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect(url_for('login'))
+
+    items = (
+        NotificationRecipient.query
+        .filter_by(user_id=user_id)
+        .join(Notification)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+
+    # позначаємо все як прочитане при відкритті сторінки
+    unread_ids = [n.id for n in items if not n.is_read]
+    if unread_ids:
+        NotificationRecipient.query.filter(NotificationRecipient.id.in_(unread_ids)).update(
+            {"is_read": True, "read_at": datetime.utcnow()}, synchronize_session=False
+        )
+        db.session.commit()
+
+    return render_template("notifications.html", items=items)
 
 
 

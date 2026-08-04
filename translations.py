@@ -1,5 +1,6 @@
 TRANSLATIONS = {
     "uk": {
+        "notifications": "Сповіщення",
         "mission": "Місія",
         "login_mediamission_title": "Вхід | MediaMission",
         "nav_profile": "Профіль",

@@ -7,18 +7,16 @@ MediaMission{% endblock %} {% block style %}
     .dark-bg-dark {
       background-color: #2d2d3f !important;
     }
-
     .dark-bg-darker {
       background-color: #1e1e2e !important;
     }
 
-    /* Текст - виправлено на світлі кольори для темної теми */
+    /* Текст - світлі кольори для темної теми */
     .dark-text-light {
-      color: #000000 !important;
+      color: #e4e6eb !important; /* Виправлено: світлий текст на темному фоні */
     }
-
     .dark-text-secondary {
-      color: #000000 !important;
+      color: #a8a8b3 !important; /* Виправлено: світло-сірий для другорядного тексту */
     }
 
     /* Межі */
@@ -36,7 +34,6 @@ MediaMission{% endblock %} {% block style %}
     .dark-opacity-hover {
       opacity: 0.6 !important;
     }
-
     .dark-opacity-hover:hover {
       opacity: 0.8 !important;
     }
@@ -46,7 +43,6 @@ MediaMission{% endblock %} {% block style %}
       color: #a8a8b3;
       border-color: #3d3d4f;
     }
-
     .btn-outline-secondary.dark-theme-btn:hover {
       background-color: #3d3d4f;
       color: #e4e6eb;
@@ -58,12 +54,10 @@ MediaMission{% endblock %} {% block style %}
     background-color: #1e1e2e !important;
     color: #e4e6eb !important;
   }
-
   .dark-theme .modal-header,
   .dark-theme .modal-footer {
     border-color: #3d3d4f !important;
   }
-
   .dark-theme .btn-close {
     filter: invert(1);
   }
@@ -74,27 +68,21 @@ MediaMission{% endblock %} {% block style %}
     color: #e4e6eb !important;
     border-color: #3d3d4f !important;
   }
-
   .dark-theme .text-muted {
-    color: #000000 !important;
+    color: #a8a8b3 !important; /* Виправлено */
   }
-
   .dark-theme .border {
     border-color: #3d3d4f !important;
   }
-
   .dark-theme .bg-light {
     background-color: #2d2d3f !important;
   }
-
   .dark-theme .progress {
     background-color: #3d3d4f !important;
   }
-
   .dark-theme hr {
     border-color: #3d3d4f !important;
   }
-
   .dark-theme .form-check-label {
     color: #e4e6eb !important;
   }
@@ -103,64 +91,82 @@ MediaMission{% endblock %} {% block style %}
   .dark-theme .modal-body strong {
     color: #e4e6eb !important;
   }
-
   .dark-theme .modal-body .text-muted {
     color: #a8a8b3 !important;
   }
-
   .dark-theme .modal-body code {
     color: #e4e6eb !important;
     background-color: #2d2d3f !important;
   }
-
   .dark-theme .modal-body .text-success {
     color: #4caf50 !important;
   }
-
   .dark-theme .modal-body .text-warning {
     color: #ffa726 !important;
   }
-</style>
 
+  /* Додаткові стилі для кращого UX */
+  .other-stats {
+    display: none;
+    transition: all 0.3s ease;
+  }
+  .other-stats.show {
+    display: flex;
+  }
+  #toggleStatsBtn {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  #toggleStatsBtn:hover {
+    transform: scale(1.02);
+  }
+  .badge-verification-pending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  .badge-verification-verified {
+    background-color: #d4edda;
+    color: #155724;
+  }
+</style>
 {% endblock %} {% block content %}
 <head>
   <meta
     name="description"
     content="View your MediaMission profile, XP, completed missions, achievements, streaks and personal progress in media literacy."
   />
-  <!-- Open Graph -->
   <meta property="og:title" content="MediaMission | Profile" />
-
   <meta
     property="og:description"
     content="Track your XP, achievements and progress."
   />
-
   <meta
     property="og:image"
     content="https://mediamission.onrender.com/static/img/og-profile.png"
   />
 </head>
+
 <section
   class="container py-5"
   data-t-level="{{ t('profile_level') }}"
   data-t-xp-left="{{ t('xp_left_to_next_level') }}"
   data-t-xp-to-next="{{ t('xp_to_next_level') }}"
   data-t-click-more="{{ t('profile_click_more_info') }}"
-  data-t-click-less="{{t('profile_click_less_info')}}"
+  data-t-click-less="{{ t('profile_click_less_info') }}"
 >
   <!-- Блок профілю користувача -->
   <div
     class="card shadow-sm border-0 mb-4 p-4"
     style="border-radius: var(--radius-large, 16px)"
   >
-    <!-- Верхній ряд: кнопка "Інформація про акаунт" завжди справа зверху -->
+    <!-- Верхній ряд: кнопка "Інформація про акаунт" -->
     <div class="d-flex justify-content-end mb-3">
       <button
         type="button"
         class="btn btn-outline-secondary btn-sm"
         data-bs-toggle="modal"
         data-bs-target="#accountInfoModal"
+        aria-label="{{ t('profile_information_account') }}"
       >
         <i class="bi bi-person-lines-fill info-account"></i>
         <span class="d-none d-sm-inline info-account"
@@ -182,12 +188,14 @@ MediaMission{% endblock %} {% block style %}
               class="rounded-circle"
               style="width: 96px; height: 96px; object-fit: cover"
               alt="{{ user.display_name }}"
+              loading="lazy"
             />
             {% else %}
             <div
               class="rounded-circle d-flex align-items-center justify-content-center fw-bold fs-1 text-white"
               style="width: 96px; height: 96px; background-color: {{ avatar_color(user.display_name) }};"
               id="avatarPlaceholder"
+              aria-label="{{ user.display_name }} avatar placeholder"
             >
               {{ user.display_name[0]|upper if user.display_name else "U" }}
             </div>
@@ -197,6 +205,7 @@ MediaMission{% endblock %} {% block style %}
               class="position-absolute bottom-0 end-0 bg-warning border border-2 border-white rounded-circle d-flex align-items-center justify-content-center"
               style="width: 28px; height: 28px"
               title="{{ t('profile_level') }}"
+              aria-label="{{ t('profile_level') }}"
             >
               <i
                 class="bi bi-star-fill text-white"
@@ -232,6 +241,7 @@ MediaMission{% endblock %} {% block style %}
                 accept="image/png,image/jpeg,image/webp"
                 class="d-none"
                 onchange="this.form.submit()"
+                aria-label="{{ t('change_avatar') }}"
               />
             </form>
           </div>
@@ -248,11 +258,12 @@ MediaMission{% endblock %} {% block style %}
             <button
               id="verifyEmailBtn"
               class="btn btn-sm btn-outline-warning rounded-pill px-3"
+              aria-label="{{ t('verify_email') }}"
             >
               <i class="bi bi-envelope-check"></i> {{ t('verify_email') }}
             </button>
           </div>
-          <div id="verifyStatus" class="mt-2 small"></div>
+          <div id="verifyStatus" class="mt-2 small" role="status"></div>
           {% elif user.provider == 'google.com' or user.email_verified %}
           <span class="badge rounded-pill badge-verification-verified">
             <i class="bi bi-patch-check-fill me-1"></i> {{ t('email_verified')
@@ -284,18 +295,19 @@ MediaMission{% endblock %} {% block style %}
             aria-valuenow="{{ (user.total_xp % 500) / 500 * 100 }}"
             aria-valuemin="0"
             aria-valuemax="100"
+            aria-label="XP progress"
           ></div>
         </div>
         <small class="text-muted mt-2 d-block">
           {{ t('xp_left_to_next_level') }}
-          <strong id="xpNeeded">{{ 500 - (user.total_xp % 500) }} XP</strong> {{
-          t('xp_to_next_level') }}
+          <strong id="xpNeeded">{{ 500 - (user.total_xp % 500) }} XP</strong>
+          {{ t('xp_to_next_level') }}
         </small>
       </div>
     </div>
   </div>
 
-  <!-- Статистика користувача (Дані з Flask) -->
+  <!-- Статистика користувача -->
   <div class="row g-4 mb-5">
     <!-- XP -->
     <div class="col-6 col-md-3">
@@ -352,20 +364,28 @@ MediaMission{% endblock %} {% block style %}
     </div>
   </div>
 
-  <div class="col-6 col-md-3" style="margin-left: auto; margin-right: auto">
-    <div
-      class="card border-0 shadow-sm text-center p-3 h-100"
-      style="border-radius: 16px"
-      id="toggleStatsBtn"
-      onclick="window.toggleStatsSmooth()"
-    >
-      <h3 class="fw-bold mb-0" id="toggleIcon">...</h3>
-      <span class="text-muted small">{{t('profile_click_more_info')}}</span>
+  <!-- Кнопка перемикання додаткової статистики -->
+  <div class="row g-4 mb-5">
+    <div class="col-6 col-md-3" style="margin-left: auto; margin-right: auto">
+      <div
+        class="card border-0 shadow-sm text-center p-3 h-100"
+        style="border-radius: 16px"
+        id="toggleStatsBtn"
+        role="button"
+        tabindex="0"
+        aria-expanded="false"
+        aria-label="{{ t('profile_click_more_info') }}"
+        onclick="window.toggleStatsSmooth()"
+        onkeydown="if (event.key === 'Enter') window.toggleStatsSmooth();"
+      >
+        <h3 class="fw-bold mb-0" id="toggleIcon">+</h3>
+        <span class="text-muted small">{{ t('profile_click_more_info') }}</span>
+      </div>
     </div>
   </div>
 
   <!-- Додаткова статистика -->
-  <div class="row g-4 mb-5 other-stats">
+  <div class="row g-4 mb-5 other-stats" id="extraStats">
     <!-- Витрачено часу -->
     <div class="col-6 col-md-3">
       <div
@@ -374,9 +394,9 @@ MediaMission{% endblock %} {% block style %}
       >
         <i class="bi bi-stopwatch display-5 text-primary mb-2"></i>
         <h3 class="fw-bold mb-0">
-          {{ user_progress_time_spent }} {{t('sec')}}
+          {{ user_progress_time_spent|default(0) }} {{ t('sec') }}
         </h3>
-        <span class="text-muted small">{{t('time_spent')}}</span>
+        <span class="text-muted small">{{ t('time_spent') }}</span>
       </div>
     </div>
 
@@ -387,23 +407,20 @@ MediaMission{% endblock %} {% block style %}
         style="border-radius: 16px"
       >
         <i class="bi bi-bar-chart display-5 text-success mb-2"></i>
-        <h3 class="fw-bold mb-0">{{ total_attempts }}</h3>
-        <span class="text-muted small">{{t('attempt_number')}}</span>
+        <h3 class="fw-bold mb-0">{{ total_attempts|default(0) }}</h3>
+        <span class="text-muted small">{{ t('attempt_number') }}</span>
       </div>
     </div>
 
-    <!-- Завершено місій (дублікат для краси) -->
+    <!-- Успішних спроб -->
     <div class="col-6 col-md-3">
       <div
         class="card border-0 shadow-sm text-center p-3 h-100"
         style="border-radius: 16px"
       >
         <i class="bi bi-trophy display-5 text-warning mb-2"></i>
-        <h3 class="fw-bold mb-0">
-          {{ completed_missions if completed_missions is defined else
-          user.missions_completed }}
-        </h3>
-        <span class="text-muted small">{{t('good_attempt')}}</span>
+        <h3 class="fw-bold mb-0">{{ successful_attempts|default(0) }}</h3>
+        <span class="text-muted small">{{ t('good_attempt') }}</span>
       </div>
     </div>
 
@@ -414,10 +431,8 @@ MediaMission{% endblock %} {% block style %}
         style="border-radius: 16px"
       >
         <i class="bi bi-graph-up display-5 text-info mb-2"></i>
-        <h3 class="fw-bold mb-0">
-          {{ success_rate if success_rate is defined else 0 }}%
-        </h3>
-        <span class="text-muted small">{{t('goodness_attempt')}}</span>
+        <h3 class="fw-bold mb-0">{{ success_rate|default(0) }}%</h3>
+        <span class="text-muted small">{{ t('goodness_attempt') }}</span>
       </div>
     </div>
   </div>
@@ -443,15 +458,10 @@ MediaMission{% endblock %} {% block style %}
             <i class="bi bi-flag-fill fs-4"></i>
           </div>
           <div>
-            <h6
-              class="fw-bold mb-1 dark-text-light"
-              style="color: #000000 !important"
-            >
+            <h6 class="fw-bold mb-1 dark-text-light">
               {{ t('achievement_first_steps') }}
             </h6>
-            <small
-              class="text-muted dark-text-secondary"
-              style="color: #000000 !important"
+            <small class="text-muted dark-text-secondary"
               >{{ t('achievement_first_steps_text') }}</small
             >
           </div>
@@ -469,17 +479,11 @@ MediaMission{% endblock %} {% block style %}
             <i class="bi bi-search fs-4"></i>
           </div>
           <div>
-            <h6
-              class="fw-bold mb-1 dark-text-light"
-              style="color: #000000 !important"
-            >
+            <h6 class="fw-bold mb-1 dark-text-light">
               {{ t('achievement_fake_detective') }}
             </h6>
-            <small
-              class="text-muted dark-text-secondary"
-              style="color: #000000 !important"
-            >
-              {{ t('achievement_fake_detective_text') }}</small
+            <small class="text-muted dark-text-secondary"
+              >{{ t('achievement_fake_detective_text') }}</small
             >
           </div>
         </div>
@@ -496,15 +500,10 @@ MediaMission{% endblock %} {% block style %}
             <i class="bi bi-shield-check fs-4"></i>
           </div>
           <div>
-            <h6
-              class="fw-bold mb-1 dark-text-light"
-              style="color: #000000 !important"
-            >
+            <h6 class="fw-bold mb-1 dark-text-light">
               {{ t('achievement_unbreakable_logic') }}
             </h6>
-            <small
-              class="text-muted dark-text-secondary"
-              style="color: #000000 !important"
+            <small class="text-muted dark-text-secondary"
               >{{ t('achievement_unbreakable_logic_text') }}</small
             >
           </div>
@@ -535,7 +534,7 @@ MediaMission{% endblock %} {% block style %}
       <p class="text-muted small mb-0 dark-text-secondary">
         <i class="bi bi-calendar3"></i> {{
         item.completed_at.strftime("%d.%m.%Y") }} {% if item.time_spent %} • ⏱️
-        {{ item.time_spent }}{{t('sec')}} {% endif %} • 💯 {{
+        {{ item.time_spent }}{{ t('sec') }} {% endif %} • 💯 {{
         item.score_correct_answers }}/{{ item.total_questions }}
       </p>
       {% endif %}
@@ -557,8 +556,8 @@ MediaMission{% endblock %} {% block style %}
       <div class="modal-content" style="border-radius: 16px; border: none">
         <div class="modal-header border-0">
           <h5 class="modal-title fw-bold">
-            <i class="bi bi-person-lines-fill text-primary me-2"></i>Інформація
-            про акаунт
+            <i class="bi bi-person-lines-fill text-primary me-2"></i>{{
+            t('profile_information_account') }}
           </h5>
           <button
             type="button"
@@ -569,7 +568,7 @@ MediaMission{% endblock %} {% block style %}
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <small class="text-muted d-block">Nickname</small>
+            <small class="text-muted d-block">{{ t('username') }}</small>
             <strong>{{ user.display_name }}</strong>
           </div>
 
@@ -579,41 +578,45 @@ MediaMission{% endblock %} {% block style %}
           </div>
 
           <div class="mb-3">
-            <small class="text-muted d-block">Спосіб входу</small>
+            <small class="text-muted d-block">{{ t('login_method') }}</small>
             <strong>
               {% if user.provider == 'google.com' %}
               <i class="bi bi-google"></i> Google {% else %}
-              <i class="bi bi-envelope"></i> Email та пароль {% endif %}
+              <i class="bi bi-envelope"></i> {{ t('email_password') }} {% endif
+              %}
             </strong>
           </div>
 
           <div class="mb-3">
-            <small class="text-muted d-block">Статус email</small>
+            <small class="text-muted d-block">{{ t('email_status') }}</small>
             <strong>
               {% if user.email_verified %}
-              <span class="text-success">Підтверджено</span>
+              <span class="text-success">{{ t('verified') }}</span>
               {% else %}
-              <span class="text-warning">Не підтверджено</span>
+              <span class="text-warning">{{ t('unverified') }}</span>
               {% endif %}
             </strong>
           </div>
 
           <div class="mb-3">
-            <small class="text-muted d-block">Дата реєстрації</small>
+            <small class="text-muted d-block"
+              >{{ t('registration_date') }}</small
+            >
             <strong>{{ user.created_at.strftime("%H:%M, %d.%m.%Y") }}</strong>
           </div>
 
           {% if user.last_login %}
           <div class="mb-3">
-            <small class="text-muted d-block">Останній вхід</small>
+            <small class="text-muted d-block">{{ t('last_login') }}</small>
             <strong>{{ user.last_login.strftime("%H:%M, %d.%m.%Y") }}</strong>
           </div>
           {% endif %}
 
           <div class="mb-0">
-            <small class="text-muted d-block">ID акаунта</small>
+            <small class="text-muted d-block">{{ t('account_id') }}</small>
             <code class="small">{{ user.firebase_uid }}</code>
           </div>
+
           <div class="form-check form-switch mt-4">
             <input
               class="form-check-input"
@@ -625,33 +628,25 @@ MediaMission{% endblock %} {% block style %}
               %}checked{%
               endif
               %}
+              aria-label="{{ t('show_in_community') }}"
             />
-
             <label class="form-check-label" for="privacySwitch">
-              Показувати мене в рейтингах та спільноті
+              {{ t('show_me_in_ratings') }}
             </label>
           </div>
 
-          <p class="text-muted mt-2">
-            Якщо вимкнути, ваш профіль не буде показуватися в таблиці лідерів та
-            інших відкритих списках.
-          </p>
+          <p class="text-muted mt-2">{{ t('privacy_description') }}</p>
         </div>
         <div class="modal-footer border-0">
-          <a
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-            href="/notifications"
+          <a href="/notifications" class="btn btn-secondary"
+            >{{ t('notifications') }}</a
           >
-            Повідомлення
-          </a>
           <button
             type="button"
             class="btn btn-secondary"
             data-bs-dismiss="modal"
           >
-            Закрити
+            {{ t('close') }}
           </button>
         </div>
       </div>
@@ -667,19 +662,74 @@ MediaMission{% endblock %} {% block style %}
   type="module"
   src="{{ url_for('static', filename='js/authorized.js') }}"
 ></script>
+
 <script>
+  // Privacy switch handler with error handling
   const privacySwitch = document.getElementById("privacySwitch");
 
-  privacySwitch.addEventListener("change", async () => {
-    await fetch("/api/privacy", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        allowed_to_show: privacySwitch.checked,
-      }),
+  if (privacySwitch) {
+    privacySwitch.addEventListener("change", async () => {
+      try {
+        const response = await fetch("/api/privacy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            allowed_to_show: privacySwitch.checked,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Show success feedback
+        const status = privacySwitch.checked ? "enabled" : "disabled";
+        console.log(`Privacy setting ${status} successfully`);
+      } catch (error) {
+        console.error("Error updating privacy settings:", error);
+        // Revert switch if there was an error
+        privacySwitch.checked = !privacySwitch.checked;
+        // Could show a toast notification here
+      }
     });
+  }
+
+  // Smooth toggle for extra stats
+  window.toggleStatsSmooth = function () {
+    const stats = document.getElementById("extraStats");
+    const icon = document.getElementById("toggleIcon");
+    const label = document.querySelector("#toggleStatsBtn .text-muted");
+    const btn = document.getElementById("toggleStatsBtn");
+
+    if (!stats || !icon || !label) return;
+
+    const isOpen = stats.classList.contains("show");
+
+    if (isOpen) {
+      stats.classList.remove("show");
+      stats.style.display = "none";
+      icon.textContent = "+";
+      label.textContent = "{{ t('profile_click_more_info') }}";
+      btn.setAttribute("aria-expanded", "false");
+    } else {
+      stats.style.display = "flex";
+      // Trigger reflow for animation
+      void stats.offsetWidth;
+      stats.classList.add("show");
+      icon.textContent = "−";
+      label.textContent = "{{ t('profile_click_less_info') }}";
+      btn.setAttribute("aria-expanded", "true");
+    }
+  };
+
+  // Initialize extra stats as hidden
+  document.addEventListener("DOMContentLoaded", function () {
+    const stats = document.getElementById("extraStats");
+    if (stats) {
+      stats.style.display = "none";
+    }
   });
 </script>
 {% endblock %}

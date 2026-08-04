@@ -250,6 +250,7 @@ class Notification(db.Model):
     title = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, nullable=False)
     mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"), nullable=True)
+    mission = db.relationship("Missions")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
 
@@ -312,7 +313,7 @@ def admin_required(f):
             session.clear()
             return redirect(url_for("login"))
 
-        if not getattr(user, "is_admin", False):
+        if not getattr(user, "admin", False):
             abort(403)
 
         return f(*args, **kwargs)
@@ -708,6 +709,30 @@ def admin():
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+
+
+
+def create_notification_for_mission(mission, admin_id):
+    notif = Notification(
+        title="notification_new_mission_title",       # ключ, не готовий текст
+        body="notification_new_mission_body",          # ключ
+        mission_id=mission.id,
+        created_by=admin_id
+    )
+    db.session.add(notif)
+    db.session.flush()  # щоб отримати notif.id
+
+    user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
+    if user_ids:
+        db.session.bulk_insert_mappings(NotificationRecipient, [
+            {"notification_id": notif.id, "user_id": uid} for uid in user_ids
+        ])
+
+
+
+
+
 @app.route("/api/admin/add_mission", methods=["POST"])
 def add_mission():
     user_id = session.get("user_id")
@@ -801,6 +826,8 @@ def add_mission():
                 option_order=i,
                 option_text=option
             ))
+
+    create_notification_for_mission(mission, user_id)
 
     db.session.commit()
     return {"success": True}

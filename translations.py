@@ -151,6 +151,11 @@ TRANSLATIONS = {
         "profile": "Профіль",
         "questions_block": "Блок Питань",
         "result_your_xp": "Твій загальний XP",
+        "notifications": "Сповіщення",
+        "no_notifications": "У вас поки немає повідомлень",
+        "go_to_mission": "Перейти до місії",
+        "notification_new_mission_title": "Нова місія!",
+    "notification_new_mission_body": "З'явилася нова місія: «{title}». Спробуй свої сили!",
     },
     "de": {
         "mission": "Mission",
@@ -295,7 +300,12 @@ TRANSLATIONS = {
         "to_missions": "Zu den Missionen",
         "try_again": "Erneut versuchen",
         "profile": "Profil",
-        "press to hide": "Zum Ausblenden klicken"
+        "press to hide": "Zum Ausblenden klicken",
+        "notifications": "Benachrichtigungen",
+        "no_notifications": "Du hast noch keine Benachrichtigungen",
+        "go_to_mission": "Zur Mission",
+        "notification_new_mission_title": "Neue Mission!",
+    "notification_new_mission_body": "Eine neue Mission ist verfügbar: „{title}“. Versuch dein Glück!",
     },
     "en": {
         "mission": "Mission",
@@ -419,7 +429,7 @@ TRANSLATIONS = {
         "attempt_number": "Total number of attempts",
         "good_attempt": "Successful attempts",
         "goodness_attempt": "Success rate",
-        "press to hide": "Натисніть щоб сховати",
+        "press to hide": "Click to hide",
         "ready_mission": "Finish mission",
         "your_result": "Your result",
         "perfect_result": "Perfect completion!",
@@ -440,7 +450,12 @@ TRANSLATIONS = {
         "to_missions": "To missions",
         "try_again": "Try again",
         "profile": "Profile",
-        "press to hide": "Click to hide"
+        "press to hide": "Click to hide",
+        "notifications": "Notifications",
+        "no_notifications": "You don't have any notifications yet",
+        "go_to_mission": "Go to mission",
+        "notification_new_mission_title": "New mission!",
+    "notification_new_mission_body": "A new mission is available: “{title}”. Give it a try!",
     },
 }
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, g, jsonify
+from flask import Flask, Response, render_template, request, redirect, url_for, session, g, jsonify
 from translations import translate
 from flask_mail import Mail, Message
 import requests
@@ -278,6 +278,75 @@ def set_language():
 @app.context_processor
 def inject_translate():
     return {"t": lambda key: translate(key, g.lang)}
+
+
+
+
+@app.route("/robots.txt")
+def robots():
+    return Response(
+        f"""User-agent: *
+Allow: /
+
+Sitemap: {request.url_root}sitemap.xml
+""",
+        mimetype="text/plain"
+    )
+
+
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+
+    pages = []
+
+    # Статичні сторінки
+    pages.append({
+        "loc": url_for("index", _external=True),
+        "priority": "1.0",
+        "changefreq": "weekly"
+    })
+
+    pages.append({
+        "loc": url_for("missions_overview", _external=True),
+        "priority": "0.9",
+        "changefreq": "daily"
+    })
+
+    pages.append({
+        "loc": url_for("leaderboard", _external=True),
+        "priority": "0.8",
+        "changefreq": "daily"
+    })
+
+    pages.append({
+        "loc": url_for("login", _external=True),
+        "priority": "0.5",
+        "changefreq": "monthly"
+    })
+
+    pages.append({
+        "loc": url_for("register", _external=True),
+        "priority": "0.5",
+        "changefreq": "monthly"
+    })
+
+    # Усі місії
+    for mission in Missions.query.all():
+        pages.append({
+            "loc": url_for("mission_detail", id=mission.id, _external=True),
+            "priority": "0.9",
+            "changefreq": "monthly"
+        })
+
+    xml = render_template(
+        "sitemap.xml",
+        pages=pages,
+        lastmod=datetime.utcnow().date().isoformat()
+    )
+
+    return Response(xml, mimetype="application/xml")
 
 
 

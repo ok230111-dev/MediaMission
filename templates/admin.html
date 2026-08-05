@@ -628,6 +628,7 @@
         </div>
       </div>
     </div>
+
     <!-- 5. Вкладка Розсилка -->
     <div class="tab-pane fade" id="notify-pane" role="tabpanel">
       <form method="POST" action="/admin/notifications">
@@ -637,19 +638,128 @@
             <h3>Нове повідомлення</h3>
           </div>
           <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label fw-bold">Заголовок</label>
-              <input type="text" name="title" class="form-control" required />
+            <!-- Вкладки вибору мови введення -->
+            <label class="form-label fw-bold"
+              >Текст сповіщення різними мовами</label
+            >
+            <ul class="nav nav-pills mb-3" id="langTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="uk-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#lang-uk"
+                  type="button"
+                  role="tab"
+                >
+                  🇺🇦 Українська (Основна)
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="de-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#lang-de"
+                  type="button"
+                  role="tab"
+                >
+                  🇩🇪 Deutsch
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="en-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#lang-en"
+                  type="button"
+                  role="tab"
+                >
+                  🇬🇧 English
+                </button>
+              </li>
+            </ul>
+
+            <!-- Контент для кожної мови -->
+            <div
+              class="tab-content border p-3 rounded mb-4"
+              id="langTabsContent"
+            >
+              <!-- Українська -->
+              <div
+                class="tab-pane fade show active"
+                id="lang-uk"
+                role="tabpanel"
+              >
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Заголовок (UK)</label>
+                  <input
+                    type="text"
+                    name="title_uk"
+                    class="form-control"
+                    placeholder="Наприклад: Оновлення системи!"
+                    required
+                  />
+                </div>
+                <div class="mb-0">
+                  <label class="form-label fw-bold">Текст (UK)</label>
+                  <textarea
+                    name="body_uk"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Введіть текст українською..."
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Німецька -->
+              <div class="tab-pane fade" id="lang-de" role="tabpanel">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Titel (DE)</label>
+                  <input
+                    type="text"
+                    name="title_de"
+                    class="form-control"
+                    placeholder="z.B. System-Update!"
+                  />
+                </div>
+                <div class="mb-0">
+                  <label class="form-label fw-bold">Text (DE)</label>
+                  <textarea
+                    name="body_de"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Geben Sie den Text auf Deutsch ein..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Англійська -->
+              <div class="tab-pane fade" id="lang-en" role="tabpanel">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Title (EN)</label>
+                  <input
+                    type="text"
+                    name="title_en"
+                    class="form-control"
+                    placeholder="e.g. System Update!"
+                  />
+                </div>
+                <div class="mb-0">
+                  <label class="form-label fw-bold">Text (EN)</label>
+                  <textarea
+                    name="body_en"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Enter text in English..."
+                  ></textarea>
+                </div>
+              </div>
             </div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">Текст</label>
-              <textarea
-                name="body"
-                class="form-control"
-                rows="3"
-                required
-              ></textarea>
-            </div>
+
+            <!-- Вибір отримувачів -->
             <div class="mb-3">
               <label class="form-label fw-bold">Кому надіслати</label>
               <select class="form-select" name="target" id="notifyTarget">
@@ -657,12 +767,13 @@
                 <option value="selected">Обраним користувачам</option>
               </select>
             </div>
+
             <div id="userPickerBox" class="d-none">
-              <!-- тут можна перевикористати таблицю користувачів з вкладки "БД Користувачів",
-               додавши чекбокс у перший стовпець -->
+              <!-- таблиця з вибором користувачів -->
             </div>
           </div>
         </div>
+
         <div class="save-bar text-center">
           <button type="submit" class="btn btn-success btn-lg">
             Надіслати

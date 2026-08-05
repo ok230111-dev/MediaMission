@@ -312,15 +312,15 @@
           </div>
 
           <!-- Дзвоник сповіщень -->
-          <div class="dropdown position-relative d-inline-block">
+          <div class="dropdown position-relative notification-bell-wrapper">
             <a
-              class="nav-link position-relative p-2"
+              class="nav-link position-relative"
               href="#"
               id="notificationBell"
               role="button"
               data-bs-toggle="dropdown"
-              data-bs-display="static"
               aria-expanded="false"
+              style="padding: 0 !important"
             >
               <i class="bi bi-bell-fill fs-5"></i>
               {% if unread_count and unread_count > 0 %}
@@ -340,6 +340,7 @@
             <div
               class="dropdown-menu dropdown-menu-end notification-dropdown p-0 shadow border-0"
               aria-labelledby="notificationBell"
+              style="min-width: 320px"
             >
               <div
                 class="notification-header px-3 py-2 d-flex justify-content-between align-items-center"
@@ -353,7 +354,10 @@
               </div>
               <hr class="m-0" />
 
-              <div class="notification-list">
+              <div
+                class="notification-list"
+                style="max-height: 360px; overflow-y: auto"
+              >
                 {% if latest_notifications %} {% for record in
                 latest_notifications %}
                 <a
@@ -365,11 +369,13 @@
                     <span class="unread-dot mt-1"></span>
                     {% endif %}
                     <div class="flex-grow-1 min-width-0">
-                      <div class="fw-semibold small line-clamp-2">
-                        {{ t(record.notification.title) }}
+                      <div class="fw-semibold line-clamp-2">
+                        {{ record.notification.title_json.get(g.lang) or
+                        record.notification.title_json.get('uk') or '' }}
                       </div>
                       <div class="text-muted small line-clamp-2">
-                        {{ t(record.notification.body) }}
+                        {{ record.notification.body_json.get(g.lang) or
+                        record.notification.body_json.get('uk') or '' }}
                       </div>
                       <div
                         class="text-muted extra-small mt-1"

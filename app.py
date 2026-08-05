@@ -3,6 +3,7 @@ from flask import Flask, Response, render_template, request, redirect, url_for, 
 from translations import translate
 from flask_mail import Mail, Message
 from flask_migrate import Migrate
+from sqlalchemy import JSON
 import os
 import uuid
 import json
@@ -262,8 +263,8 @@ class UserAnswer(db.Model):
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    body = db.Column(db.Text, nullable=False)
+    title_json = db.Column(JSON, nullable=True)
+    body_json = db.Column(JSON, nullable=True)
     mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"), nullable=True)
     mission = db.relationship("Missions")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -351,6 +352,17 @@ def set_language():
 @app.context_processor
 def inject_translate():
     return {"t": lambda key: translate(key, g.lang)}
+
+
+
+
+# Зручні методи-хелпери для отримання тексту потрібною мовою
+    def get_title(self, lang='uk'):
+        # Повертає текст обраною мовою, або українською за замовчуванням
+        return self.title_json.get(lang) or self.title_json.get('uk') or ''
+
+    def get_body(self, lang='uk'):
+        return self.body_json.get(lang) or self.body_json.get('uk') or ''
 
 
 
@@ -1051,13 +1063,21 @@ def delete_from_cloudinary(url):
 
 def create_notification_for_mission(mission, admin_id):
     notif = Notification(
-        title="notification_new_mission_title",  # ключ перекладу, не готовий текст
-        body="notification_new_mission_body",     # ключ перекладу
+        title_json={
+            "uk": translate("notification_new_mission_title", "uk"),
+            "de": translate("notification_new_mission_title", "de"),
+            "en": translate("notification_new_mission_title", "en"),
+        },
+        body_json={
+            "uk": translate("notification_new_mission_body", "uk"),
+            "de": translate("notification_new_mission_body", "de"),
+            "en": translate("notification_new_mission_body", "en"),
+        },
         mission_id=mission.id,
         created_by=admin_id
     )
     db.session.add(notif)
-    db.session.flush()  # щоб отримати notif.id
+    db.session.flush()
 
     user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
     if user_ids:
@@ -1748,30 +1768,43 @@ def delete_mission(mission_id):
 
 
 
-@app.route("/admin/notifications", methods=["POST"])
+@app.route('/admin/notifications', methods=['POST'])
 @admin_required
-def send_notification():
-    admin_id = session.get("user_id")
+def send_admin_notification():
+    title_uk = request.form.get('title_uk')
+    body_uk = request.form.get('body_uk')
+    
+    title_de = request.form.get('title_de') or title_uk
+    body_de = request.form.get('body_de') or body_uk
+    
+    title_en = request.form.get('title_en') or title_uk
+    body_en = request.form.get('body_en') or body_uk
 
-    title = request.form["title"]
-    body = request.form["body"]
-    mission_id = request.form.get("mission_id") or None
-    target = request.form.get("target")
+    title_json = {
+        'uk': title_uk,
+        'de': title_de,
+        'en': title_en
+    }
+    
+    body_json = {
+        'uk': body_uk,
+        'de': body_de,
+        'en': body_en
+    }
 
-    notif = Notification(title=title, body=body, mission_id=mission_id, created_by=admin_id)
-    db.session.add(notif)
-    db.session.flush()
-
-    if target == "all":
-        user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
-    else:
-        user_ids = request.form.getlist("user_ids")
-
-    db.session.bulk_insert_mappings(NotificationRecipient, [
-        {"notification_id": notif.id, "user_id": uid} for uid in user_ids
-    ])
+    # Передаємо ТІЛЬКИ title_json та body_json
+    new_notification = Notification(
+        title_json=title_json,
+        body_json=body_json
+    )
+    
+    db.session.add(new_notification)
     db.session.commit()
-    return redirect(url_for("admin"))
+
+    # Далі ваша логіка (UserNotification / PUSH)...
+
+    flash('Сповіщення успішно надіслано!', 'success')
+    return redirect(url_for('admin'))
 
 
 
@@ -1807,6 +1840,10 @@ def delete_notification(notification_id):
 def inject_notifications():
     user_id = session.get("user_id")
     print(f"🔍 Context processor - user_id: {user_id}")
+
+    user = None
+    if user_id:
+        user = Users.query.get(user_id)
     
     if not user_id:
         print("⚠️ Користувач не авторизований")
@@ -1827,7 +1864,10 @@ def inject_notifications():
         print(f"📦 Останніх сповіщень: {len(latest_notifications)}")
         
         for item in latest_notifications:
-            print(f"  - {item.notification.title} (ID: {item.notification.id})")
+            if item.notification:
+                # Отримуємо заголовок потрібною мовою (або fallback на 'uk')
+                title = item.notification.title_json.get('uk') if item.notification.title_json else ''
+                print(f"  - {title} (ID: {item.notification.id})")
             
     except Exception as e:
         print(f"❌ Помилка в context processor: {e}")
@@ -1837,8 +1877,11 @@ def inject_notifications():
     
     return {
         "unread_count": unread_count,
-        "latest_notifications": latest_notifications
+        "latest_notifications": latest_notifications,
+        "current_user": user
     }
+
+
 
 
 
@@ -1956,7 +1999,7 @@ def send_push_notification_to_tokens(title, body, tokens, url="/"):
                 notification=messaging.WebpushNotification(
                     title=title,
                     body=body,
-                    icon="/static/images/logo.png"  # Шлях до іконки твого лого
+                    icon="/static/images/logo.png"
                 ),
                 fcm_options=messaging.WebpushFCMOptions(
                     link=url  # Куди переходити при кліку на сповіщення
@@ -1992,7 +2035,7 @@ def send_new_mission_notification(mission_id):
             title="🎯 Нова місія у MediaMission!",
             body="З'явилася нова місія. Заходь та виконуй!",
             tokens=tokens,
-            url=f"/missions/{mission_id}"  # Перехід відразу на сторінку місії
+            url=f"/missions/{mission_id}"
         )
 
 

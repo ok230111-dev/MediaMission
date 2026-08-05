@@ -1818,5 +1818,43 @@ def custom_verify_email():
         return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
 
 
+# У блоці with app.app_context():
+with app.app_context():
+    try:
+        # Перевіряємо, чи існують таблиці
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        if 'achievements' not in tables:
+            print("⚠️ Таблиця achievements відсутня. Створюємо...")
+            db.create_all()
+            print("✅ Таблиці створено")
+        
+        # Перевіряємо, чи є досягнення
+        if Achievement.query.count() == 0:
+            print("⚠️ Досягнень немає. Додаємо...")
+            init_achievements()
+            print(f"✅ Додано {Achievement.query.count()} досягнень")
+        else:
+            print(f"✅ Вже є {Achievement.query.count()} досягнень")
+            
+    except Exception as e:
+        print(f"⚠️ Помилка ініціалізації: {e}")
+
+
+
+@app.route("/api/admin/create_tables", methods=["POST"])
+@admin_required
+def create_tables():
+    """Створення таблиць через API"""
+    try:
+        db.create_all()
+        return {"success": True, "message": "Таблиці створено"}, 200
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+
+
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

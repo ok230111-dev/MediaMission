@@ -14,19 +14,53 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
+// ---------- PUSH NOTIFICATIONS ----------
 messaging.onBackgroundMessage(function(payload) {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
     const notificationTitle = payload.notification?.title || 'MediaMission';
+    
+    // Отримуємо URL для переходу з fcmOptions чи data
+    const targetUrl = payload.fcmOptions?.link || payload.data?.url || '/';
+
     const notificationOptions = {
         body: payload.notification?.body || '',
-        icon: '/static/icons/icon-192.png'
+        icon: '/static/icons/icon-192.png',
+        badge: '/static/favicon/favicon-32x32.png',
+        data: {
+            url: targetUrl
+        }
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-const CACHE_NAME = 'mediamission-v2';
+// Клік по сповіщенню
+self.addEventListener('notificationclick', function(event) {
+    event.notification.close();
+    
+    const targetUrl = event.notification.data?.url || '/';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
+            // Якщо сайт уже відкритий у вкладці — фокусуємося і переходимо
+            for (let i = 0; i < windowClients.length; i++) {
+                let client = windowClients[i];
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    client.navigate(targetUrl);
+                    return client.focus();
+                }
+            }
+            // Якщо вкладка закрита — відкриваємо нову
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl);
+            }
+        })
+    );
+});
+
+// ---------- CACHE CONFIG ----------
+const CACHE_NAME = 'mediamission-v3'; // Оновили версію кешу
 const STATIC_CACHE = `static-${CACHE_NAME}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_NAME}`;
 

@@ -3,7 +3,7 @@ import { app } from "./firebase-config.js";
 
 const messaging = getMessaging(app);
 
-// Глобальна функція сповіщення, розрахована на Bootstrap Modal z-index
+// 1. Показ сповіщень поверх усіх модальних вікон
 export function showAlert(message, type = "success") {
     let alertContainer = document.getElementById("alert-container");
     if (!alertContainer) {
@@ -13,7 +13,7 @@ export function showAlert(message, type = "success") {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1090;
+            z-index: 9999;
             min-width: 300px;
             max-width: 400px;
         `;
@@ -48,76 +48,98 @@ export function showAlert(message, type = "success") {
     }, 4000);
 }
 
-// Прив'язуємо listener ТІЛЬКИ після повного завантаження DOM
-document.addEventListener("DOMContentLoaded", () => {
+// 2. Ініціалізація та прив'язка
+function initNotifications() {
+    console.log("🔍 [PUSH] Спроба знайти #pushNotificationsSwitch...");
     const pushSwitch = document.getElementById("pushNotificationsSwitch");
 
     if (!pushSwitch) {
-        console.warn("Перемикач #pushNotificationsSwitch не знайдено на сторінці.");
+        console.warn("⚠️ [PUSH] #pushNotificationsSwitch не знайдено на сторінці.");
         return;
     }
 
-    // Перевірка дозволу при відкритті
+    console.log("✅ [PUSH] Перемикач знайдено! Поточний статус дозволу:", Notification.permission);
+
     if (Notification.permission === "granted") {
         pushSwitch.checked = true;
     }
 
+    if (pushSwitch.dataset.initialized === "true") {
+        return;
+    }
+    pushSwitch.dataset.initialized = "true";
+
     pushSwitch.addEventListener("change", async () => {
+        console.log("👉 [PUSH] Зміна стану перемикача:", pushSwitch.checked);
+
         if (pushSwitch.checked) {
             try {
-                // 1. Запит дозволу
-                const permission = await Notification.requestPermission();
+                showAlert("Запит дозволу на сповіщення...", "info");
 
-                if (permission !== "granted") {
+                // Перевірка підтримки браузером
+                if (!("Notification" in window)) {
+                    showAlert("Цей браузер не підтримує PUSH-сповіщення!", "danger");
                     pushSwitch.checked = false;
-                    showAlert("Дозвіл на сповіщення відхилено в браузері!", "warning");
                     return;
                 }
 
-                // 2. Отримання токена
+                const permission = await Notification.requestPermission();
+                console.log("📋 [PUSH] Результат запиту дозволу:", permission);
+
+                if (permission !== "granted") {
+                    pushSwitch.checked = false;
+                    showAlert("Дозвіл на сповіщення відхилено в налаштуваннях браузера!", "warning");
+                    return;
+                }
+
+                showAlert("Отримання FCM-токена...", "info");
+
                 const token = await getToken(messaging, {
                     vapidKey: "BD3FQs9fZ4EbLPDubiJ5NsrDnA3orDBtV9NsFs-Xj16oVGbqbzlSk0bCQ0MBFasq2BQZHipxJ6xtOdIZU_kdqG0"
                 });
 
+                console.log("🔑 [PUSH] Отримано FCM Токен:", token);
+
                 if (!token) {
                     pushSwitch.checked = false;
-                    showAlert("Не вдалося отримати PUSH-токен!", "danger");
+                    showAlert("Не вдалося отримати PUSH-токен від Firebase!", "danger");
                     return;
                 }
 
-                // 3. Відправка на Flask Backend
                 const response = await fetch("/api/save_notification_token", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ token: token })
                 });
 
+                console.log("🌐 [PUSH] Відповідь сервера на збереження токена:", response.status);
+
                 if (response.ok) {
                     showAlert("PUSH-сповіщення успішно увімкнено!", "success");
                 } else {
                     pushSwitch.checked = false;
-                    showAlert("Помилка збереження токена на сервері", "danger");
+                    showAlert("Помилка збереження токена на сервері (HTTP " + response.status + ")", "danger");
                 }
 
             } catch (err) {
-                console.error("Помилка при збереженні Push-токена:", err);
+                console.error("❌ [PUSH] Помилка:", err);
                 pushSwitch.checked = false;
-                showAlert("Виникла помилка під час активації", "danger");
+                showAlert("Помилка: " + err.message, "danger");
             }
         } else {
             showAlert("PUSH-сповіщення вимкнено", "info");
         }
     });
-});
+}
 
-// Автоматично ініціалізуємо при відкритті модального вікна акаунта
+// Запуск
 document.addEventListener("DOMContentLoaded", () => {
+    initNotifications();
+
     const accountModal = document.getElementById("accountInfoModal");
     if (accountModal) {
         accountModal.addEventListener("shown.bs.modal", () => {
             initNotifications();
         });
-    } else {
-        initNotifications();
     }
 });

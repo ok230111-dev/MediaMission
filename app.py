@@ -1903,24 +1903,39 @@ def save_notification_token():
 
 
 # Додайте цю функцію десь у вашому коді
-def send_push_notification_to_tokens(title, body, tokens):
+def send_push_notification_to_tokens(title, body, tokens, url="/"):
     if not tokens:
         print("⚠️ Немає токенів для надсилання push-повідомлень")
         return
 
+    # Розбиваємо на пачки по 500 (ліміт Firebase)
     for start in range(0, len(tokens), 500):
         batch_tokens = tokens[start:start + 500]
+        
+        # Створюємо MulticastMessage із налаштуванням кліку для WebPush
         message = messaging.MulticastMessage(
             notification=messaging.Notification(title=title, body=body),
+            webpush=messaging.WebpushConfig(
+                notification=messaging.WebpushNotification(
+                    title=title,
+                    body=body,
+                    icon="/static/images/logo.png"  # Шлях до іконки твого лого
+                ),
+                fcm_options=messaging.WebpushFCMOptions(
+                    link=url  # Куди переходити при кліку на сповіщення
+                )
+            ),
             tokens=batch_tokens
         )
         try:
-            response = messaging.send_multicast(message)
-            print(f"✅ Push-повідомлення надіслано {response.success_count}/{len(batch_tokens)}")
-            if response.failure_count:
+            # Зверни увагу: send_each_for_multicast замість send_multicast
+            response = messaging.send_each_for_multicast(message)
+            print(f"✅ Push-повідомлення надіслано: успішно {response.success_count}/{len(batch_tokens)}")
+            
+            if response.failure_count > 0:
                 for index, resp in enumerate(response.responses):
                     if not resp.success:
-                        print(f"❌ Токен {batch_tokens[index]} помилка: {resp.exception}")
+                        print(f"❌ Помилка для токена {batch_tokens[index]}: {resp.exception}")
         except Exception as e:
             print(f"❌ Помилка при відправці push-повідомлень: {e}")
 
@@ -1929,15 +1944,18 @@ def send_new_mission_notification(mission_id):
     """Надсилає сповіщення про нову місію всім користувачам"""
     with app.app_context():
         users = Users.query.filter(Users.notification_token.isnot(None)).all()
-        tokens = [user.notification_token for user in users if user.notification_token]
+        # Фільтруємо унікальні й непорожні токени
+        tokens = list(set([user.notification_token for user in users if user.notification_token]))
+        
         if not tokens:
             print("⚠️ Немає користувачів з токенами")
             return
 
         send_push_notification_to_tokens(
-            title="Нова місія!",
-            body="З'явилася нова місія у MediaMission.",
-            tokens=tokens
+            title="🎯 Нова місія у MediaMission!",
+            body="З'явилася нова місія. Заходь та виконуй!",
+            tokens=tokens,
+            url=f"/missions/{mission_id}"  # Перехід відразу на сторінку місії
         )
 
 

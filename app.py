@@ -1806,19 +1806,39 @@ def delete_notification(notification_id):
 @app.context_processor
 def inject_notifications():
     user_id = session.get("user_id")
+    print(f"🔍 Context processor - user_id: {user_id}")
+    
     if not user_id:
-        return {}
+        print("⚠️ Користувач не авторизований")
+        return {"unread_count": 0, "latest_notifications": []}
 
-    unread_count = NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).count()
-    latest_notifications = (
-        NotificationRecipient.query
-        .filter_by(user_id=user_id)
-        .join(Notification)
-        .order_by(Notification.created_at.desc())
-        .limit(5)
-        .all()
-    )
-    return dict(unread_count=unread_count, latest_notifications=latest_notifications)
+    try:
+        unread_count = NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).count()
+        print(f"📊 Непрочитаних сповіщень: {unread_count}")
+        
+        latest_notifications = (
+            NotificationRecipient.query
+            .filter_by(user_id=user_id)
+            .join(Notification)
+            .order_by(Notification.created_at.desc())
+            .limit(5)
+            .all()
+        )
+        print(f"📦 Останніх сповіщень: {len(latest_notifications)}")
+        
+        for item in latest_notifications:
+            print(f"  - {item.notification.title} (ID: {item.notification.id})")
+            
+    except Exception as e:
+        print(f"❌ Помилка в context processor: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"unread_count": 0, "latest_notifications": []}
+    
+    return {
+        "unread_count": unread_count,
+        "latest_notifications": latest_notifications
+    }
 
 
 

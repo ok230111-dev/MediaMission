@@ -60,7 +60,7 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 // ---------- CACHE CONFIG ----------
-const CACHE_NAME = 'mediamission-v3'; // Оновили версію кешу
+const CACHE_NAME = 'mediamission-v4'; // Оновили версію кешу
 const STATIC_CACHE = `static-${CACHE_NAME}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_NAME}`;
 

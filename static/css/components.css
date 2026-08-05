@@ -444,6 +444,15 @@
   border-left: 3px solid var(--primary-color) !important;
 }
 
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2; /* Стандартна властивість для редактора */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 /* Мобільна адаптивність */
 @media (max-width: 480px) {
   .notification-dropdown {

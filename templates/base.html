@@ -312,7 +312,7 @@
           </div>
 
           <!-- Дзвоник сповіщень -->
-          <div class="dropdown notification-bell-wrapper">
+          <div class="dropdown position-relative notification-bell-wrapper">
             <a
               class="nav-link position-relative p-2"
               href="#"
@@ -337,8 +337,9 @@
 
             <!-- Випадаюче меню сповіщень -->
             <div
-              class="dropdown-menu dropdown-menu-end notification-dropdown p-0 shadow"
+              class="dropdown-menu dropdown-menu-end notification-dropdown p-0 shadow border-0"
               aria-labelledby="notificationBell"
+              style="min-width: 320px"
             >
               <div
                 class="notification-header px-3 py-2 d-flex justify-content-between align-items-center"
@@ -346,31 +347,37 @@
                 <span class="fw-bold">{{ t('nav_notifications_title') }}</span>
                 {% if unread_count and unread_count > 0 %}
                 <span class="badge bg-primary-subtle text-primary"
-                  >{{ unread_count }} нов{{ t('nav_new_notifications') }}</span
+                  >{{ unread_count }} {{ t('nav_new_notifications') }}</span
                 >
                 {% endif %}
               </div>
               <hr class="m-0" />
 
-              <div class="notification-list">
+              <div
+                class="notification-list"
+                style="max-height: 360px; overflow-y: auto"
+              >
                 {% if latest_notifications %} {% for record in
                 latest_notifications %}
                 <a
                   href="/notifications"
-                  class="dropdown-item notification-item {% if not record.is_read %}unread{% endif %}"
+                  class="dropdown-item notification-item py-2 px-3 {% if not record.is_read %}unread{% endif %}"
                 >
                   <div class="d-flex align-items-start gap-2">
                     {% if not record.is_read %}
                     <span class="unread-dot mt-1"></span>
                     {% endif %}
                     <div class="flex-grow-1 min-width-0">
-                      <div class="fw-semibold text-truncate">
+                      <div class="fw-semibold text-truncate small">
                         {{ t(record.notification.title) }}
                       </div>
                       <div class="text-muted small text-truncate">
                         {{ t(record.notification.body) }}
                       </div>
-                      <div class="text-muted small">
+                      <div
+                        class="text-muted extra-small mt-1"
+                        style="font-size: 0.75rem"
+                      >
                         {{ record.notification.created_at.strftime("%d.%m.%Y
                         %H:%M") }}
                       </div>
@@ -388,7 +395,7 @@
               <hr class="m-0" />
               <a
                 href="/notifications"
-                class="dropdown-item text-center text-primary fw-semibold py-2"
+                class="dropdown-item text-center text-primary fw-semibold py-2 small"
               >
                 {{ t('nav_view_all_notifications') }}
               </a>

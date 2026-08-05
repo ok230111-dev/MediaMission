@@ -1,24 +1,20 @@
 {% extends "base.html" %} {% block title %} {{t('nav_missions')}} |
-MediaMission{% endblock %} {% block content %}
-<head>
-  <meta
-    name="description"
-    content="Explore interactive media literacy missions. Complete quizzes, analyze videos, verify news and earn XP while improving your critical thinking skills."
-  />
+MediaMission{% endblock %} {% block meta %}
+<meta
+  name="description"
+  content="Explore interactive media literacy missions. Complete quizzes, analyze videos, verify news and earn XP while improving your critical thinking skills."
+/>
+<meta property="og:title" content="Missions | MediaMission" />
+<meta
+  property="og:description"
+  content="Interactive media literacy missions with videos, quizzes and practical exercises."
+/>
+<meta
+  property="og:image"
+  content="https://mediamission.onrender.com/static/img/og-missions.png"
+/>
+{% endblock %} {% block content %}
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="MediaMission | Missions" />
-
-  <meta
-    property="og:description"
-    content="Interactive media literacy missions with videos, quizzes and practical exercises."
-  />
-
-  <meta
-    property="og:image"
-    content="https://mediamission.onrender.com/static/img/og-missions.png"
-  />
-</head>
 <div class="container py-3">
   <figure class="text-center">
     <h1 class="fw-bold display-4">{{t('nav_missions')}}</h1>
@@ -28,7 +24,7 @@ MediaMission{% endblock %} {% block content %}
     <div class="col-md-4">
       <div class="card h-100">
         <img
-          src="{{ url_for('static', filename='image/' + (mission.image or 'placeholder.jpg')) }}"
+          src="{{ mission.image or url_for('static', filename='image/placeholder.jpg') }}"
           class="card-img-top"
           alt="{{ mission.title }}"
         />

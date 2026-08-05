@@ -35,6 +35,8 @@
 
     <title>{% block title %} MediaMission {% endblock %}</title>
 
+    {% block meta %}{% endblock %}
+
     <!-- FAVICON -->
     <link
       rel="apple-touch-icon"
@@ -89,6 +91,16 @@
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
+    />
+
+    <!-- ==========================================================
+         ТЕМНА ТЕМА
+         Підключається ОСТАННЬОЮ, щоб коректно перевизначати
+         кольори для data-theme="dark" поверх усього вище.
+    =========================================================== -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/dark-theme.css') }}"
     />
 
     <!--manifest, щоб додати сайт на головний екран мобільного пристрою -->
@@ -188,6 +200,7 @@
         }
       }
     </script>
+    {% block style %}{% endblock %}
   </head>
 
   <body
@@ -289,15 +302,6 @@
          MAIN CONTENT
     =========================================================== -->
     <main class="main-content">{% block content %} {% endblock %}</main>
-
-    <!-- ==========================================================
-         FOOTER
-    =========================================================== -->
-    <footer class="site-footer py-4 mt-auto">
-      <div class="container text-center text-muted">
-        <p class="mb-0">© 2026 MediaMission. Всі права захищено.</p>
-      </div>
-    </footer>
 
     <!-- JAVASCRIPT -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,111 +1,154 @@
 {% extends "base.html" %} {% block title %}{{ t('profile_title') }} |
 MediaMission{% endblock %} {% block style %}
 <style>
-  /* Стилі для темної теми */
-  .dark-theme {
-    /* Фони */
-    .dark-bg-dark {
-      background-color: #2d2d3f !important;
-    }
-    .dark-bg-darker {
-      background-color: #1e1e2e !important;
-    }
+  /* ==========================================================
+     Стилі, специфічні лише для сторінки профілю.
+     Загальна темна тема (картки, текст, форми, прогрес-бари,
+     бейджі, модалки тощо) вже покрита /static/css/dark-theme.css
+     і працює через html[data-theme="dark"] — тому тут лишаємо
+     тільки те, чого там немає.
+  ========================================================== */
 
-    /* Текст - світлі кольори для темної теми */
-    .dark-text-light {
-      color: #e4e6eb !important; /* Виправлено: світлий текст на темному фоні */
-    }
-    .dark-text-secondary {
-      color: #a8a8b3 !important; /* Виправлено: світло-сірий для другорядного тексту */
-    }
-
-    /* Межі */
-    .dark-border {
-      border-color: #3d3d4f !important;
-    }
-
-    /* Картки */
-    .card.dark-bg-darker {
-      background-color: #1e1e2e !important;
-      border-color: #3d3d4f !important;
-    }
-
-    /* Ховер ефекти для заблокованих досягнень */
-    .dark-opacity-hover {
-      opacity: 0.6 !important;
-    }
-    .dark-opacity-hover:hover {
-      opacity: 0.8 !important;
-    }
-
-    /* Кнопки та елементи */
-    .btn-outline-secondary.dark-theme-btn {
-      color: #a8a8b3;
-      border-color: #3d3d4f;
-    }
-    .btn-outline-secondary.dark-theme-btn:hover {
-      background-color: #3d3d4f;
-      color: #e4e6eb;
-    }
+  /* ---------- Аватар ---------- */
+  .profile-avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid var(--mm-surface, #fff);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    transition: transform 0.3s ease;
+  }
+  .profile-avatar:hover {
+    transform: scale(1.04);
   }
 
-  /* Адаптація для модального вікна в темній темі */
-  .dark-theme .modal-content {
-    background-color: #1e1e2e !important;
-    color: #e4e6eb !important;
+  /* ---------- Прогрес-бар XP (градієнт) ---------- */
+  .progress-bar {
+    background: linear-gradient(90deg, #0d6efd, #3c8dff);
+    border-radius: 20px;
+    transition: width 0.6s ease;
   }
-  .dark-theme .modal-header,
-  .dark-theme .modal-footer {
-    border-color: #3d3d4f !important;
-  }
-  .dark-theme .btn-close {
-    filter: invert(1);
+  html[data-theme="dark"] .progress-bar {
+    background: linear-gradient(90deg, #4f7cff, #6fd0ff) !important;
   }
 
-  /* Додаткові стилі для темної теми */
-  .dark-theme .card {
-    background-color: #1e1e2e !important;
-    color: #e4e6eb !important;
-    border-color: #3d3d4f !important;
+  /* ---------- Кнопка завантаження аватара ---------- */
+  .avatar-upload-btn {
+    font-size: 0.8rem;
+    border-radius: 30px;
+    padding: 10px 20px;
+    background: #fff;
+    border: 1px solid #d7dbe3;
   }
-  .dark-theme .text-muted {
-    color: #a8a8b3 !important; /* Виправлено */
-  }
-  .dark-theme .border {
-    border-color: #3d3d4f !important;
-  }
-  .dark-theme .bg-light {
-    background-color: #2d2d3f !important;
-  }
-  .dark-theme .progress {
-    background-color: #3d3d4f !important;
-  }
-  .dark-theme hr {
-    border-color: #3d3d4f !important;
-  }
-  .dark-theme .form-check-label {
-    color: #e4e6eb !important;
+  html[data-theme="dark"] .avatar-upload-btn {
+    background: var(--mm-surface-2);
+    border-color: var(--mm-border);
+    color: var(--mm-text);
   }
 
-  /* Стилі для модального вікна в темній темі */
-  .dark-theme .modal-body strong {
-    color: #e4e6eb !important;
+  /* ---------- Плашка Ліги / Рангу ---------- */
+  .league-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(13, 110, 253, 0.08);
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    border-radius: 50px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
   }
-  .dark-theme .modal-body .text-muted {
-    color: #a8a8b3 !important;
+  .league-rank-badge:hover {
+    background: rgba(13, 110, 253, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
   }
-  .dark-theme .modal-body code {
-    color: #e4e6eb !important;
-    background-color: #2d2d3f !important;
+  html[data-theme="dark"] .league-rank-badge {
+    background: rgba(122, 162, 255, 0.1);
+    border-color: rgba(122, 162, 255, 0.25);
   }
-  .dark-theme .modal-body .text-success {
-    color: #4caf50 !important;
-  }
-  .dark-theme .modal-body .text-warning {
-    color: #ffa726 !important;
+  html[data-theme="dark"] .league-rank-badge .text-primary {
+    color: #9fbcff !important;
   }
 
-  /* Додаткові стилі для кращого UX */
+  /* ---------- Кнопка "i" (інформація про систему) ---------- */
+  .btn-info-system {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: rgba(13, 110, 253, 0.05);
+    border-color: rgba(13, 110, 253, 0.2);
+    color: var(--bs-primary);
+    transition:
+      transform 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+  .btn-info-system:hover {
+    transform: scale(1.15);
+    background: var(--bs-primary);
+    color: #fff;
+    border-color: var(--bs-primary);
+    box-shadow: 0 2px 12px rgba(13, 110, 253, 0.3);
+  }
+  html[data-theme="dark"] .btn-info-system {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--mm-text-muted);
+  }
+  html[data-theme="dark"] .btn-info-system:hover {
+    background: var(--bs-primary);
+    color: #fff;
+  }
+
+  /* ---------- Бейджі верифікації email (кастомний вигляд) ---------- */
+  .badge-verification-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: 500;
+    padding: 6px 14px;
+  }
+  .badge-verification-verified {
+    background-color: #d4edda;
+    color: #155724;
+    font-weight: 500;
+    padding: 6px 14px;
+  }
+  html[data-theme="dark"] .badge-verification-pending {
+    background-color: var(--mm-surface-2);
+    color: #ffc107;
+    border: 1px solid #ffc107;
+  }
+  html[data-theme="dark"] .badge-verification-verified {
+    background-color: #16261c;
+    color: #75b798;
+    border: 1px solid #75b798;
+  }
+
+  /* ---------- Картки системи гейміфікації (модалка) ---------- */
+  .system-card {
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    background: #f8f9fa;
+    transition: transform 0.2s ease;
+  }
+  .system-card:hover {
+    transform: translateY(-2px);
+  }
+  html[data-theme="dark"] .system-card {
+    background: var(--mm-surface-2);
+    border-color: var(--mm-border);
+  }
+
+  /* ---------- Перемикач "детальна статистика" ---------- */
   .other-stats {
     display: none;
     transition: all 0.3s ease;
@@ -120,32 +163,160 @@ MediaMission{% endblock %} {% block style %}
   #toggleStatsBtn:hover {
     transform: scale(1.02);
   }
-  .badge-verification-pending {
-    background-color: #fff3cd;
-    color: #856404;
+
+  /* ---------- Анімація вкладок модалки гейміфікації ---------- */
+  .tab-anim-pane {
+    animation: fadeInSlide 0.35s ease-out forwards;
   }
-  .badge-verification-verified {
-    background-color: #d4edda;
-    color: #155724;
+  @keyframes fadeInSlide {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ---------- Мобільна адаптація ---------- */
+  @media (max-width: 576px) {
+    .league-rank-badge {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+    }
+    .btn-info-system {
+      width: 20px;
+      height: 20px;
+      font-size: 0.65rem;
+    }
+    .card.p-4 {
+      padding: 1.25rem !important;
+    }
+  }
+  /* Стилі для досягнень */
+  .achievement-card {
+    transition: all 0.3s ease;
+    cursor: default;
+    background: #f8f9fa;
+  }
+
+  .dark-theme .achievement-card {
+    background: #2d2d3f;
+    border-color: #3d3d4f;
+  }
+
+  .achievement-card.unlocked {
+    border-color: #198754 !important;
+    background: rgba(25, 135, 84, 0.05);
+  }
+
+  .achievement-card.unlocked:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.15);
+  }
+
+  .achievement-card.locked {
+    opacity: 0.6;
+    filter: grayscale(0.4);
+    border-color: #dee2e6 !important;
+  }
+
+  .achievement-card.locked:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+  }
+
+  .dark-theme .achievement-card.unlocked {
+    background: rgba(25, 135, 84, 0.1);
+    border-color: #198754 !important;
+  }
+
+  .dark-theme .achievement-card.locked {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    opacity: 0.5;
+  }
+
+  .dark-theme .achievement-card.locked .text-muted {
+    color: #6c757d !important;
+  }
+
+  .dark-theme .achievement-card.locked .text-secondary {
+    color: #6c757d !important;
+  }
+
+  /* Анімація для NEW! */
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Стилі для іконок */
+  .achievement-card .bg-success {
+    background: #198754 !important;
+  }
+
+  .achievement-card .bg-secondary {
+    background: #6c757d !important;
+  }
+
+  .dark-theme .achievement-card .bg-secondary {
+    background: #495057 !important;
+  }
+
+  /* Прогрес-бар */
+  .progress {
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .dark-theme .progress {
+    background-color: #3d3d4f;
+  }
+
+  .progress-bar {
+    background: linear-gradient(90deg, #198754, #20c997);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+  }
+
+  /* Адаптивність */
+  @media (max-width: 768px) {
+    .achievement-card {
+      padding: 0.75rem !important;
+    }
+
+    .achievement-card .rounded-circle {
+      width: 40px !important;
+      height: 40px !important;
+    }
+
+    .achievement-card .fs-4 {
+      font-size: 1rem !important;
+    }
+
+    .achievement-card h6 {
+      font-size: 0.85rem !important;
+    }
+
+    .achievement-card small {
+      font-size: 0.7rem !important;
+    }
   }
 </style>
 {% endblock %} {% block content %}
-<head>
-  <meta
-    name="description"
-    content="View your MediaMission profile, XP, completed missions, achievements, streaks and personal progress in media literacy."
-  />
-  <meta property="og:title" content="MediaMission | Profile" />
-  <meta
-    property="og:description"
-    content="Track your XP, achievements and progress."
-  />
-  <meta
-    property="og:image"
-    content="https://mediamission.onrender.com/static/img/og-profile.png"
-  />
-</head>
-
 <section
   class="container py-5"
   data-t-level="{{ t('profile_level') }}"
@@ -168,8 +339,8 @@ MediaMission{% endblock %} {% block style %}
         data-bs-target="#accountInfoModal"
         aria-label="{{ t('profile_information_account') }}"
       >
-        <i class="bi bi-person-lines-fill info-account"></i>
-        <span class="d-none d-sm-inline info-account"
+        <i class="bi bi-person-lines-fill"></i>
+        <span class="d-none d-sm-inline"
           >{{ t('profile_information_account') }}</span
         >
       </button>
@@ -181,14 +352,15 @@ MediaMission{% endblock %} {% block style %}
         <div
           class="d-flex flex-column flex-sm-row align-items-center text-center text-sm-start gap-3"
         >
+          <!-- Аватар -->
           <div class="position-relative flex-shrink-0">
             {% if user.avatar %}
             <img
               src="{{ user.avatar }}"
-              class="rounded-circle"
-              style="width: 96px; height: 96px; object-fit: cover"
+              class="profile-avatar"
               alt="{{ user.display_name }}"
               loading="lazy"
+              style="width: 96px; height: 96px; border-width: 3px"
             />
             {% else %}
             <div
@@ -201,6 +373,7 @@ MediaMission{% endblock %} {% block style %}
             </div>
             {% endif %}
 
+            <!-- Бейдж рівня -->
             <span
               class="position-absolute bottom-0 end-0 bg-warning border border-2 border-white rounded-circle d-flex align-items-center justify-content-center"
               style="width: 28px; height: 28px"
@@ -214,6 +387,7 @@ MediaMission{% endblock %} {% block style %}
             </span>
           </div>
 
+          <!-- Ім'я та email -->
           <div class="min-width-0">
             <h3 class="fw-bold mb-0 text-truncate" id="profileName">
               {{ user.display_name }}
@@ -222,6 +396,32 @@ MediaMission{% endblock %} {% block style %}
               {{ user.email }}
             </p>
 
+            <!-- Блок Рангу, Ліги та кнопки "i" -->
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+              <div class="league-rank-badge">
+                <span id="userLeagueIcon">🛡️</span>
+                <span id="userLeagueName" class="text-primary"
+                  >{{ user.league_name|default('Бронзова ліга') }}</span
+                >
+                <span class="text-muted">•</span>
+                <span id="userRankName" class="fw-bold"
+                  >{{ user.rank_name|default('Новачок') }}</span
+                >
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-outline-primary btn-info-system"
+                data-bs-toggle="modal"
+                data-bs-target="#gamificationSystemModal"
+                title="Пояснення системи рівнів, рангів та ліг"
+                aria-label="Інформація про систему рівнів"
+              >
+                i
+              </button>
+            </div>
+
+            <!-- Форма завантаження аватара -->
             <form
               action="/upload-avatar"
               method="POST"
@@ -229,8 +429,7 @@ MediaMission{% endblock %} {% block style %}
             >
               <label
                 for="avatarInput"
-                class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3"
-                style="font-size: 0.8rem"
+                class="btn btn-sm btn-outline-primary rounded-pill avatar-upload-btn"
               >
                 <i class="bi bi-camera"></i> {{ t('change_avatar') }}
               </label>
@@ -275,20 +474,21 @@ MediaMission{% endblock %} {% block style %}
 
       <!-- Шкала прогресу до наступного рівня -->
       <div class="col-12 col-md-8">
+        <!-- XP статистика -->
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="fw-bold text-primary" id="currentLevel"
-            >{{ t('profile_level') }} 1</span
-          >
-          <span class="text-muted small" id="xpText"
-            >{{ user.total_xp }} / 500 XP</span
-          >
+          <span class="fw-bold text-primary" id="currentLevel">
+            {{ t('profile_level') }} {% set user_level = (user.total_xp /
+            500)|int + 1 %} {{ user_level }}
+          </span>
+          <span class="text-muted small" id="xpText">
+            {{ user.total_xp }} / 500 XP
+          </span>
         </div>
-        <div
-          class="progress"
-          style="height: 14px; border-radius: 10px; background-color: #e9ecef"
-        >
+
+        <!-- Прогрес-бар -->
+        <div class="progress" style="height: 14px; border-radius: 10px">
           <div
-            class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+            class="progress-bar progress-bar-striped progress-bar-animated"
             role="progressbar"
             id="xpProgressBar"
             style="width: {{ (user.total_xp % 500) / 500 * 100 }}%; border-radius: 10px"
@@ -298,6 +498,8 @@ MediaMission{% endblock %} {% block style %}
             aria-label="XP progress"
           ></div>
         </div>
+
+        <!-- Текст про залишок XP -->
         <small class="text-muted mt-2 d-block">
           {{ t('xp_left_to_next_level') }}
           <strong id="xpNeeded">{{ 500 - (user.total_xp % 500) }} XP</strong>
@@ -442,74 +644,108 @@ MediaMission{% endblock %} {% block style %}
     class="card border-0 shadow-sm p-4 mb-4"
     style="border-radius: var(--radius-large, 16px)"
   >
-    <h4 class="fw-bold mb-4">
-      <i class="bi bi-award text-primary me-2"></i>{{ t('achievements') }}
-    </h4>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-bold mb-0">
+        <i class="bi bi-award text-primary me-2"></i>{{ t('achievements') }}
+      </h4>
+      <span class="badge bg-primary rounded-pill">
+        {{ user_achievements|selectattr('unlocked', 'equalto', True)|list|length
+        }}/{{ user_achievements|length }}
+      </span>
+    </div>
+
+    <!-- Анімація для нових досягнень -->
+    {% if newly_unlocked %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-trophy-fill me-2"></i>
+      <strong>🎉 Вітаємо!</strong> Ви отримали нові досягнення: {% for ach in
+      newly_unlocked %}
+      <span class="badge bg-warning text-dark">{{ ach.title_en }}</span>
+      {% endfor %}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
 
     <div class="row g-3">
-      <div class="col-md-4">
+      {% for achievement in user_achievements %}
+      <div class="col-md-4 col-lg-3">
         <div
-          class="d-flex align-items-center p-3 border rounded-3 bg-light dark-bg-dark"
+          class="d-flex align-items-center p-3 border rounded-3 achievement-card {% if achievement.unlocked %}unlocked{% else %}locked{% endif %}"
+          data-bs-toggle="tooltip"
+          title="{% if achievement.unlocked %}Розблоковано: {{ achievement.unlocked_at.strftime('%d.%m.%Y') if achievement.unlocked_at else 'Нещодавно' }}{% else %}Ще не розблоковано{% endif %}"
         >
+          <!-- Іконка досягнення -->
           <div
-            class="bg-success text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center"
-            style="width: 50px; height: 50px"
+            class="{% if achievement.unlocked %}bg-success{% else %}bg-secondary{% endif %} text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center flex-shrink-0"
+            style="width: 50px; height: 50px; transition: all 0.3s ease"
           >
-            <i class="bi bi-flag-fill fs-4"></i>
+            <i class="{{ achievement.icon }} fs-4"></i>
           </div>
-          <div>
-            <h6 class="fw-bold mb-1 dark-text-light">
-              {{ t('achievement_first_steps') }}
-            </h6>
-            <small class="text-muted dark-text-secondary"
-              >{{ t('achievement_first_steps_text') }}</small
+
+          <!-- Інформація -->
+          <div class="min-width-0">
+            <h6
+              class="fw-bold mb-1 d-flex align-items-center gap-1 {% if not achievement.unlocked %}text-muted{% endif %}"
             >
+              {{ achievement.title }} {% if achievement.unlocked %}
+              <i
+                class="bi bi-check-circle-fill text-success"
+                style="font-size: 0.7rem"
+              ></i>
+              {% else %}
+              <i
+                class="bi bi-lock-fill text-secondary"
+                style="font-size: 0.7rem"
+              ></i>
+              {% endif %}
+            </h6>
+            <small
+              class="{% if achievement.unlocked %}text-muted{% else %}text-secondary{% endif %} d-block text-truncate"
+              style="max-width: 120px"
+            >
+              {{ achievement.description }}
+            </small>
+            {% if achievement.unlocked and achievement.unlocked_at %}
+            <small class="text-success" style="font-size: 0.6rem">
+              <i class="bi bi-clock"></i> {{
+              achievement.unlocked_at.strftime('%d.%m.%Y') }}
+            </small>
+            {% endif %} {% if achievement.is_new %}
+            <span
+              class="badge bg-danger"
+              style="font-size: 0.5rem; animation: pulse 1.5s infinite"
+              >NEW!</span
+            >
+            {% endif %}
           </div>
         </div>
       </div>
+      {% endfor %}
+    </div>
 
-      <div class="col-md-4">
-        <div
-          class="d-flex align-items-center p-3 border rounded-3 bg-light dark-bg-dark opacity-75 dark-opacity-hover"
-        >
-          <div
-            class="bg-secondary text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center"
-            style="width: 50px; height: 50px"
-          >
-            <i class="bi bi-search fs-4"></i>
-          </div>
-          <div>
-            <h6 class="fw-bold mb-1 dark-text-light">
-              {{ t('achievement_fake_detective') }}
-            </h6>
-            <small class="text-muted dark-text-secondary"
-              >{{ t('achievement_fake_detective_text') }}</small
-            >
-          </div>
-        </div>
+    <!-- Прогрес досягнень -->
+    {% set unlocked_count = user_achievements|selectattr('unlocked', 'equalto',
+    True)|list|length %} {% set total_count = user_achievements|length %} {% if
+    total_count > 0 %}
+    <div class="mt-4 pt-3 border-top">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-muted small">{{ t('achievements_progress') }}</span>
+        <span class="text-muted small">
+          {{ unlocked_count }} / {{ total_count }}
+        </span>
       </div>
-
-      <div class="col-md-4">
+      <div class="progress" style="height: 6px">
         <div
-          class="d-flex align-items-center p-3 border rounded-3 bg-light dark-bg-dark opacity-75 dark-opacity-hover"
-        >
-          <div
-            class="bg-secondary text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center"
-            style="width: 50px; height: 50px"
-          >
-            <i class="bi bi-shield-check fs-4"></i>
-          </div>
-          <div>
-            <h6 class="fw-bold mb-1 dark-text-light">
-              {{ t('achievement_unbreakable_logic') }}
-            </h6>
-            <small class="text-muted dark-text-secondary"
-              >{{ t('achievement_unbreakable_logic_text') }}</small
-            >
-          </div>
-        </div>
+          class="progress-bar bg-success"
+          role="progressbar"
+          style="width: {{ (unlocked_count / total_count * 100)|round|int }}%; transition: width 0.6s ease;"
+          aria-valuenow="{{ (unlocked_count / total_count * 100)|round|int }}"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        ></div>
       </div>
     </div>
+    {% endif %}
   </div>
 
   <!-- Останні результати -->
@@ -522,16 +758,16 @@ MediaMission{% endblock %} {% block style %}
       t('profile_stats_title') }}
     </h4>
 
-    <p class="dark-text-light">{{ t('profile_recent_results') }}</p>
+    <p>{{ t('profile_recent_results') }}</p>
 
     {% if recent_progress %} {% for item in recent_progress %}
     <div class="mb-2">
-      <p class="mb-1 dark-text-light">
+      <p class="mb-1">
         <strong>{{ t('mission_number') }}{{ item.mission.id }}</strong> — {{
         item.mission.title }}
       </p>
       {% if item.completed_at %}
-      <p class="text-muted small mb-0 dark-text-secondary">
+      <p class="text-muted small mb-0">
         <i class="bi bi-calendar3"></i> {{
         item.completed_at.strftime("%d.%m.%Y") }} {% if item.time_spent %} • ⏱️
         {{ item.time_spent }}{{ t('sec') }} {% endif %} • 💯 {{
@@ -539,9 +775,9 @@ MediaMission{% endblock %} {% block style %}
       </p>
       {% endif %}
     </div>
-    <hr class="dark-border" />
+    <hr />
     {% endfor %} {% else %}
-    <p class="text-muted dark-text-secondary">{{ t('profile_no_missions') }}</p>
+    <p class="text-muted">{{ t('profile_no_missions') }}</p>
     {% endif %}
   </div>
 
@@ -652,6 +888,349 @@ MediaMission{% endblock %} {% block style %}
       </div>
     </div>
   </div>
+
+  <!-- Модальне вікно: Пояснення системи Gamification -->
+  <div
+    class="modal fade"
+    id="gamificationSystemModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div
+      class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+      <div class="modal-content" style="border-radius: 20px; border: none">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-controller text-primary me-2"></i>Система Рівнів,
+            Ліг та Рангів
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Вкладки навігації -->
+          <ul
+            class="nav nav-pills nav-fill mb-4 gap-2"
+            id="gamificationTab"
+            role="tablist"
+          >
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link active rounded-pill fw-semibold"
+                id="leagues-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#leagues-pane"
+                type="button"
+                role="tab"
+              >
+                🏆 Ліги
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link rounded-pill fw-semibold"
+                id="ranks-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#ranks-pane"
+                type="button"
+                role="tab"
+              >
+                🎖️ Ранги
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link rounded-pill fw-semibold"
+                id="xp-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#xp-pane"
+                type="button"
+                role="tab"
+              >
+                ⚡ Нарахування XP
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link rounded-pill fw-semibold"
+                id="achievements-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#achievements-pane"
+                type="button"
+                role="tab"
+              >
+                ⭐ Ачівки
+              </button>
+            </li>
+          </ul>
+
+          <!-- Контент вкладок з анімацією -->
+          <div class="tab-content" id="gamificationTabContent">
+            <!-- TAB 1: ЛІГИ -->
+            <div
+              class="tab-pane fade show active tab-anim-pane"
+              id="leagues-pane"
+              role="tabpanel"
+            >
+              <p class="text-muted mb-3 small">
+                Ліга змінюється автоматично при досягненні відповідного рівня
+                або накопиченні XP:
+              </p>
+              <div class="row g-2">
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    🟤 <strong>Бронзова</strong>
+                    <div class="small text-muted">1000 XP (10 рівень)</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    ⚪ <strong>Срібна</strong>
+                    <div class="small text-muted">2500 XP</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    🟡 <strong>Золота</strong>
+                    <div class="small text-muted">30 рівень</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    🔷 <strong>Алмазна</strong>
+                    <div class="small text-muted">40 рівень</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    💠 <strong>Діамантова</strong>
+                    <div class="small text-muted">50 рівень</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    🟢 <strong>Смарагдова</strong>
+                    <div class="small text-muted">60 рівень</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    🔻 <strong>Рубінова</strong>
+                    <div class="small text-muted">70 рівень</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    🟦 <strong>Сапфірова</strong>
+                    <div class="small text-muted">80 рівень</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="system-card p-2 text-center">
+                    👑 <strong>Чемпіонська</strong>
+                    <div class="small text-muted">90 рівень</div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="system-card p-2 text-center border-warning">
+                    💎 <strong>Олімпійська ліга</strong>
+                    <div class="small text-muted">100 рівень</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: РАНГИ -->
+            <div
+              class="tab-pane fade tab-anim-pane"
+              id="ranks-pane"
+              role="tabpanel"
+            >
+              <p class="text-muted mb-3 small">
+                Ранг залежить від комплексу 3 параметрів: кількості місій, рівня
+                та точності відповідей.
+              </p>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead>
+                    <tr class="text-muted small">
+                      <th>Ранг</th>
+                      <th>Місії</th>
+                      <th>Рівень</th>
+                      <th>Точність</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>🥉 <strong>Бронзовий</strong></td>
+                      <td>≥ 10</td>
+                      <td>≥ 5</td>
+                      <td>≥ 50%</td>
+                    </tr>
+                    <tr>
+                      <td>🥈 <strong>Срібний</strong></td>
+                      <td>≥ 25</td>
+                      <td>≥ 10</td>
+                      <td>≥ 60%</td>
+                    </tr>
+                    <tr>
+                      <td>🥇 <strong>Золотий</strong></td>
+                      <td>≥ 60</td>
+                      <td>≥ 20</td>
+                      <td>≥ 70%</td>
+                    </tr>
+                    <tr>
+                      <td>🛡️ <strong>Мастер</strong></td>
+                      <td>≥ 175</td>
+                      <td>≥ 50</td>
+                      <td>≥ 80%</td>
+                    </tr>
+                    <tr>
+                      <td>🔥 <strong>Легендарний</strong></td>
+                      <td>≥ 300</td>
+                      <td>≥ 80</td>
+                      <td>≥ 80%</td>
+                    </tr>
+                    <tr class="table-primary">
+                      <td>⚡ <strong>Ультра ранг</strong></td>
+                      <td>≥ 360</td>
+                      <td>100</td>
+                      <td>≥ 80%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- TAB 3: XP ТА МІСІЇ -->
+            <div
+              class="tab-pane fade tab-anim-pane"
+              id="xp-pane"
+              role="tabpanel"
+            >
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <h6 class="fw-bold text-primary">🎯 Складність місій</h6>
+                  <ul class="list-group list-group-flush small">
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Дуже легко (1):</span><strong>+10 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Легко (2):</span><strong>+15 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Середньо (3):</span><strong>+20 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Важко (4):</span><strong>+30 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Дуже важко (5):</span><strong>+40 XP</strong>
+                    </li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="fw-bold text-danger">🔥 Серія днів та бонуси</h6>
+                  <ul class="list-group list-group-flush small">
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Перша місія за день:</span><strong>+10 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Серія 3 днів:</span><strong>+10 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Серія 7 днів:</span><strong>+15 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Серія 15+ днів:</span><strong>+20 XP</strong>
+                    </li>
+                    <li
+                      class="list-group-content d-flex justify-content-between py-1"
+                    >
+                      <span>Пройдено всі типи місій:</span
+                      ><strong>+20 XP</strong>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 4: АЧІВКИ ТА ЗВАННЯ -->
+            <div
+              class="tab-pane fade tab-anim-pane"
+              id="achievements-pane"
+              role="tabpanel"
+            >
+              <div class="d-flex flex-column gap-2">
+                <div
+                  class="system-card p-2 d-flex justify-content-between align-items-center"
+                >
+                  <div>🎯 <strong>Перша пройдена місія</strong></div>
+                  <span class="badge bg-success">Звання: Початківець</span>
+                </div>
+                <div
+                  class="system-card p-2 d-flex justify-content-between align-items-center"
+                >
+                  <div>⚔️ <strong>Перші 10 місій</strong></div>
+                  <span class="badge bg-success">Звання: Десятник</span>
+                </div>
+                <div
+                  class="system-card p-2 d-flex justify-content-between align-items-center"
+                >
+                  <div>🛡️ <strong>50. Рівень</strong></div>
+                  <span class="badge bg-info text-dark"
+                    >Майстер MediaMission</span
+                  >
+                </div>
+                <div
+                  class="system-card p-2 d-flex justify-content-between align-items-center"
+                >
+                  <div>👑 <strong>100. Рівень</strong></div>
+                  <span class="badge bg-warning text-dark"
+                    >Легенда MediaMission</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-0">
+          <button
+            type="button"
+            class="btn btn-secondary rounded-pill"
+            data-bs-dismiss="modal"
+          >
+            Зрозуміло!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <script
@@ -664,6 +1243,26 @@ MediaMission{% endblock %} {% block style %}
 ></script>
 
 <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabElList = document.querySelectorAll(
+      '#gamificationTab button[data-bs-toggle="tab"]',
+    );
+    tabElList.forEach((tabEl) => {
+      tabEl.addEventListener("show.bs.tab", (event) => {
+        const targetPane = document.querySelector(
+          event.target.getAttribute("data-bs-target"),
+        );
+        if (targetPane) {
+          targetPane.classList.remove("tab-anim-pane");
+          void targetPane.offsetWidth; // Reflow для рестарту CSS анімації
+          targetPane.classList.add("tab-anim-pane");
+        }
+      });
+    });
+  });
+</script>
+
+<script>
   // Privacy switch handler with error handling
   const privacySwitch = document.getElementById("privacySwitch");
 
@@ -672,26 +1271,19 @@ MediaMission{% endblock %} {% block style %}
       try {
         const response = await fetch("/api/privacy", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            allowed_to_show: privacySwitch.checked,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ allowed_to_show: privacySwitch.checked }),
         });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Show success feedback
         const status = privacySwitch.checked ? "enabled" : "disabled";
         console.log(`Privacy setting ${status} successfully`);
       } catch (error) {
         console.error("Error updating privacy settings:", error);
-        // Revert switch if there was an error
         privacySwitch.checked = !privacySwitch.checked;
-        // Could show a toast notification here
       }
     });
   }
@@ -715,7 +1307,6 @@ MediaMission{% endblock %} {% block style %}
       btn.setAttribute("aria-expanded", "false");
     } else {
       stats.style.display = "flex";
-      // Trigger reflow for animation
       void stats.offsetWidth;
       stats.classList.add("show");
       icon.textContent = "−";
@@ -724,7 +1315,6 @@ MediaMission{% endblock %} {% block style %}
     }
   };
 
-  // Initialize extra stats as hidden
   document.addEventListener("DOMContentLoaded", function () {
     const stats = document.getElementById("extraStats");
     if (stats) {

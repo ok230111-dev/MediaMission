@@ -305,11 +305,6 @@ async function saveMission() {
       }
     });
 
-    if (options.some(opt => !opt)) {
-      alert("Будь ласка, заповніть всі варіанти відповідей.");
-      return;
-    }
-
     questionsArray.push({
       question: qText,
       type: qType || 'single_choice',

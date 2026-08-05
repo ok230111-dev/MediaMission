@@ -403,7 +403,7 @@
 .question-card h4 {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--secondary-color);
+    color: var(--text-color);
 }
 
 .option-row .input-group-text {

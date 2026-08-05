@@ -288,10 +288,11 @@
         <!-- 1. Логотип -->
         <a class="navbar-brand fw-bold" href="/">MediaMission</a>
 
-        <!-- 2. Права частина: Перемикач мови + Тема (Завжди видимі) -->
+        <!-- 2. Права частина: Перемикач мови + Сповіщення + Тема (Завжди видимі) -->
         <div
           class="d-flex align-items-center gap-2 ms-lg-4 me-lg-auto order-lg-2"
         >
+          <!-- Перемикач мови -->
           <div class="language-switch">
             <a
               href="/set_language/uk"
@@ -310,6 +311,91 @@
             >
           </div>
 
+          <!-- Дзвоник сповіщень -->
+          <div class="dropdown notification-bell-wrapper">
+            <a
+              class="nav-link position-relative p-2"
+              href="#"
+              id="notificationBell"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="bi bi-bell-fill fs-5"></i>
+              {% if unread_count and unread_count > 0 %}
+              <span
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
+                id="notificationBadge"
+              >
+                {{ unread_count if unread_count < 10 else '9+' }}
+                <span class="visually-hidden"
+                  >{{ t('nav_unread_notifications') }}</span
+                >
+              </span>
+              {% endif %}
+            </a>
+
+            <!-- Випадаюче меню сповіщень -->
+            <div
+              class="dropdown-menu dropdown-menu-end notification-dropdown p-0 shadow"
+              aria-labelledby="notificationBell"
+            >
+              <div
+                class="notification-header px-3 py-2 d-flex justify-content-between align-items-center"
+              >
+                <span class="fw-bold">{{ t('nav_notifications_title') }}</span>
+                {% if unread_count and unread_count > 0 %}
+                <span class="badge bg-primary-subtle text-primary"
+                  >{{ unread_count }} нов{{ t('nav_new_notifications') }}</span
+                >
+                {% endif %}
+              </div>
+              <hr class="m-0" />
+
+              <div class="notification-list">
+                {% if latest_notifications %} {% for record in
+                latest_notifications %}
+                <a
+                  href="/notifications"
+                  class="dropdown-item notification-item {% if not record.is_read %}unread{% endif %}"
+                >
+                  <div class="d-flex align-items-start gap-2">
+                    {% if not record.is_read %}
+                    <span class="unread-dot mt-1"></span>
+                    {% endif %}
+                    <div class="flex-grow-1 min-width-0">
+                      <div class="fw-semibold text-truncate">
+                        {{ t(record.notification.title) }}
+                      </div>
+                      <div class="text-muted small text-truncate">
+                        {{ t(record.notification.body) }}
+                      </div>
+                      <div class="text-muted small">
+                        {{ record.notification.created_at.strftime("%d.%m.%Y
+                        %H:%M") }}
+                      </div>
+                    </div>
+                  </div>
+                </a>
+                {% endfor %} {% else %}
+                <div class="text-center text-muted py-4 small">
+                  <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+                  {{ t('nav_no_notifications') }}
+                </div>
+                {% endif %}
+              </div>
+
+              <hr class="m-0" />
+              <a
+                href="/notifications"
+                class="dropdown-item text-center text-primary fw-semibold py-2"
+              >
+                {{ t('nav_view_all_notifications') }}
+              </a>
+            </div>
+          </div>
+
+          <!-- Перемикач теми -->
           <button
             class="btn btn-theme-toggle p-1"
             id="themeToggle"
@@ -329,7 +415,7 @@
           </button>
         </div>
 
-        <!-- 3. Основне меню (На десктопі йде ПІСЛЯ перемикача мови) -->
+        <!-- 3. Основне меню -->
         <div class="collapse navbar-collapse order-lg-3" id="navbarNav">
           <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
             <li class="nav-item">
@@ -379,10 +465,33 @@
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
-            .register("/firebase-messaging-sw.js")
+            .register("/static/service-worker.js")
             .then((reg) => {
               console.log("SW Registered");
             });
+        });
+      }
+    </script>
+    <script>
+      const bellEl = document.getElementById("notificationBell");
+      if (bellEl) {
+        bellEl.addEventListener("shown.bs.dropdown", async () => {
+          const badge = document.getElementById("notificationBadge");
+          if (!badge) return;
+
+          try {
+            await fetch("/api/notifications/mark_read", { method: "POST" });
+            badge.remove();
+            document
+              .querySelectorAll(".notification-item.unread")
+              .forEach((item) => {
+                item.classList.remove("unread");
+                const dot = item.querySelector(".unread-dot");
+                if (dot) dot.remove();
+              });
+          } catch (err) {
+            console.error("Не вдалось позначити сповіщення прочитаними:", err);
+          }
         });
       }
     </script>

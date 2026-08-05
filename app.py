@@ -1848,6 +1848,23 @@ def notifications():
 
 
 
+@app.route("/api/notifications/mark_read", methods=["POST"])
+def mark_notifications_read():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"success": False}, 401
+
+    NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).update(
+        {"is_read": True, "read_at": datetime.now(timezone.utc)},
+        synchronize_session=False
+    )
+    db.session.commit()
+
+    return {"success": True}
+
+
+
+
 @app.route('/api/auth/custom_verify_email', methods=['POST'])
 def custom_verify_email():
     data = request.get_json()

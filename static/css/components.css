@@ -377,3 +377,76 @@
     color: white;
     margin-left: 8px;
 }
+
+
+.notification-bell-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.notification-badge {
+  font-size: 0.65rem;
+  padding: 3px 5px;
+  min-width: 18px;
+}
+
+/* Легка анімація "дзвону" коли є непрочитані */
+.notification-badge {
+  animation: bell-pulse 2s ease-in-out infinite;
+}
+
+@keyframes bell-pulse {
+  0%, 100% { transform: scale(1) translate(-50%, -50%); }
+  50% { transform: scale(1.15) translate(-50%, -50%); }
+}
+
+.notification-dropdown {
+  width: 340px;
+  max-width: 90vw;
+  border-radius: 16px;
+  border: none;
+  box-shadow: var(--shadow-large, 0 20px 45px rgba(0,0,0,.15));
+  overflow: hidden;
+}
+
+.notification-header {
+  background: var(--background-color);
+}
+
+.notification-list {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  white-space: normal;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.notification-card-unread {
+  border-left: 3px solid var(--primary-color) !important;
+}
+
+/* Мобільна адаптивність */
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: 300px;
+  }
+}

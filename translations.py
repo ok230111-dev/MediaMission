@@ -161,7 +161,13 @@ TRANSLATIONS = {
         "notification_new_mission_title": "Нова місія!",
         "notification_new_mission_body": "З'явилася нова місія: «{title}». Спробуй свої сили!",
         "give_answers_for_quetions": "Дайте відповіді на запитання для завершення місії",
-        
+        "nav_unread_notifications": "непрочитаних сповіщень",
+        "nav_notifications_title": "Сповіщення",
+        "nav_new_notifications": "нові",
+        "nav_no_notifications": "Немає сповіщень",
+        "nav_view_all_notifications": "Переглянути всі",
+        "notification_new_mission_title": "Нова місія доступна!",
+        "notification_new_mission_body": "Додано нову місію. Переглянь її!"
     },
     "de": {
         "mission": "Mission",
@@ -323,6 +329,13 @@ TRANSLATIONS = {
         "questions_block": "Fragenblock",
         "result_your_xp": "Dein Gesamt-XP",
         "give_answers_for_questions": "Beantworte die Fragen, um die Mission abzuschließen",
+        "nav_unread_notifications": "Ungelesene Benachrichtigungen",
+        "nav_notifications_title": "Benachrichtigungen",
+        "nav_new_notifications": "neu",
+        "nav_no_notifications": "Keine Benachrichtigungen",
+        "nav_view_all_notifications": "Alle anzeigen",
+        "notification_new_mission_title": "Neue Mission verfügbar!",
+        "notification_new_mission_body": "Eine neue Mission wurde hinzugefügt. Schau sie dir an!"
     },
     "en": {
         "mission": "Mission",
@@ -485,6 +498,13 @@ TRANSLATIONS = {
         "questions_block": "Questions block",
         "result_your_xp": "Your total XP",
         "give_answers_for_questions": "Answer the questions to complete the mission",
+        "nav_unread_notifications": "unread notifications",
+        "nav_notifications_title": "Notifications",
+        "nav_new_notifications": "new",
+        "nav_no_notifications": "No notifications",
+        "nav_view_all_notifications": "View all",
+        "notification_new_mission_title": "New mission available!",
+        "notification_new_mission_body": "A new mission has been added. Check it out!"
     },
 }
 

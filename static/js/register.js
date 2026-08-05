@@ -69,18 +69,21 @@ form.addEventListener("submit", async (e) => {
             })
         });
 
-        await fetch("/api/session_login", {
+        const sessionResponse = await fetch("/api/session_login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ uid: user.uid })
         });
+        const sessionData = await sessionResponse.json();
+        if (!sessionResponse.ok || sessionData.success !== true) {
+            throw new Error(sessionData.error || "Не вдалося встановити сесію");
+        }
 
-        showAlert("Реєстрація успішна!, Перенаправлення...", "success");
-
+        showAlert("Реєстрація успішна! Перенаправлення...", "success");
 
         setTimeout(() => {
-            window.location.href = "/login";
-        }, 1000);
+            window.location.href = "/missions-overview";
+        }, 900);
 
     } catch (error) {
         console.log(error);

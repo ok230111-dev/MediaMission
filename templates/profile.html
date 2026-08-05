@@ -853,6 +853,24 @@ MediaMission{% endblock %} {% block style %}
             <code class="small">{{ user.firebase_uid }}</code>
           </div>
 
+          <div class="form-check form-switch mt-3">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="pushNotificationsSwitch"
+              aria-label="Увімкнути PUSH-сповіщення"
+            />
+            <label
+              class="form-check-label fw-bold"
+              for="pushNotificationsSwitch"
+            >
+              🔔 PUSH-сповіщення
+            </label>
+          </div>
+          <p class="text-muted small mb-3">
+            Отримувати важливі сповіщення прямо у браузері
+          </p>
+
           <div class="form-check form-switch mt-4">
             <input
               class="form-check-input"
@@ -1322,4 +1340,8 @@ MediaMission{% endblock %} {% block style %}
     }
   });
 </script>
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/notifications.js') }}?v={{ range(1, 99999) | random }}"
+></script>
 {% endblock %}

@@ -19,7 +19,7 @@ btn.addEventListener("click", async () => {
         const user = result.user;
 
         // 1. Створюємо запис у власній БД, якщо його ще немає
-        await fetch("/api/create_user", {
+        const createResponse = await fetch("/api/create_user", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -30,13 +30,20 @@ btn.addEventListener("click", async () => {
                 email_verified: user.emailVerified
             })
         });
+        const createData = await createResponse.json();
+        if (!createResponse.ok || createData.success !== true) {
+          throw new Error(createData.error || "Не вдалося створити користувача");
+        }
 
-        // 2. Встановлюємо Flask-сесію
-        await fetch("/api/session_login", {
+        const sessionResponse = await fetch("/api/session_login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ uid: user.uid })
         });
+        const sessionData = await sessionResponse.json();
+        if (!sessionResponse.ok || sessionData.success !== true) {
+          throw new Error(sessionData.error || "Не вдалося встановити сесію");
+        }
 
         showAlert("Вхід успішний!", "success");
 

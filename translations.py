@@ -1,5 +1,7 @@
 TRANSLATIONS = {
     "uk": {
+        "no_connection_internet": "Немає підключення до Інтернету",
+        "no_internet_try_again": "Схоже, що зараз немає мережі. Спробуй ще раз трохи пізніше.",
         "notifications": "Сповіщення",
         "mission": "Місія",
         "login_mediamission_title": "Вхід | MediaMission",

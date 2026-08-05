@@ -20,10 +20,24 @@
     =========================================================== -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% if g.lang == "uk" %}
     <meta
       name="description"
-      content="MediaMission ist eine interaktive Plattform zur Förderung der Medienkompetenz durch Medienmissionen, Video-Quizze und praktische Aufgaben."
+      content="MediaMission — інтерактивна платформа для українських дітей у Німеччині. Розвивайте медіаграмотність, критичне мислення та вміння розпізнавати фейки через цікаві місії."
     />
+
+    {% elif g.lang == "de" %}
+    <meta
+      name="description"
+      content="MediaMission ist eine interaktive Lernplattform für ukrainische Kinder in Deutschland. Entwickle Medienkompetenz, kritisches Denken und lerne Fake News zu erkennen."
+    />
+
+    {% else %}
+    <meta
+      name="description"
+      content="MediaMission is an interactive learning platform for Ukrainian children in Germany. Improve media literacy, critical thinking and learn how to detect misinformation."
+    />
+    {% endif %}
 
     <!-- Завантажуємо тему ЯКНАЙРАНІШЕ до рендеру контенту -->
     <script>
@@ -93,6 +107,28 @@
       href="{{ url_for('static', filename='css/style.css') }}"
     />
 
+    <!-- hreflang-->
+    <link
+      rel="alternate"
+      hreflang="uk"
+      href="https://mediamission.onrender.com/?lang=uk"
+    />
+    <link
+      rel="alternate"
+      hreflang="de"
+      href="https://mediamission.onrender.com/?lang=de"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://mediamission.onrender.com/?lang=en"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://mediamission.onrender.com/"
+    />
+
     <!-- ==========================================================
          ТЕМНА ТЕМА
          Підключається ОСТАННЬОЮ, щоб коректно перевизначати
@@ -116,12 +152,36 @@
     />
 
     <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="MediaMission" />
-
+    {% if g.lang == "uk" %}
+    <meta
+      property="og:title"
+      content="MediaMission — Медіаграмотність для дітей"
+    />
     <meta
       property="og:description"
-      content="Improve your media literacy through interactive quizzes, fake news detection, practical challenges and engaging educational missions."
+      content="Інтерактивні місії, відео та завдання для розвитку медіаграмотності."
     />
+
+    {% elif g.lang == "de" %}
+    <meta
+      property="og:title"
+      content="MediaMission – Medienkompetenz für Kinder"
+    />
+    <meta
+      property="og:description"
+      content="Interaktive Missionen und Aufgaben zur Förderung der Medienkompetenz."
+    />
+
+    {% else %}
+    <meta
+      property="og:title"
+      content="MediaMission – Media Literacy for Kids"
+    />
+    <meta
+      property="og:description"
+      content="Interactive missions that teach media literacy and critical thinking."
+    />
+    {% endif %}
 
     <meta
       property="og:image"
@@ -142,21 +202,24 @@
     <meta property="og:site_name" content="MediaMission" />
 
     <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-
-    <meta name="twitter:title" content="MediaMission" />
-
+    {% if g.lang == "uk" %}
     <meta
       name="twitter:description"
-      content="Interaktive Missionen zur Medienkompetenz"
+      content="Інтерактивна платформа для розвитку медіаграмотності."
     />
 
+    {% elif g.lang == "de" %}
     <meta
-      name="twitter:image"
-      content="https://mediamission.onrender.com/static/image/og-image.png"
+      name="twitter:description"
+      content="Interaktive Plattform für Medienkompetenz."
     />
 
-    <meta name="twitter:url" content="https://mediamission.onrender.com/" />
+    {% else %}
+    <meta
+      name="twitter:description"
+      content="Interactive platform for media literacy."
+    />
+    {% endif %}
 
     <!-- Покращує підтримку соцмиереж -->
     <meta property="og:image:width" content="1200" />
@@ -170,7 +233,7 @@
 
     <meta
       name="keywords"
-      content="MediaMission, Zukunft Ukraine, DAAD, Oksana Kucheruk, Oleksandr Kucheruk, Medienkompetenz, Fake News, Medienbildung, Quiz, Lernen, Schule, Deutschland, Ukraine, interaktive Missionen, kritisches Denken, Medienanalyse, digitale Bildung, Online-Lernen, Medienkompetenz-Training, Medienkompetenz-Plattform, Medienkompetenz-Entwicklung, Medienkompetenz-Förderung, Medienkompetenz-Programme, Medienkompetenz-Workshops, Medienkompetenz-Kurse, Medienkompetenz-Schulungen"
+      content="MediaMission, українські діти Німеччина, українська школа Німеччина, українці Гессен, медіаграмотність, медіаосвіта, критичне мислення, фейки, безпека в інтернеті, навчальна платформа, інтерактивне навчання, діти України, українська діаспора, Ukrainische Kinder Deutschland, ukrainische Schule Hessen, Medienkompetenz Kinder, Fake News lernen, digitale Bildung, Zukunft Ukraine, DAAD, Oksana Kucheruk, Oleksandr Kucheruk, Medienkompetenz, Fake News, Medienbildung, Quiz, Lernen, Schule, Deutschland, Ukraine, interaktive Missionen, kritisches Denken, Medienanalyse, digitale Bildung, Online-Lernen, Medienkompetenz-Training, Medienkompetenz-Plattform, Medienkompetenz-Entwicklung, Medienkompetenz-Förderung, Medienkompetenz-Programme, Medienkompetenz-Workshops, Medienkompetenz-Kurse, Medienkompetenz-Schulungen"
     />
 
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -312,5 +375,16 @@
     ></script>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/firebase-messaging-sw.js")
+            .then((reg) => {
+              console.log("SW Registered");
+            });
+        });
+      }
+    </script>
   </body>
 </html>

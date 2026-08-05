@@ -1,5 +1,6 @@
-import { auth } from "./firebase-config.js";
+import { auth, provider, db } from "./firebase-config.js";
 import { 
+  signInWithPopup,
   signInWithEmailAndPassword,
   fetchSignInMethodsForEmail
  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
@@ -31,20 +32,23 @@ form.addEventListener("submit", async (e) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    showAlert("Вхід успішний! Перенаправлення...", "success");
-
-    console.log("Авторизовано:", userCredential.user);
-
-    await fetch("/api/session_login", {
+    const sessionResponse = await fetch("/api/session_login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uid: user.uid })
     });
+    const sessionData = await sessionResponse.json();
 
+    if (!sessionResponse.ok || sessionData.success !== true) {
+      throw new Error(sessionData.error || "Не вдалося встановити сесію");
+    }
+
+    showAlert("Вхід успішний! Перенаправлення...", "success");
+
+    console.log("Авторизовано:", userCredential.user);
     setTimeout(() => {
       window.location.href = "/missions-overview";
     }, 900);
-
   } catch (error) {
     console.error("Помилка входу:", error.code, error.message);
 

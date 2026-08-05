@@ -1,11 +1,12 @@
 import re
-from flask import Flask, Response, render_template, request, redirect, url_for, session, g, abort, jsonify, flash
+from flask import Flask, Response, render_template, request, redirect, url_for, session, g, abort, jsonify, flash, send_from_directory
 from translations import translate
 from flask_mail import Mail, Message
 from flask_migrate import Migrate
 import os
 import uuid
 import json
+from auth import login_required
 from werkzeug.utils import secure_filename
 import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
@@ -18,7 +19,7 @@ from flask_admin.contrib.sqla import ModelView
 import cloudinary
 import cloudinary.uploader
 from functools import wraps
-
+from firebase_admin import messaging
 
 
 load_dotenv()
@@ -27,10 +28,30 @@ app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
+# app.py
 cred_path = os.environ.get(
     "FIREBASE_CRED_PATH",
-    "./mediamission-a0b70-firebase-adminsdk-fbsvc-a1ebbce726.json"
+    "serviceAccountKey.json"  # ← ВИКОРИСТОВУЄМО ПРАВИЛЬНИЙ ФАЙЛ
 )
+
+# Перевіряємо, чи існує файл
+if not os.path.exists(cred_path):
+    # Спробуємо альтернативні назви
+    alternatives = [
+        "mediamission-a0b70-firebase-adminsdk-fbsvc-9cea1cad13.json",
+        "serviceAccountKey.json.json",
+        "mediamission-a0b70-firebase-adminsdk-fbsvc-a1ebbce726.json"
+    ]
+    for alt in alternatives:
+        if os.path.exists(alt):
+            cred_path = alt
+            break
+    else:
+        print(f"❌ Файл облікових даних не знайдено!")
+        print(f"Шукали: {cred_path}")
+        raise FileNotFoundError("Не знайдено файл облікових даних Firebase")
+
+print(f"✅ Використовуємо файл: {cred_path}")
 
 cred = credentials.Certificate(cred_path)
 if not firebase_admin._apps:
@@ -165,6 +186,7 @@ class Users(db.Model):
     avatar = db.Column(db.String(500), nullable=True)
     photo_url = db.Column(db.String(500))
     language = db.Column(db.String(70), default="uk")
+    notification_token = db.Column(db.String(500), nullable=True)
 
 class SecureAdminIndexView(AdminIndexView):
     @expose('/')
@@ -311,11 +333,13 @@ migrate = Migrate(app, db)
 @app.before_request
 def set_language():
     lang = None
+    g.user = None
 
     user_id = session.get("user_id")
     if user_id:
         user = Users.query.get(user_id)
         if user:
+            g.user = user
             lang = user.language
 
     if lang is None:
@@ -584,6 +608,7 @@ def admin_required(f):
 
         return f(*args, **kwargs)
     return decorated
+
 
 
 
@@ -1172,7 +1197,32 @@ def session_login():
 
     user = Users.query.filter_by(firebase_uid=data["uid"]).first()
     if user is None:
-        return {"success": False, "error": "user не знайдено"}, 404
+        try:
+            firebase_user = firebase_auth.get_user(data["uid"])
+            provider = "password"
+            if firebase_user.provider_data:
+                provider = firebase_user.provider_data[0].provider_id or provider
+
+            user = Users(
+                firebase_uid=firebase_user.uid,
+                display_name=firebase_user.display_name or "Користувач",
+                email=firebase_user.email or "",
+                provider=provider,
+                email_verified=firebase_user.email_verified,
+                total_xp=0,
+                missions_completed=0,
+                accuracy=0,
+                streak=0,
+                created_at=datetime.now(timezone.utc),
+                last_login=datetime.now(timezone.utc)
+            )
+            db.session.add(user)
+            db.session.commit()
+        except firebase_auth.UserNotFoundError:
+            return {"success": False, "error": "user не знайдено"}, 404
+        except Exception as e:
+            db.session.rollback()
+            return {"success": False, "error": str(e)}, 500
 
     user.last_login = datetime.now(timezone.utc)
     db.session.commit()
@@ -1224,7 +1274,12 @@ def create_user():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    session.clear()
+    user_id = session.get("user_id")
+    if user_id:
+        user = db.session.get(Users, user_id)
+        if user:
+            return redirect(url_for('missions_overview'))
+
     return render_template('login.html')
 
 
@@ -1816,6 +1871,89 @@ def custom_verify_email():
     except Exception as e:
         print(f"Помилка відправки листа верифікації: {e}")
         return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
+
+
+
+
+@app.route("/offline")
+def offline():
+    return render_template("offline.html")
+
+
+
+
+@app.route("/api/save_notification_token", methods=["POST"])
+@login_required
+def save_notification_token():
+    data = request.get_json()
+
+    if not data or "token" not in data:
+        return jsonify(success=False, error="token required"), 400
+
+    user = g.user
+    if not user:
+        return jsonify(success=False, error="User session not found"), 401
+
+    user.notification_token = data["token"]
+    db.session.commit()
+
+    return jsonify(success=True)
+
+
+
+
+# Додайте цю функцію десь у вашому коді
+def send_push_notification_to_tokens(title, body, tokens):
+    if not tokens:
+        print("⚠️ Немає токенів для надсилання push-повідомлень")
+        return
+
+    for start in range(0, len(tokens), 500):
+        batch_tokens = tokens[start:start + 500]
+        message = messaging.MulticastMessage(
+            notification=messaging.Notification(title=title, body=body),
+            tokens=batch_tokens
+        )
+        try:
+            response = messaging.send_multicast(message)
+            print(f"✅ Push-повідомлення надіслано {response.success_count}/{len(batch_tokens)}")
+            if response.failure_count:
+                for index, resp in enumerate(response.responses):
+                    if not resp.success:
+                        print(f"❌ Токен {batch_tokens[index]} помилка: {resp.exception}")
+        except Exception as e:
+            print(f"❌ Помилка при відправці push-повідомлень: {e}")
+
+
+def send_new_mission_notification(mission_id):
+    """Надсилає сповіщення про нову місію всім користувачам"""
+    with app.app_context():
+        users = Users.query.filter(Users.notification_token.isnot(None)).all()
+        tokens = [user.notification_token for user in users if user.notification_token]
+        if not tokens:
+            print("⚠️ Немає користувачів з токенами")
+            return
+
+        send_push_notification_to_tokens(
+            title="Нова місія!",
+            body="З'явилася нова місія у MediaMission.",
+            tokens=tokens
+        )
+
+
+
+
+# app.py - додайте цей маршрут
+@app.route('/service-worker.js')
+def service_worker():
+    """Віддає service-worker.js файл"""
+    return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
+
+
+@app.route('/firebase-messaging-sw.js')
+def firebase_messaging_sw():
+    """Віддає firebase messaging worker"""
+    return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
 
 
 

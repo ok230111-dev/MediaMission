@@ -312,13 +312,14 @@
           </div>
 
           <!-- Дзвоник сповіщень -->
-          <div class="dropdown position-relative notification-bell-wrapper">
+          <div class="dropdown position-relative d-inline-block">
             <a
               class="nav-link position-relative p-2"
               href="#"
               id="notificationBell"
               role="button"
               data-bs-toggle="dropdown"
+              data-bs-display="static"
               aria-expanded="false"
             >
               <i class="bi bi-bell-fill fs-5"></i>
@@ -339,7 +340,6 @@
             <div
               class="dropdown-menu dropdown-menu-end notification-dropdown p-0 shadow border-0"
               aria-labelledby="notificationBell"
-              style="min-width: 320px"
             >
               <div
                 class="notification-header px-3 py-2 d-flex justify-content-between align-items-center"
@@ -353,10 +353,7 @@
               </div>
               <hr class="m-0" />
 
-              <div
-                class="notification-list"
-                style="max-height: 360px; overflow-y: auto"
-              >
+              <div class="notification-list">
                 {% if latest_notifications %} {% for record in
                 latest_notifications %}
                 <a
@@ -368,7 +365,7 @@
                     <span class="unread-dot mt-1"></span>
                     {% endif %}
                     <div class="flex-grow-1 min-width-0">
-                      <div class="fw-semibold line-clamp-2">
+                      <div class="fw-semibold small line-clamp-2">
                         {{ t(record.notification.title) }}
                       </div>
                       <div class="text-muted small line-clamp-2">

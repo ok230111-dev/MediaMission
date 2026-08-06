@@ -317,6 +317,25 @@ class UserAchievement(db.Model):
     user = db.relationship("Users", backref=db.backref("user_achievements", lazy=True, cascade="all, delete-orphan"))
 
 
+class SupportTicket(db.Model):
+    __tablename__ = "support_tickets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    category = db.Column(db.String(100), nullable=False)
+    mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"))
+    issue_type = db.Column(db.String(100), nullable=True)      # конкретний тип проблеми (xp_not_credited, wont_open, тощо)
+    description = db.Column(db.Text, nullable=True)
+    screenshot_url = db.Column(db.String(500), nullable=True)
+    # Автоматично зібрана технічна інформація
+    browser_info = db.Column(JSON, nullable=True)  # {browser, os, theme, language, screen, url, timestamp}
+    status = db.Column(db.String(20), default="open")  # open, answered, solved, closed
+    admin_reply = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    user = db.relationship("Users")
+    mission = db.relationship("Missions")
+
 UKRAINIAN_MONTHS = [
     "січня", "лютого", "березня", "квітня", "травня", "червня",
     "липня", "серпня", "вересня", "жовтня", "листопада", "грудня"
@@ -2124,6 +2143,111 @@ def adjust_user_xp(target_id):
         "new_total_xp": target_user.total_xp,
         "user_id": target_user.id
     }
+
+
+
+@app.route("/support")
+def support():
+    missions = Missions.query.order_by(Missions.title).all()
+    return render_template("support.html", missions=missions)
+
+
+@app.route("/api/support/submit_ticket", methods=["POST"])
+def submit_support_ticket():
+    user_id = session.get("user_id")
+
+    category = request.form.get("category", "").strip()
+    mission_id = request.form.get("mission_id") or None
+    issue_type = request.form.get("issue_type", "").strip()
+    description = request.form.get("description", "").strip()
+    browser_info_raw = request.form.get("browser_info", "{}")
+
+    if not category:
+        return jsonify({"success": False, "error": "Оберіть категорію звернення"}), 400
+
+    try:
+        browser_info = json.loads(browser_info_raw)
+    except (ValueError, TypeError):
+        browser_info = {}
+
+    screenshot_url = None
+    if "screenshot" in request.files:
+        file = request.files["screenshot"]
+        if file and file.filename:
+            upload_result = upload_to_cloudinary(file, folder="mediamission_support", resource_type="image")
+            if upload_result["success"]:
+                screenshot_url = upload_result["url"]
+
+    ticket = SupportTicket(
+        user_id=user_id,
+        category=category,
+        mission_id=int(mission_id) if mission_id else None,
+        issue_type=issue_type,
+        description=description,
+        screenshot_url=screenshot_url,
+        browser_info=browser_info,
+        status="open"
+    )
+    db.session.add(ticket)
+    db.session.commit()
+
+    return jsonify({"success": True, "ticket_id": ticket.id})
+
+
+@app.route("/api/admin/support_tickets", methods=["GET"])
+def get_support_tickets():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).all()
+
+    result = []
+    for tk in tickets:
+        result.append({
+            "id": tk.id,
+            "category": tk.category,
+            "issue_type": tk.issue_type,
+            "description": tk.description,
+            "mission_title": tk.mission.title if tk.mission else None,
+            "user_email": tk.user.email if tk.user else "Гість",
+            "screenshot_url": tk.screenshot_url,
+            "browser_info": tk.browser_info,
+            "status": tk.status,
+            "created_at": tk.created_at.strftime("%d.%m.%Y %H:%M")
+        })
+
+    return jsonify({"success": True, "tickets": result})
+
+
+@app.route("/api/admin/support_tickets/<int:ticket_id>/status", methods=["POST"])
+def update_ticket_status(ticket_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    ticket = SupportTicket.query.get(ticket_id)
+    if not ticket:
+        return jsonify({"success": False, "error": "Звернення не знайдено"}), 404
+
+    data = request.get_json()
+    new_status = data.get("status")
+    if new_status not in ("open", "answered", "solved", "closed"):
+        return jsonify({"success": False, "error": "Некоректний статус"}), 400
+
+    ticket.status = new_status
+    db.session.commit()
+
+    return jsonify({"success": True})
+
 
 
 

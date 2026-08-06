@@ -1,0 +1,214 @@
+{% extends "base.html" %} {% block title %}{{ t('support_title') }} |
+MediaMission{% endblock %} {% block content %}
+<section class="container py-5" style="max-width: 700px">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold mb-2">
+      <i class="bi bi-life-preserver text-primary me-2"></i>{{
+      t('support_title') }}
+    </h1>
+    <p class="text-muted">{{ t('support_subtitle') }}</p>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <!-- Прогрес-індикатор -->
+      <div class="d-flex justify-content-between mb-4" id="wizardSteps">
+        <div class="wizard-step active" data-step="1">1</div>
+        <div class="wizard-step" data-step="2">2</div>
+        <div class="wizard-step" data-step="3">3</div>
+        <div class="wizard-step" data-step="4">4</div>
+      </div>
+
+      <!-- КРОК 1: Категорія -->
+      <div class="wizard-panel" data-panel="1">
+        <h5 class="fw-bold mb-3">{{ t('support_step1_title') }}</h5>
+        <div class="d-flex flex-column gap-2" id="categoryOptions">
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="bug"
+            data-label="{{ t('support_cat_bug') }}"
+          >
+            <i class="bi bi-bug-fill me-2"></i>{{ t('support_cat_bug') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="account"
+            data-label="{{ t('support_cat_account') }}"
+          >
+            <i class="bi bi-person-fill me-2"></i>{{ t('support_cat_account') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="mission"
+            data-label="{{ t('support_cat_mission') }}"
+          >
+            <i class="bi bi-journal-check me-2"></i>{{ t('support_cat_mission')
+            }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="translation"
+            data-label="{{ t('support_cat_translation') }}"
+          >
+            <i class="bi bi-translate me-2"></i>{{ t('support_cat_translation')
+            }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="avatar"
+            data-label="{{ t('support_cat_avatar') }}"
+          >
+            <i class="bi bi-person-circle me-2"></i>{{ t('support_cat_avatar')
+            }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="notifications"
+            data-label="{{ t('support_cat_notifications') }}"
+          >
+            <i class="bi bi-bell-fill me-2"></i>{{
+            t('support_cat_notifications') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="leaderboard"
+            data-label="{{ t('support_cat_leaderboard') }}"
+          >
+            <i class="bi bi-trophy-fill me-2"></i>{{
+            t('support_cat_leaderboard') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="other"
+            data-label="{{ t('support_cat_other') }}"
+          >
+            <i class="bi bi-three-dots me-2"></i>{{ t('support_cat_other') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- КРОК 2: Деталі (динамічно змінюється залежно від категорії) -->
+      <div class="wizard-panel d-none" data-panel="2">
+        <h5 class="fw-bold mb-3">{{ t('support_step2_title') }}</h5>
+
+        <!-- Якщо категорія "mission" — показуємо вибір місії -->
+        <div id="missionSelectBlock" class="d-none mb-3">
+          <label class="form-label fw-semibold"
+            >{{ t('support_which_mission') }}</label
+          >
+          <select class="form-select" id="missionSelect">
+            <option value="">{{ t('support_select_mission') }}</option>
+            {% for m in missions %}
+            <option value="{{ m.id }}">{{ m.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <label class="form-label fw-semibold"
+          >{{ t('support_what_exactly') }}</label
+        >
+        <div class="d-flex flex-column gap-2" id="issueTypeOptions"></div>
+      </div>
+
+      <!-- КРОК 3: Опис -->
+      <div class="wizard-panel d-none" data-panel="3">
+        <h5 class="fw-bold mb-3">{{ t('support_step3_title') }}</h5>
+
+        <div class="alert alert-light border small" id="ticketSummary"></div>
+
+        <label class="form-label fw-semibold"
+          >{{ t('support_description_label') }}</label
+        >
+        <textarea
+          class="form-control mb-3"
+          id="descriptionInput"
+          rows="4"
+          placeholder="{{ t('support_description_placeholder') }}"
+        ></textarea>
+
+        <label class="form-label fw-semibold"
+          >{{ t('support_screenshot_label') }}</label
+        >
+        <input
+          type="file"
+          class="form-control"
+          id="screenshotInput"
+          accept="image/*"
+        />
+        <div class="form-text">{{ t('support_screenshot_hint') }}</div>
+      </div>
+
+      <!-- КРОК 4: Готово -->
+      <div class="wizard-panel d-none text-center py-4" data-panel="4">
+        <i
+          class="bi bi-check-circle-fill text-success"
+          style="font-size: 3rem"
+        ></i>
+        <h5 class="fw-bold mt-3">{{ t('support_success_title') }}</h5>
+        <p class="text-muted">{{ t('support_success_text') }}</p>
+        <p class="fw-bold" id="ticketIdDisplay"></p>
+      </div>
+
+      <!-- Навігація -->
+      <div class="d-flex justify-content-between mt-4" id="wizardNav">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          id="backBtn"
+          disabled
+        >
+          <i class="bi bi-arrow-left me-1"></i>{{ t('support_back') }}
+        </button>
+        <button type="button" class="btn btn-primary d-none" id="submitBtn">
+          <i class="bi bi-send-fill me-1"></i>{{ t('support_submit') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .wizard-step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bs-secondary-bg, #e9ecef);
+    color: var(--bs-secondary-color, #6c757d);
+    font-weight: bold;
+    font-size: 0.9rem;
+    flex: 1;
+    margin: 0 4px;
+    position: relative;
+  }
+  .wizard-step.active {
+    background: var(--bs-primary);
+    color: #fff;
+  }
+  .wizard-step.done {
+    background: #198754;
+    color: #fff;
+  }
+  .category-btn.selected {
+    background-color: var(--bs-primary);
+    color: #fff;
+  }
+  [data-theme="dark"] .alert-light {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+</style>
+
+<script src="{{ url_for('static', filename='js/support-wizard.js') }}"></script>
+{% endblock %}

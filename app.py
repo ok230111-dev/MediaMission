@@ -2102,6 +2102,21 @@ def adjust_user_xp(target_id):
 
 
 
+@app.route("/api/debug/run_migrations/<secret>")
+def run_migrations(secret):
+    if secret != os.environ.get("SECRET_KEY"):
+        return "Forbidden", 403
+
+    from flask_migrate import upgrade
+    try:
+        upgrade()
+        return "✅ Міграції успішно застосовано", 200
+    except Exception as e:
+        import traceback
+        return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

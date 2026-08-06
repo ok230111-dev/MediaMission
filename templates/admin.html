@@ -154,7 +154,55 @@
                     <i class="bi bi-trash"></i>
                   </button>
                 </td>
-                <td>{{ user.total_xp }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-1">
+                    <span id="xp-value-{{ user.id }}" class="fw-semibold"
+                      >{{ user.total_xp }}</span
+                    >
+                    <div class="dropdown">
+                      <button
+                        class="btn btn-sm btn-outline-secondary py-0 px-1"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        title="Змінити XP"
+                      >
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <div class="dropdown-menu p-2" style="min-width: 180px">
+                        <div class="d-flex gap-1">
+                          <input
+                            type="number"
+                            id="xp-input-{{ user.id }}"
+                            class="form-control form-control-sm"
+                            placeholder="±XP"
+                            style="width: 90px"
+                          />
+                          <button
+                            class="btn btn-sm btn-success flex-shrink-0"
+                            onclick="adjustXp({{ user.id }})"
+                          >
+                            <i class="bi bi-check-lg"></i>
+                          </button>
+                        </div>
+                        <div class="d-flex gap-1 mt-1">
+                          <button
+                            class="btn btn-sm btn-outline-danger flex-fill"
+                            onclick="quickAdjustXp({{ user.id }}, -10)"
+                          >
+                            -10
+                          </button>
+                          <button
+                            class="btn btn-sm btn-outline-success flex-fill"
+                            onclick="quickAdjustXp({{ user.id }}, 10)"
+                          >
+                            +10
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
                 <td>{{ user.missions_completed }}</td>
                 <td>{{ user.accuracy }}%</td>
                 <td>{{ user.created_at.strftime("%d.%m.%Y") }}</td>
@@ -783,7 +831,7 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/admin.js') }}?v={{ asset_version('admin.js') }}"></script>
   <script>
     document.getElementById("notifyTarget").addEventListener("change", (e) => {
       document

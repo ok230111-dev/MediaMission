@@ -602,6 +602,18 @@ def check_and_unlock_achievements(user_id):
 
 
 
+@app.context_processor
+def inject_asset_version():
+    def asset_version(filename):
+        filepath = os.path.join(app.static_folder, filename)
+        try:
+            return int(os.path.getmtime(filepath))
+        except OSError:
+            return 0
+    return {"asset_version": asset_version}
+
+
+
 
 def admin_required(f):
     @wraps(f)
@@ -2052,6 +2064,41 @@ def service_worker():
 def firebase_messaging_sw():
     """Віддає firebase messaging worker"""
     return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
+
+
+
+
+@app.route("/api/admin/adjust_xp/<int:target_id>", methods=["POST"])
+def adjust_user_xp(target_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    target_user = Users.query.get(target_id)
+    if not target_user:
+        return {"success": False, "error": "Користувача не знайдено"}, 404
+
+    data = request.get_json()
+    try:
+        amount = int(data.get("amount"))
+    except (TypeError, ValueError):
+        return {"success": False, "error": "Некоректне значення XP"}, 400
+
+    if amount == 0:
+        return {"success": False, "error": "Значення не може бути 0"}, 400
+
+    target_user.total_xp = max(0, target_user.total_xp + amount)  # не даємо піти в мінус
+    db.session.commit()
+
+    return {
+        "success": True,
+        "new_total_xp": target_user.total_xp,
+        "user_id": target_user.id
+    }
 
 
 

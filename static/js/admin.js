@@ -448,6 +448,46 @@ async function deleteMission(missionId, missionTitle, hasNotifications, notifica
     }
 }
 
+async function sendXpAdjustment(userId, amount) {
+  if (!amount || amount === 0) {
+    alert("Введіть ненульове значення XP");
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/admin/adjust_xp/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      const el = document.getElementById(`xp-value-${userId}`);
+      if (el) el.textContent = data.new_total_xp;
+
+      // очищуємо поле вводу, якщо воно є
+      const input = document.getElementById(`xp-input-${userId}`);
+      if (input) input.value = "";
+    } else {
+      alert(data.error || "Помилка зміни XP");
+    }
+  } catch (err) {
+    console.error("Помилка запиту:", err);
+    alert("Сталася помилка при зверненні до сервера");
+  }
+}
+
+function adjustXp(userId) {
+  const input = document.getElementById(`xp-input-${userId}`);
+  const amount = parseInt(input.value, 10);
+  sendXpAdjustment(userId, amount);
+}
+
+function quickAdjustXp(userId, amount) {
+  sendXpAdjustment(userId, amount);
+}
+
 // --- ФУНКЦІЯ ДЛЯ ПОКАЗУ TOAST ПОВІДОМЛЕНЬ ---
 function showToast(title, message, type = 'info') {
   // Перевіряємо чи існує контейнер

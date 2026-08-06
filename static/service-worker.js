@@ -60,7 +60,7 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 // ---------- CACHE CONFIG ----------
-const CACHE_NAME = 'mediamission-v4'; // Оновили версію кешу
+const CACHE_NAME = 'mediamission-54'; // Оновили версію кешу
 const STATIC_CACHE = `static-${CACHE_NAME}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_NAME}`;
 
@@ -121,6 +121,12 @@ self.addEventListener("activate", event => {
 // ---------- FETCH ----------
 self.addEventListener("fetch", event => {
     if (event.request.method !== "GET") return;
+
+    // API-запити — завжди йдемо в мережу, ніколи не кешуємо
+    if (event.request.url.includes("/api/")) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
 
     // HTML - network first
     if (event.request.headers.get("accept")?.includes("text/html")) {

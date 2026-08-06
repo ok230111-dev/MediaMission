@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <body style="font-family: Arial, sans-serif; color: #333">
+    <h2>Нове звернення в підтримку #{{ ticket.id }}</h2>
+    <p><strong>Категорія:</strong> {{ ticket.category }}</p>
+    {% if ticket.issue_type %}
+    <p><strong>Тип проблеми:</strong> {{ ticket.issue_type }}</p>
+    {% endif %} {% if ticket.mission %}
+    <p><strong>Місія:</strong> {{ ticket.mission.title }}</p>
+    {% endif %}
+    <p><strong>Від:</strong> {{ reporter_email }}</p>
+    {% if ticket.description %}
+    <p><strong>Опис:</strong><br />{{ ticket.description }}</p>
+    {% endif %} {% if ticket.screenshot_url %}
+    <p>
+      <strong>Скріншот:</strong><br /><img
+        src="{{ ticket.screenshot_url }}"
+        style="max-width: 500px; border: 1px solid #ddd"
+      />
+    </p>
+    {% endif %}
+    <hr />
+    <p style="color: #888; font-size: 0.85em">
+      Браузер: {{ ticket.browser_info.get('browser', '—') }}<br />
+      Мова: {{ ticket.browser_info.get('language', '—') }}<br />
+      Тема: {{ ticket.browser_info.get('theme', '—') }}<br />
+      Сторінка: {{ ticket.browser_info.get('url', '—') }}
+    </p>
+    <p>
+      <a href="https://mediamission.onrender.com/admin"
+        >Переглянути в адмінці →</a
+      >
+    </p>
+  </body>
+</html>

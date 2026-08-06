@@ -324,6 +324,14 @@ MediaMission{% endblock %} {% block style %}
   data-t-xp-to-next="{{ t('xp_to_next_level') }}"
   data-t-click-more="{{ t('profile_click_more_info') }}"
   data-t-click-less="{{ t('profile_click_less_info') }}"
+  data-t-support-no-tickets="{{ t('support_no_tickets') }}"
+  data-t-support-load-error="{{ t('support_load_error') }}"
+  data-t-support-reply-label="{{ t('support_reply_label') }}"
+  data-t-support-mission-label="{{ t('support_mission_label') }}"
+  data-t-status-open="{{ t('support_status_open') }}"
+  data-t-status-answered="{{ t('support_status_answered') }}"
+  data-t-status-solved="{{ t('support_status_solved') }}"
+  data-t-status-closed="{{ t('support_status_closed') }}"
 >
   <!-- Блок профілю користувача -->
   <div
@@ -779,6 +787,19 @@ MediaMission{% endblock %} {% block style %}
     {% endfor %} {% else %}
     <p class="text-muted">{{ t('profile_no_missions') }}</p>
     {% endif %}
+  </div>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-life-preserver text-primary me-2"></i>{{
+        t('support_my_tickets') }}
+      </h3>
+      <div id="myTicketsList" class="d-flex flex-column gap-2">
+        <div class="text-center text-muted py-3">
+          <span class="spinner-border spinner-border-sm"></span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Модальне вікно інформації про акаунт -->
@@ -1253,7 +1274,7 @@ MediaMission{% endblock %} {% block style %}
 
 <script
   type="module"
-  src="{{ url_for('static', filename='js/profile.js') }}"
+  src="{{ url_for('static', filename='js/profile.js') }}?v={{ asset_version('js/profile.js') }}"
 ></script>
 <script
   type="module"

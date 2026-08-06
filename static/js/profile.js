@@ -216,48 +216,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ============================================
-// СКИДАННЯ ПАРОЛЯ ЧЕРЕЗ FLASK
-// ============================================
-async function sendResetPasswordEmail(email) {
+
+
+const body = document.body;
+
+const STATUS_CONFIG = {
+  open:     { emoji: "🟡", label: body.dataset.tStatusOpen || "Open",         class: "bg-warning-subtle text-warning-emphasis" },
+  answered: { emoji: "🔵", label: body.dataset.tStatusAnswered || "Answered", class: "bg-info-subtle text-info-emphasis" },
+  solved:   { emoji: "🟢", label: body.dataset.tStatusSolved || "Solved",     class: "bg-success-subtle text-success-emphasis" },
+  closed:   { emoji: "🔴", label: body.dataset.tStatusClosed || "Closed",     class: "bg-danger-subtle text-danger-emphasis" }
+};
+
+async function loadMyTickets() {
+  const container = document.getElementById("myTicketsList");
+  if (!container) return;
+
+  const noTicketsText = body.dataset.tSupportNoTickets || "No tickets yet";
+  const loadErrorText = body.dataset.tSupportLoadError || "Failed to load";
+  const replyLabel = body.dataset.tSupportReplyLabel || "Reply";
+  const missionLabel = body.dataset.tSupportMissionLabel || "Mission";
+
   try {
-    const response = await fetch('/api/auth/custom_reset_password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email })
-    });
+    const response = await fetch("/api/my_support_tickets");
+    const data = await response.json();
 
-    const result = await response.json();
-
-    if (result.success) {
-      alert("Перевірте вашу пошту! Ми надіслали email для підтвердження.");
-    } else {
-      alert("Помилка: " + result.error);
+    if (!data.success || data.tickets.length === 0) {
+      container.innerHTML = `<div class="text-center text-muted py-3 small">${noTicketsText}</div>`;
+      return;
     }
+
+    container.innerHTML = data.tickets.map(tk => {
+      const status = STATUS_CONFIG[tk.status] || STATUS_CONFIG.open;
+      return `
+        <div class="border rounded-3 p-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="fw-bold">#${tk.id} — ${tk.category}</span>
+            <span class="badge ${status.class}">${status.emoji} ${status.label}</span>
+          </div>
+          ${tk.mission_title ? `<div class="small text-muted mb-1">${missionLabel}: ${tk.mission_title}</div>` : ''}
+          ${tk.description ? `<div class="small mb-2">${tk.description}</div>` : ''}
+          ${tk.admin_reply ? `<div class="small bg-light rounded p-2 mt-2"><strong>${replyLabel}:</strong> ${tk.admin_reply}</div>` : ''}
+          <div class="text-muted small mt-2">${tk.created_at}</div>
+        </div>
+      `;
+    }).join("");
+
   } catch (err) {
-    console.error(err);
-    alert("Помилка з'єднання з сервером.");
+    console.error("Помилка завантаження звернень:", err);
+    container.innerHTML = `<div class="text-center text-danger py-3 small">${loadErrorText}</div>`;
   }
 }
 
-// ============================================
-// ДОДАТКОВО: ОНОВЛЕННЯ XP ПРИ ЗМІНІ totalXp
-// ============================================
-const observer = new MutationObserver(function() {
-    updateXPProgress();
-});
-
-const totalXpElement = document.getElementById('totalXp');
-if (totalXpElement) {
-    observer.observe(totalXpElement, { 
-        childList: true, 
-        characterData: true,
-        subtree: true 
-    });
-}
-
-// Також оновлюємо при завантаженні сторінки
-window.addEventListener('load', function() {
-    updateXPProgress();
-    window.toggleStatsSmooth = toggleStatsSmooth;
-});
+document.addEventListener("DOMContentLoaded", loadMyTickets);

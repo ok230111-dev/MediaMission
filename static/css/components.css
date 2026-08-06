@@ -544,3 +544,25 @@
 [data-theme="dark"] .site-footer h6 {
   color: rgba(255, 255, 255, 0.45);
 }
+
+.status-badge {
+  font-size: 0.8rem;
+  padding: 0.35em 0.7em;
+}
+[data-theme="dark"] .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.15) !important; color: #ffd970 !important; }
+[data-theme="dark"] .bg-info-subtle { background-color: rgba(13, 202, 240, 0.15) !important; color: #8fe3f5 !important; }
+[data-theme="dark"] .bg-success-subtle { background-color: rgba(25, 135, 84, 0.15) !important; color: #82d9ab !important; }
+[data-theme="dark"] .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.15) !important; color: #f5a3ab !important; }
+
+[data-theme="dark"] #myTicketsList .border {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #myTicketsList .bg-light {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+[data-theme="dark"] #myTicketsList .text-muted {
+  color: rgba(255, 255, 255, 0.55) !important;
+}

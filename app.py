@@ -1433,6 +1433,65 @@ def profile():
 
 
 
+@app.route("/api/my_support_tickets", methods=["GET"])
+def get_my_support_tickets():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    tickets = SupportTicket.query.filter_by(user_id=user_id).order_by(SupportTicket.created_at.desc()).all()
+
+    result = []
+    for tk in tickets:
+        result.append({
+            "id": tk.id,
+            "category": tk.category,
+            "issue_type": tk.issue_type,
+            "description": tk.description,
+            "mission_title": tk.mission.title if tk.mission else None,
+            "status": tk.status,
+            "admin_reply": tk.admin_reply,
+            "created_at": tk.created_at.strftime("%d.%m.%Y %H:%M")
+        })
+
+    return jsonify({"success": True, "tickets": result})
+
+
+
+
+@app.route("/api/admin/support_tickets/<int:ticket_id>/status", methods=["POST"])
+def update_support_ticket_status(ticket_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    ticket = SupportTicket.query.get(ticket_id)
+    if not ticket:
+        return jsonify({"success": False, "error": "Звернення не знайдено"}), 404
+
+    data = request.get_json()
+    new_status = data.get("status")
+    admin_reply = data.get("admin_reply")
+
+    if new_status and new_status not in ("open", "answered", "solved", "closed"):
+        return jsonify({"success": False, "error": "Некоректний статус"}), 400
+
+    if new_status:
+        ticket.status = new_status
+    if admin_reply is not None:
+        ticket.admin_reply = admin_reply
+
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+
+
+
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
@@ -2202,8 +2261,60 @@ def submit_support_ticket():
     db.session.add(ticket)
     db.session.commit()
 
+    # --- Сповіщення адмінів: in-app + email ---
+    notify_admins_new_ticket(ticket)
+
     return jsonify({"success": True, "ticket_id": ticket.id})
 
+
+def notify_admins_new_ticket(ticket):
+    reporter_email = ticket.user.email if ticket.user else "Гість"
+    category_label = ticket.category
+    summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
+
+    # In-app сповіщення адмінам (як і раніше)
+    admins = Users.query.filter_by(admin=True).all()
+    if admins:
+        notif = Notification(
+            title_json={
+                "uk": "Нове звернення в підтримку",
+                "de": "Neue Support-Anfrage",
+                "en": "New support ticket"
+            },
+            body_json={
+                "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
+                "de": f"#{ticket.id}: {summary} (von {reporter_email})",
+                "en": f"#{ticket.id}: {summary} (from {reporter_email})"
+            },
+            created_by=ticket.user_id
+        )
+        db.session.add(notif)
+        db.session.flush()
+
+        admin_ids = [a.id for a in admins]
+        db.session.bulk_insert_mappings(NotificationRecipient, [
+            {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
+        ])
+        db.session.commit()
+
+    # Email на адресу з .env (MAIL_USERNAME)
+    support_email = os.environ.get("MAIL_USERNAME")
+    if support_email:
+        try:
+            msg = Message(
+                subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
+                recipients=[support_email],
+                html=render_template(
+                    "emails/new_support_ticket.html",
+                    ticket=ticket,
+                    reporter_email=reporter_email
+                )
+            )
+            mail.send(msg)
+        except Exception as e:
+            print(f"Не вдалося надіслати email про звернення #{ticket.id}: {e}")
+    else:
+        print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
 
 @app.route("/api/admin/support_tickets", methods=["GET"])
 def get_support_tickets():
@@ -2251,12 +2362,17 @@ def update_ticket_status(ticket_id):
 
     data = request.get_json()
     new_status = data.get("status")
-    if new_status not in ("open", "answered", "solved", "closed"):
+    admin_reply = data.get("admin_reply")
+
+    if new_status and new_status not in ("open", "answered", "solved", "closed"):
         return jsonify({"success": False, "error": "Некоректний статус"}), 400
 
-    ticket.status = new_status
-    db.session.commit()
+    if new_status:
+        ticket.status = new_status
+    if admin_reply is not None:
+        ticket.admin_reply = admin_reply
 
+    db.session.commit()
     return jsonify({"success": True})
 
 

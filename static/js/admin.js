@@ -621,3 +621,156 @@ function refreshMissions() {
   loadAdminMissions();
   showToast('🔄 Оновлення', 'Список місій оновлено', 'info');
 }
+
+const TICKET_STATUS_CONFIG = {
+  open:     { emoji: "🟡", label: "Відкрито",    class: "bg-warning-subtle text-warning-emphasis" },
+  answered: { emoji: "🔵", label: "Відповідано",  class: "bg-info-subtle text-info-emphasis" },
+  solved:   { emoji: "🟢", label: "Вирішено",     class: "bg-success-subtle text-success-emphasis" },
+  closed:   { emoji: "🔴", label: "Закрито",      class: "bg-danger-subtle text-danger-emphasis" }
+};
+
+let allTickets = [];
+
+async function loadSupportTickets() {
+  const container = document.getElementById("supportTicketsContainer");
+  if (!container) return;
+
+  container.innerHTML = `<div class="text-center text-muted py-4">Завантаження...</div>`;
+
+  try {
+    const response = await fetch("/api/admin/support_tickets");
+    const data = await response.json();
+
+    if (!data.success) {
+      container.innerHTML = `<div class="text-center text-danger py-4">Помилка: ${data.error}</div>`;
+      return;
+    }
+
+    allTickets = data.tickets;
+    renderTickets();
+  } catch (err) {
+    console.error("Помилка завантаження звернень:", err);
+    container.innerHTML = `<div class="text-center text-danger py-4">Мережева помилка</div>`;
+  }
+}
+
+function renderTickets() {
+  const container = document.getElementById("supportTicketsContainer");
+  const filter = document.getElementById("ticketStatusFilter")?.value || "all";
+
+  const filtered = filter === "all" ? allTickets : allTickets.filter(t => t.status === filter);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="text-center text-muted py-4">Звернень немає</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(tk => {
+    const status = TICKET_STATUS_CONFIG[tk.status] || TICKET_STATUS_CONFIG.open;
+    const browser = tk.browser_info || {};
+
+    return `
+      <div class="border rounded-3 p-3 mb-3" id="ticket-${tk.id}">
+        <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+          <div>
+            <span class="fw-bold">#${tk.id}</span>
+            <span class="badge bg-secondary-subtle text-secondary ms-2">${escapeHtml(tk.category)}</span>
+            ${tk.issue_type ? `<span class="badge bg-secondary-subtle text-secondary ms-1">${escapeHtml(tk.issue_type)}</span>` : ''}
+          </div>
+          <span class="badge status-badge ${status.class}">${status.emoji} ${status.label}</span>
+        </div>
+
+        <div class="small text-muted mb-2">
+          Від: <strong>${escapeHtml(tk.user_email)}</strong> · ${tk.created_at}
+          ${tk.mission_title ? ` · Місія: <strong>${escapeHtml(tk.mission_title)}</strong>` : ''}
+        </div>
+
+        ${tk.description ? `<div class="mb-2">${escapeHtml(tk.description)}</div>` : ''}
+
+        ${tk.screenshot_url ? `
+          <a href="${tk.screenshot_url}" target="_blank" class="d-inline-block mb-2">
+            <img src="${tk.screenshot_url}" style="max-width: 200px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);">
+          </a>
+        ` : ''}
+
+        <details class="small text-muted mb-2">
+          <summary style="cursor: pointer;">Технічна інформація</summary>
+          <div class="mt-2">
+            Браузер: ${escapeHtml(browser.browser || '—')}<br>
+            Мова: ${escapeHtml(browser.language || '—')}<br>
+            Тема: ${escapeHtml(browser.theme || '—')}<br>
+            Екран: ${escapeHtml(browser.screen || '—')}<br>
+            URL: ${escapeHtml(browser.url || '—')}
+          </div>
+        </details>
+
+        <div class="d-flex gap-2 flex-wrap align-items-center mt-3 pt-3 border-top">
+          <select class="form-select form-select-sm" style="width: auto" id="status-select-${tk.id}">
+            ${Object.entries(TICKET_STATUS_CONFIG).map(([key, cfg]) =>
+              `<option value="${key}" ${tk.status === key ? 'selected' : ''}>${cfg.emoji} ${cfg.label}</option>`
+            ).join('')}
+          </select>
+          <button class="btn btn-sm btn-success" onclick="saveTicketUpdate(${tk.id})">
+            <i class="bi bi-check-lg me-1"></i>Зберегти статус
+          </button>
+          <button class="btn btn-sm btn-primary" onclick="toggleReplyBox(${tk.id})">
+            <i class="bi bi-reply-fill me-1"></i>Відповісти
+          </button>
+        </div>
+
+        <div class="d-none mt-2" id="reply-box-${tk.id}">
+          <textarea class="form-control form-control-sm mb-2" id="reply-text-${tk.id}" rows="2" placeholder="Ваша відповідь...">${tk.admin_reply || ''}</textarea>
+          <button class="btn btn-sm btn-success" onclick="saveTicketUpdate(${tk.id})">
+            <i class="bi bi-check-lg me-1"></i>Зберегти
+          </button>
+        </div>
+
+        ${tk.admin_reply ? `
+          <div class="small bg-light rounded p-2 mt-2">
+            <strong>Ваша відповідь:</strong> ${escapeHtml(tk.admin_reply)}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleReplyBox(ticketId) {
+  document.getElementById(`reply-box-${ticketId}`)?.classList.toggle("d-none");
+}
+
+async function saveTicketUpdate(ticketId) {
+  const statusSelect = document.getElementById(`status-select-${ticketId}`);
+  const replyText = document.getElementById(`reply-text-${ticketId}`);
+
+  try {
+    const response = await fetch(`/api/admin/support_tickets/${ticketId}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: statusSelect.value,
+        admin_reply: replyText.value.trim()
+      })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      showToast('✅ Збережено', `Звернення #${ticketId} оновлено`, 'success');
+      loadSupportTickets();
+    } else {
+      showToast('❌ Помилка', data.error || 'Не вдалося оновити', 'danger');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Помилка', 'Мережева помилка', 'danger');
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadSupportTickets();
+
+  const filterEl = document.getElementById("ticketStatusFilter");
+  if (filterEl) {
+    filterEl.addEventListener("change", renderTickets);
+  }
+});

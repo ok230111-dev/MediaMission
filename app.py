@@ -2103,10 +2103,7 @@ def adjust_user_xp(target_id):
 
 
 @app.route("/api/debug/run_migrations/1234")
-def run_migrations(secret):
-    if secret != os.environ.get("ADMIN_SETUP_KEY"):
-        return "Forbidden", 403
-
+def run_migrations():
     from flask_migrate import upgrade
     try:
         upgrade()

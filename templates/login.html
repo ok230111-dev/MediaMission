@@ -1,5 +1,18 @@
 {% extends "base.html" %} {% block title %}{{t('login_mediamission_title')}} |
-MediaMission{% endblock %} {% block content %}
+MediaMission{% endblock %} {% block style %}
+<style>
+  [data-theme="dark"] .btn-outline-dark {
+    color: #f8f9fa !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  [data-theme="dark"] .btn-outline-dark:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+  }
+</style>
+{% endblock %} {% block content %}
 <head>
   <meta
     name="description"

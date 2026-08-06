@@ -350,6 +350,23 @@ AVATAR_COLORS = [
 migrate = Migrate(app, db)
 
 
+
+def asset_version(filename):
+    filepath = os.path.join(app.static_folder, filename)
+    print(f"🔍 asset_version викликано для: {filename}")
+    print(f"🔍 Повний шлях: {filepath}")
+    print(f"🔍 Файл існує: {os.path.exists(filepath)}")
+    try:
+        mtime = int(os.path.getmtime(filepath))
+        print(f"🔍 mtime: {mtime}")
+        return mtime
+    except OSError as e:
+        print(f"❌ Помилка: {e}")
+        return 0
+
+app.jinja_env.globals['asset_version'] = asset_version
+
+
 @app.before_request
 def set_language():
     lang = None
@@ -371,6 +388,12 @@ def set_language():
 @app.context_processor
 def inject_translate():
     return {"t": lambda key: translate(key, g.lang)}
+
+
+
+@app.context_processor
+def inject_current_year():
+    return {"current_year": datetime.now(timezone.utc).year}
 
 
 
@@ -618,18 +641,6 @@ def check_and_unlock_achievements(user_id):
         db.session.commit()
     
     return newly_unlocked
-
-
-
-@app.context_processor
-def inject_asset_version():
-    def asset_version(filename):
-        filepath = os.path.join(app.static_folder, filename)
-        try:
-            return int(os.path.getmtime(filepath))
-        except OSError:
-            return 0
-    return {"asset_version": asset_version}
 
 
 

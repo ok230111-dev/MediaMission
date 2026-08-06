@@ -104,7 +104,7 @@
     <!-- ВЛАСНІ СТИЛІ (підключаються останніми) -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}?v=4.0"
+      href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version('css/style.css') }}"
     />
 
     <!-- hreflang-->
@@ -280,6 +280,7 @@
     data-t-login="{{ t('nav_login') }}"
     data-t-leaderboard="{{ t('nav_leaderboard') }}"
     data-t-about="{{ t('nav_about') }}"
+    class="d-flex flex-column min-vh-100"
   >
     <!-- ==========================================================
          HEADER / NAVBAR
@@ -468,10 +469,61 @@
     <!-- ==========================================================
          MAIN CONTENT
     =========================================================== -->
-    <main class="main-content">{% block content %} {% endblock %}</main>
-    <div class="text-center text-muted small py-2">
-      <i class="bi bi-award me-1"></i>{{ t('footer_grant_notice') }}
-    </div>
+    <main class="main-content flex-grow-1t">
+      {% block content %} {% endblock %}
+    </main>
+    <footer class="site-footer mt-auto pt-5 pb-3">
+      <div class="container">
+        <div class="row g-4">
+          <!-- Бренд -->
+          <div class="col-md-4">
+            <h5 class="fw-bold mb-3">MediaMission</h5>
+            <ul class="list-unstyled footer-tags">
+              <li>{{ t('footer_media_literacy') }}</li>
+              <li>{{ t('footer_info_literacy') }}</li>
+              <li>{{ t('footer_critical_thinking') }}</li>
+            </ul>
+          </div>
+
+          <!-- Навігація -->
+          <div class="col-md-4">
+            <h6 class="fw-bold mb-3">{{ t('footer_navigation') }}</h6>
+            <ul class="list-unstyled footer-links">
+              <li><a href="/">{{ t('nav_home') }}</a></li>
+              <li><a href="/missions-overview">{{ t('nav_missions') }}</a></li>
+              <li><a href="/leaderboard">{{ t('nav_leaderboard') }}</a></li>
+              <li><a href="/profile">{{ t('nav_profile') }}</a></li>
+              <li><a href="/support">{{ t('nav_support') }}</a></li>
+            </ul>
+          </div>
+
+          <!-- Ресурси -->
+          <div class="col-md-4">
+            <h6 class="fw-bold mb-3">{{ t('footer_resources') }}</h6>
+            <ul class="list-unstyled footer-links">
+              <li><a href="/about">{{ t('nav_about') }}</a></li>
+              <li><a href="/faq">{{ t('nav_faq') }}</a></li>
+              <li><a href="/support">{{ t('nav_ai_assistant') }}</a></li>
+              <li><a href="/privacy">{{ t('nav_privacy') }}</a></li>
+              <li><a href="/terms">{{ t('nav_terms') }}</a></li>
+              <li><a href="/impressum">{{ t('nav_impressum') }}</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div
+          class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 text-center text-sm-start"
+        >
+          <div class="small text-muted">
+            <i class="bi bi-award me-1"></i>{{ t('footer_supported_by') }}
+            <strong>Zukunft Ukraine</strong>
+          </div>
+          <div class="small text-muted">© {{ current_year }} MediaMission</div>
+        </div>
+      </div>
+    </footer>
 
     <!-- JAVASCRIPT -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

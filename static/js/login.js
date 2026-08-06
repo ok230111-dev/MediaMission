@@ -55,7 +55,7 @@ form.addEventListener("submit", async (e) => {
 
     console.log("Авторизовано:", userCredential.user);
     setTimeout(() => {
-      window.location.href = "/missions-overview";
+      window.location.href = "/profile";
     }, 900);
   } catch (error) {
     console.error("Помилка входу:", error.code, error.message);

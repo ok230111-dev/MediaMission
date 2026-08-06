@@ -2116,6 +2116,16 @@ def fix_notification_columns():
         return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
 
 
+@app.route("/api/debug/stamp_migrations/1234")
+def stamp_migrations():
+    from flask_migrate import stamp
+    try:
+        stamp()
+        return "✅ Alembic позначено як актуальний", 200
+    except Exception as e:
+        import traceback
+        return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
+
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

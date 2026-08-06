@@ -104,6 +104,22 @@
     <!-- ВЛАСНІ СТИЛІ (підключаються останніми) -->
     <link
       rel="stylesheet"
+      href="{{ url_for('static', filename='css/variables.css') }}?v={{ asset_version('css/variables.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}?v={{ asset_version('css/base.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/components.css') }}?v={{ asset_version('css/components.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/pages.css') }}?v={{ asset_version('css/pages.css') }}"
+    />
+    <link
+      rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version('css/style.css') }}"
     />
 

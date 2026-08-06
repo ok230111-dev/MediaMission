@@ -1574,15 +1574,37 @@ def delete_user(target_id):
     if target_user.id == current_user.id:
         return {"success": False, "error": "Ви не можете видалити самого себе!"}, 400
 
-    if target_user.avatar:
-        delete_from_cloudinary(target_user.avatar)
+    try:
+        if target_user.avatar:
+            delete_from_cloudinary(target_user.avatar)
 
-    UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+        # Видаляємо сповіщення користувача
+        NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
 
-    db.session.delete(target_user)
-    db.session.commit()
+        # Видаляємо відповіді користувача (повʼязані через прогрес місій)
+        progress_ids = [
+            p.id for p in UserMissionProgress.query
+            .filter_by(user_id=target_user.id)
+            .with_entities(UserMissionProgress.id)
+            .all()
+        ]
+        if progress_ids:
+            UserAnswer.query.filter(
+                UserAnswer.user_progress_id.in_(progress_ids)
+            ).delete(synchronize_session=False)
 
-    return {"success": True}
+        # Видаляємо прогрес місій
+        UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+
+        db.session.delete(target_user)
+        db.session.commit()
+
+        return {"success": True}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка видалення користувача: {e}")
+        return {"success": False, "error": str(e)}, 500
 
 
 @app.route("/leaderboard", methods=["GET", "POST"])

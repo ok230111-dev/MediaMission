@@ -1304,14 +1304,17 @@ def create_user():
 
 
 
+# @app.route("/login", methods=["GET", "POST"])
+# def login():
+#     user_id = session.get("user_id")
+#     if user_id:
+#         user = db.session.get(Users, user_id)
+#         if user:
+#             return redirect(url_for('missions_overview'))
+
+#     return render_template('login.html')
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    user_id = session.get("user_id")
-    if user_id:
-        user = db.session.get(Users, user_id)
-        if user:
-            return redirect(url_for('missions_overview'))
-
     return render_template('login.html')
 
 
@@ -2099,6 +2102,13 @@ def adjust_user_xp(target_id):
         "new_total_xp": target_user.total_xp,
         "user_id": target_user.id
     }
+
+
+
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
 
 

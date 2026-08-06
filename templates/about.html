@@ -1,0 +1,322 @@
+{% extends "base.html" %} {% block title %}{{ t('about_title') }} |
+MediaMission{% endblock %} {% block style %}
+<style>
+  /* ===== About page — dark theme adjustments ===== */
+  [data-theme="dark"] .card {
+    background-color: var(--card-bg, #1e2530);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  [data-theme="dark"] .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  /* Приглушені кольорові плашки замість яскравих subtle-фонів */
+  [data-theme="dark"] .bg-primary-subtle {
+    background-color: rgba(13, 110, 253, 0.15) !important;
+    color: #8bb9fe !important;
+  }
+
+  [data-theme="dark"] .bg-danger-subtle {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+  }
+  [data-theme="dark"] .bg-danger-subtle .fw-bold {
+    color: #f5a3ab;
+  }
+
+  [data-theme="dark"] .bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.15) !important;
+  }
+  [data-theme="dark"] .bg-success-subtle .fw-bold {
+    color: #82d9ab;
+  }
+
+  [data-theme="dark"] .bg-info-subtle {
+    background-color: rgba(13, 202, 240, 0.15) !important;
+  }
+  [data-theme="dark"] .bg-info-subtle .fw-bold {
+    color: #8fe3f5;
+  }
+
+  [data-theme="dark"] .bg-secondary-subtle {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+  }
+
+  [data-theme="dark"] .about-hero-icon {
+    color: #6ea8fe !important;
+  }
+
+  [data-theme="dark"] hr {
+    border-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+  }
+
+  [data-theme="dark"] .about-avatar {
+    background-color: #375a7f;
+  }
+
+  [data-theme="dark"] .shadow-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  [data-theme="dark"] .btn-outline-dark {
+    color: #f8f9fa !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  [data-theme="dark"] .btn-outline-dark:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+  }
+</style>
+{% endblock %} {% block content %}
+<section class="container py-5" style="max-width: 900px">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold mb-3">
+      <i class="bi bi-info-circle-fill text-primary about-hero-icon me-2"></i>{{
+      t('about_title') }}
+    </h1>
+    <p class="text-muted fs-5">{{ t('about_subtitle') }}</p>
+  </div>
+
+  <!-- Про платформу -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-bullseye text-primary me-2"></i>{{
+        t('about_mission_title') }}
+      </h3>
+      <p class="mb-0 text-muted">{{ t('about_mission_text') }}</p>
+    </div>
+  </div>
+
+  <!-- наші цілі -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-stars text-primary me-2"></i>
+        {{ t('about_goals_title') }}
+      </h3>
+      <div class="row">
+        <div class="col-md-6">
+          <ul class="mb-0">
+            <li>{{ t('goal_fake_news') }}</li>
+            <li>{{ t('goal_information') }}</li>
+            <li>{{ t('goal_sources') }}</li>
+            <li>{{ t('goal_thinking') }}</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="mb-0">
+            <li>{{ t('goal_privacy') }}</li>
+            <li>{{ t('goal_ai') }}</li>
+            <li>{{ t('goal_media') }}</li>
+            <li>{{ t('goal_digital') }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Для кого -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-people-fill text-primary me-2"></i>{{
+        t('about_audience_title') }}
+      </h3>
+      <p class="mb-0 text-muted">{{ t('about_audience_text') }}</p>
+    </div>
+  </div>
+
+  <!-- Медіаграмотність vs Інформаційна грамотність -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-lightbulb-fill text-primary me-2"></i>{{
+        t('about_literacy_title') }}
+      </h3>
+      <p class="text-muted mb-4">{{ t('about_literacy_intro') }}</p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="p-3 rounded-3 bg-primary-subtle h-100">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-camera-reels-fill text-primary fs-4"></i>
+              <div class="fw-bold">{{ t('about_media_literacy_title') }}</div>
+            </div>
+            <div class="small text-muted">
+              {{ t('about_media_literacy_text') }}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="p-3 rounded-3 bg-info-subtle h-100">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-search text-info fs-4"></i>
+              <div class="fw-bold">{{ t('about_info_literacy_title') }}</div>
+            </div>
+            <div class="small text-muted">
+              {{ t('about_info_literacy_text') }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4" />
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div
+            class="d-flex align-items-start gap-2 p-3 rounded-3 bg-danger-subtle h-100"
+          >
+            <i class="bi bi-x-circle-fill text-danger fs-4"></i>
+            <div>
+              <div class="fw-bold mb-1">{{ t('about_misinfo_title') }}</div>
+              <div class="small text-muted">{{ t('about_misinfo_text') }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div
+            class="d-flex align-items-start gap-2 p-3 rounded-3 bg-success-subtle h-100"
+          >
+            <i class="bi bi-check-circle-fill text-success fs-4"></i>
+            <div>
+              <div class="fw-bold mb-1">
+                {{ t('about_criticalthink_title') }}
+              </div>
+              <div class="small text-muted">
+                {{ t('about_criticalthink_text') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Про грант -->
+  <div class="card shadow-sm border-0 mb-4 bg-primary-subtle">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-award-fill text-primary me-2"></i>{{
+        t('about_grant_title') }}
+      </h3>
+      <p class="mb-0">{{ t('about_grant_text') }}</p>
+    </div>
+  </div>
+
+  <!-- Команда -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-4">
+        <i class="bi bi-people-fill text-primary me-2"></i>{{
+        t('about_team_title') }}
+      </h3>
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="d-flex align-items-center gap-3">
+            <div
+              class="d-flex align-items-center justify-content-center rounded-circle bg-primary about-avatar text-white"
+              style="width: 56px; height: 56px; font-size: 1.5rem"
+            >
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Oksana Kucheruk</div>
+              <div class="text-muted small">{{ t('about_role_lead') }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="d-flex align-items-center gap-3">
+            <div
+              class="d-flex align-items-center justify-content-center rounded-circle bg-primary about-avatar text-white"
+              style="width: 56px; height: 56px; font-size: 1.5rem"
+            >
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Oleksandr Kucheruk</div>
+              <div class="text-muted small">{{ t('about_role_dev') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-4" />
+
+      <div class="fw-bold mb-2">{{ t('about_technologies') }}</div>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2"
+          >Flask</span
+        >
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2"
+          >Firebase</span
+        >
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2"
+          >PostgreSQL</span
+        >
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2"
+          >Bootstrap</span
+        >
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2"
+          >Python</span
+        >
+        <span class="badge bg-secondary-subtle text-secondary px-3 py-2"
+          >HTML / CSS / JS</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Дослідницький бекграунд -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-journal-text text-primary me-2"></i>{{
+        t('about_research_title') }}
+      </h3>
+      <p class="mb-0 text-muted">{{ t('about_research_text') }}</p>
+    </div>
+  </div>
+
+  <!-- Контакти -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4 text-center">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-envelope-fill text-primary me-2"></i>{{
+        t('about_contact_title') }}
+      </h3>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="/contact" class="btn btn-outline-primary">
+          <i class="bi bi-envelope me-2"></i>Email
+        </a>
+        <a
+          href="https://github.com/ok230111-dev/MediaMission"
+          target="_blank"
+          class="btn btn-outline-dark"
+        >
+          <i class="bi bi-github me-2"></i>GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Подяки -->
+  <div class="card shadow-sm border-0 mt-4">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-3">
+        <i class="bi bi-heart-fill text-danger me-2"></i>{{
+        t('about_thanks_title') }}
+      </h3>
+      <p class="text-muted mb-0">{{ t('about_thanks_text') }}</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

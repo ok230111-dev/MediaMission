@@ -2,8 +2,16 @@ import { auth, provider, db } from "./firebase-config.js";
 import { 
   signInWithPopup,
   signInWithEmailAndPassword,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
+  onAuthStateChanged
  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+// --- Якщо користувач вже залогінений — одразу редіректимо на місії ---
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.location.href = "/missions-overview";
+  }
+});
 
 const form = document.getElementById("loginForm");
 const btn = document.getElementById("loginBtn");

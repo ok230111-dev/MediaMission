@@ -2102,30 +2102,6 @@ def adjust_user_xp(target_id):
 
 
 
-@app.route("/api/debug/fix_notification_columns/1234")
-def fix_notification_columns():
-    from sqlalchemy import text
-    try:
-        with db.engine.connect() as conn:
-            conn.execute(text("ALTER TABLE notification ADD COLUMN IF NOT EXISTS title_json JSON"))
-            conn.execute(text("ALTER TABLE notification ADD COLUMN IF NOT EXISTS body_json JSON"))
-            conn.commit()
-        return "✅ Колонки title_json та body_json додано (якщо їх не було)", 200
-    except Exception as e:
-        import traceback
-        return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
-
-
-@app.route("/api/debug/stamp_migrations/1234")
-def stamp_migrations():
-    from flask_migrate import stamp
-    try:
-        stamp()
-        return "✅ Alembic позначено як актуальний", 200
-    except Exception as e:
-        import traceback
-        return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
-
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

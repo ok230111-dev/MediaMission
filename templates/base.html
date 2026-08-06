@@ -370,12 +370,12 @@
                     {% endif %}
                     <div class="flex-grow-1 min-width-0">
                       <div class="fw-semibold line-clamp-2">
-                        {{ record.notification.title_json.get(g.lang) or
-                        record.notification.title_json.get('uk') or '' }}
+                        {{ (record.notification.title_json or {}).get('uk') or
+                        '' }}
                       </div>
                       <div class="text-muted small line-clamp-2">
-                        {{ record.notification.body_json.get(g.lang) or
-                        record.notification.body_json.get('uk') or '' }}
+                        {{ (record.notification.body_json or {}).get(g.lang) or
+                        (record.notification.body_json or {}).get('uk') or '' }}
                       </div>
                       <div
                         class="text-muted extra-small mt-1"

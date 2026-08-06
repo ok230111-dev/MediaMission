@@ -16,8 +16,8 @@ MediaMission {% endblock %} {% block content %}
         <div class="d-flex justify-content-between align-items-start gap-2">
           <!-- Витягуємо заголовок обраною мовою або українською за замовчуванням -->
           <h5 class="fw-bold mb-1">
-            {{ record.notification.title_json.get(user_lang) or
-            record.notification.title_json.get('uk') or '' }}
+            {{ (record.notification.title_json or {}).get(g.lang) or
+            (record.notification.title_json or {}).get('uk') or '' }}
           </h5>
 
           {% if not record.is_read %}
@@ -29,8 +29,8 @@ MediaMission {% endblock %} {% block content %}
 
         <!-- Витягуємо текст обраною мовою або українською за замовчуванням -->
         <p class="text-muted mb-2">
-          {{ record.notification.body_json.get(user_lang) or
-          record.notification.body_json.get('uk') or '' }}
+          {{ (record.notification.body_json or {}).get(g.lang) or
+          (record.notification.body_json or {}).get('uk') or '' }}
         </p>
 
         {% if record.notification.mission_id %}

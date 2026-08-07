@@ -16,6 +16,8 @@ instance/
 # VS Code
 .vscode/
 
+connect_render_db.py
+
 # Environment
 .env
 

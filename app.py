@@ -1,5 +1,6 @@
 import re
-from flask import Flask, Response, render_template, request, redirect, url_for, session, g, abort, jsonify, flash, send_from_directory
+import threading
+from flask import Flask, Response, current_app, render_template, request, redirect, url_for, session, g, abort, jsonify, flash, send_from_directory
 from translations import translate
 from flask_mail import Mail, Message
 from flask_migrate import Migrate
@@ -73,6 +74,7 @@ app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() in ['true
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = ('MediaMission', os.getenv('MAIL_USERNAME'))
+app.config['MAIL_TIMEOUT'] = 10  # Переривати спробу підключення через 10 секунд
 
 mail = Mail(app)
 
@@ -2227,6 +2229,82 @@ def support():
     return render_template("support.html", missions=missions)
 
 
+
+
+def send_async_email(app_obj, msg):
+    """Функція для відправки пошти у фоновому потоці"""
+    with app_obj.app_context():
+        try:
+            mail.send(msg)
+            print(f"✉️ [SUCCESS] Email успішно надіслано!")
+        except Exception as e:
+            print(f"❌ [MAIL ERROR] Не вдалося надіслати email: {e}")
+
+
+
+
+
+def notify_admins_new_ticket(ticket):
+    reporter_email = ticket.user.email if ticket.user else "Гість"
+    category_label = ticket.category
+    summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
+
+    # 1. In-app сповіщення адмінам (БД)
+    admins = Users.query.filter_by(admin=True).all()
+    if admins:
+        notif = Notification(
+            title_json={
+                "uk": "Нове звернення в підтримку",
+                "de": "Neue Support-Anfrage",
+                "en": "New support ticket"
+            },
+            body_json={
+                "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
+                "de": f"#{ticket.id}: {summary} (von {reporter_email})",
+                "en": f"#{ticket.id}: {summary} (from {reporter_email})"
+            },
+            created_by=ticket.user_id
+        )
+        db.session.add(notif)
+        db.session.flush()
+
+        admin_ids = [a.id for a in admins]
+        db.session.bulk_insert_mappings(NotificationRecipient, [
+            {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
+        ])
+        db.session.commit()
+
+    # 2. Асинхронний Email на адресу з .env (MAIL_USERNAME)
+    support_email = os.environ.get("MAIL_USERNAME")
+    if support_email:
+        try:
+            # Рендеримо HTML-шаблон до запуску потоку
+            html_content = render_template(
+                "emails/new_support_ticket.html",
+                ticket=ticket,
+                reporter_email=reporter_email
+            )
+            
+            msg = Message(
+                subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
+                recipients=[support_email],
+                html=html_content
+            )
+
+            # Отримуємо екземпляр Flask для фонового контексту
+            app_obj = current_app._get_current_object()
+
+            # Запускаємо відправку в окремому потоці (Thread)
+            threading.Thread(target=send_async_email, args=(app_obj, msg)).start()
+
+        except Exception as e:
+            print(f"Не вдалося підготувати email про звернення #{ticket.id}: {e}")
+    else:
+        print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
+
+
+
+
 @app.route("/api/support/submit_ticket", methods=["POST"])
 def submit_support_ticket():
     user_id = session.get("user_id")
@@ -2270,61 +2348,62 @@ def submit_support_ticket():
     db.session.add(ticket)
     db.session.commit()
 
+    # Сповіщення створюються та надсилаються фоново
     notify_admins_new_ticket(ticket)
 
+    # Відповідь користувачу віддається миттєво
     return jsonify({"success": True, "ticket_id": ticket.id})
 
 
 
+# def notify_admins_new_ticket(ticket):
+#     reporter_email = ticket.user.email if ticket.user else "Гість"
+#     category_label = ticket.category
+#     summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
 
-def notify_admins_new_ticket(ticket):
-    reporter_email = ticket.user.email if ticket.user else "Гість"
-    category_label = ticket.category
-    summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
+#     # In-app сповіщення адмінам (як і раніше)
+#     admins = Users.query.filter_by(admin=True).all()
+#     if admins:
+#         notif = Notification(
+#             title_json={
+#                 "uk": "Нове звернення в підтримку",
+#                 "de": "Neue Support-Anfrage",
+#                 "en": "New support ticket"
+#             },
+#             body_json={
+#                 "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
+#                 "de": f"#{ticket.id}: {summary} (von {reporter_email})",
+#                 "en": f"#{ticket.id}: {summary} (from {reporter_email})"
+#             },
+#             created_by=ticket.user_id
+#         )
+#         db.session.add(notif)
+#         db.session.flush()
 
-    # In-app сповіщення адмінам (як і раніше)
-    admins = Users.query.filter_by(admin=True).all()
-    if admins:
-        notif = Notification(
-            title_json={
-                "uk": "Нове звернення в підтримку",
-                "de": "Neue Support-Anfrage",
-                "en": "New support ticket"
-            },
-            body_json={
-                "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
-                "de": f"#{ticket.id}: {summary} (von {reporter_email})",
-                "en": f"#{ticket.id}: {summary} (from {reporter_email})"
-            },
-            created_by=ticket.user_id
-        )
-        db.session.add(notif)
-        db.session.flush()
+#         admin_ids = [a.id for a in admins]
+#         db.session.bulk_insert_mappings(NotificationRecipient, [
+#             {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
+#         ])
+#         db.session.commit()
 
-        admin_ids = [a.id for a in admins]
-        db.session.bulk_insert_mappings(NotificationRecipient, [
-            {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
-        ])
-        db.session.commit()
-
-    # Email на адресу з .env (MAIL_USERNAME)
-    support_email = os.environ.get("MAIL_USERNAME")
-    if support_email:
-        try:
-            msg = Message(
-                subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
-                recipients=[support_email],
-                html=render_template(
-                    "emails/new_support_ticket.html",
-                    ticket=ticket,
-                    reporter_email=reporter_email
-                )
-            )
-            mail.send(msg)
-        except Exception as e:
-            print(f"Не вдалося надіслати email про звернення #{ticket.id}: {e}")
-    else:
-        print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
+#     # Email на адресу з .env (MAIL_USERNAME)
+#     support_email = os.environ.get("MAIL_USERNAME")
+#     if support_email:
+#         try:
+#             msg = Message(
+#                 subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
+#                 recipients=[support_email],
+#                 html=render_template(
+#                     "emails/new_support_ticket.html",
+#                     ticket=ticket,
+#                     reporter_email=reporter_email
+#                 )
+#             )
+#             mail.send(msg)
+#         except Exception as e:
+#             print(f"Не вдалося надіслати email про звернення #{ticket.id}: {e}")
+#     else:
+#         print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
 
 
 
@@ -2400,15 +2479,15 @@ def about():
 
 
 
-@app.route("/api/debug/run_migrations/1234")
-def run_migrations():
-    from flask_migrate import upgrade
-    try:
-        upgrade()
-        return "✅ Міграції успішно застосовано", 200
-    except Exception as e:
-        import traceback
-        return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
+# @app.route("/api/debug/run_migrations/1234")
+# def run_migrations():
+#     from flask_migrate import upgrade
+#     try:
+#         upgrade()
+#         return "✅ Міграції успішно застосовано", 200
+#     except Exception as e:
+#         import traceback
+#         return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
 
 
 

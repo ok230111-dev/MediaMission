@@ -2400,5 +2400,19 @@ def about():
 
 
 
+@app.route("/api/debug/run_migrations/1234")
+def run_migrations():
+    from flask_migrate import upgrade
+    try:
+        upgrade()
+        return "✅ Міграції успішно застосовано", 200
+    except Exception as e:
+        import traceback
+        return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
+
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

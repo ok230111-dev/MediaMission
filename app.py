@@ -272,6 +272,9 @@ class Notification(db.Model):
     mission = db.relationship("Missions")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    author = db.relationship("Users", foreign_keys=[created_by])
+    comments = db.relationship("NotificationComment", backref="notification", cascade="all, delete-orphan", order_by="desc(NotificationComment.created_at)")
+    reactions = db.relationship("NotificationReaction", backref="notification", cascade="all, delete-orphan")
 
 class NotificationRecipient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -280,7 +283,36 @@ class NotificationRecipient(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     read_at = db.Column(db.DateTime, nullable=True)
 
-    notification = db.relationship("Notification")  # тепер n.notification.title працює
+    notification = db.relationship("Notification") 
+    user = db.relationship("User") # тепер n.notification.title працює
+
+class NotificationComment(db.Model):
+    __tablename__ = 'notification_comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User")
+
+
+class NotificationReaction(db.Model):
+    __tablename__ = 'notification_reactions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    reaction_type = db.Column(db.String(20), nullable=False)  # 'like', 'heart', 'fire'
+
+    user = db.relationship("User")
+    
+    # Унікальний індекс: один користувач може залишити лише одну реакцію певного типу
+    __table_args__ = (
+        db.UniqueConstraint('notification_id', 'user_id', 'reaction_type', name='unique_user_reaction'),
+    )
+
 
 class Achievement(db.Model):
     """Таблиця з усіма можливими досягненнями"""
@@ -2009,6 +2041,114 @@ def notifications():
 
 
 
+@app.route('/notifications/<int:notification_id>')
+@login_required
+def read_notification(notification_id):
+    # Отримуємо сповіщення або 404
+    notification = Notification.query.get_or_404(notification_id)
+    
+    # Автоматично позначаємо як прочитане для поточного користувача
+    recipient = NotificationRecipient.query.filter_by(
+        notification_id=notification_id, 
+        user_id=g.user_id
+    ).first()
+    
+    if recipient and not recipient.is_read:
+        recipient.is_read = True
+        recipient.read_at = datetime.utcnow()
+        db.session.commit()
+
+    # Парсинг JSON полів під мову користувача (за замовчуванням 'uk')
+    lang = getattr(g, 'lang', 'uk')  # або сесія session.get('lang', 'uk')
+    
+    title = notification.title_json.get(lang) if notification.title_json else "Без заголовка"
+    body = notification.body_json.get(lang) if notification.body_json else ""
+
+    # Підрахунок кількості кожної реакції
+    reactions_count = {
+        'like': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='like').count(),
+        'heart': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='heart').count(),
+        'fire': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='fire').count()
+    }
+
+    return render_template(
+        'read_notification.html',
+        notification=notification,
+        title=title,
+        body=body,
+        reactions_count=reactions_count
+    )
+
+
+@app.route('/api/notifications/<int:notification_id>/react', methods=['POST'])
+@login_required
+def add_reaction(notification_id):
+    data = request.get_json() or {}
+    reaction_type = data.get('reaction')
+    
+    if reaction_type not in ['like', 'heart', 'fire']:
+        return jsonify({"success": False, "error": "Некоректний тип реакції"}), 400
+
+    # Перевіряємо, чи вже є така реакція від користувача
+    existing_reaction = NotificationReaction.query.filter_by(
+        notification_id=notification_id,
+        user_id=current_user.id,
+        reaction_type=reaction_type
+    ).first()
+
+    if existing_reaction:
+        # Якщо вже ставив — видаляємо (перемикач/toggle)
+        db.session.delete(existing_reaction)
+        action = 'removed'
+    else:
+        # Якщо ні — додаємо
+        new_reaction = NotificationReaction(
+            notification_id=notification_id,
+            user_id=current_user.id,
+            reaction_type=reaction_type
+        )
+        db.session.add(new_reaction)
+        action = 'added'
+
+    db.session.commit()
+
+    # Отримуємо оновлену кількість цієї реакції
+    new_count = NotificationReaction.query.filter_by(
+        notification_id=notification_id, 
+        reaction_type=reaction_type
+    ).count()
+
+    return jsonify({"success": True, "action": action, "reaction": reaction_type, "new_count": new_count})
+
+
+@app.route('/api/notifications/<int:notification_id>/comment', methods=['POST'])
+@login_required
+def add_comment(notification_id):
+    data = request.get_json() or {}
+    text = data.get('text', '').strip()
+
+    if not text:
+        return jsonify({"success": False, "error": "Порожній коментар"}), 400
+
+    comment = NotificationComment(
+        notification_id=notification_id,
+        user_id=current_user.id,
+        text=text
+    )
+    db.session.add(comment)
+    db.session.commit()
+
+    # Повертаємо об'єкт для миттєвого додавання в HTML через JS
+    return jsonify({
+        "success": True,
+        "comment": {
+            "id": comment.id,
+            "author": current_user.username if hasattr(current_user, 'username') else f"User #{current_user.id}",
+            "created_at": comment.created_at.strftime("%d.%m.%Y %H:%M"),
+            "text": comment.text
+        }
+    })
+
 
 @app.route("/api/notifications/mark_read", methods=["POST"])
 def mark_notifications_read():
@@ -2489,7 +2629,6 @@ def about():
 #     except Exception as e:
 #         import traceback
 #         return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
-
 
 
 

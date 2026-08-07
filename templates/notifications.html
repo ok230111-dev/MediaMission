@@ -7,14 +7,18 @@ MediaMission {% endblock %} {% block content %}
 
   {% set user_lang = current_user.language or session.get('lang', 'uk') %} {% if
   items %}
-  <div class="d-flex flex-column gap-2">
+  <div class="d-flex flex-column gap-3">
     {% for record in items %}
     <div
       class="card border-0 shadow-sm notification-card {% if not record.is_read %}notification-card-unread{% endif %}"
     >
-      <div class="card-body">
+      <!-- Основне посилання на детальну сторінку сповіщення -->
+      <a
+        href="{{ url_for('read_notification', notification_id=record.notification.id) }}"
+        class="text-decoration-none text-dark card-body d-block"
+      >
         <div class="d-flex justify-content-between align-items-start gap-2">
-          <!-- Витягуємо заголовок обраною мовою або українською за замовчуванням -->
+          <!-- Заголовок -->
           <h5 class="fw-bold mb-1">
             {{ (record.notification.title_json or {}).get(g.lang) or
             (record.notification.title_json or {}).get('uk') or '' }}
@@ -27,26 +31,32 @@ MediaMission {% endblock %} {% block content %}
           {% endif %}
         </div>
 
-        <!-- Витягуємо текст обраною мовою або українською за замовчуванням -->
+        <!-- Текст сповіщення (обрізаємо або виводимо повністю) -->
         <p class="text-muted mb-2">
           {{ (record.notification.body_json or {}).get(g.lang) or
           (record.notification.body_json or {}).get('uk') or '' }}
         </p>
 
-        {% if record.notification.mission_id %}
-        <a
-          href="/mission/{{ record.notification.mission_id }}"
-          class="btn btn-sm btn-outline-primary"
-        >
-          {{ t('go_to_mission') }} →
-        </a>
-        {% endif %}
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="text-muted small">
+            <i class="bi bi-clock me-1"></i>
+            {{ record.notification.created_at.strftime("%d.%m.%Y %H:%M") }}
+          </div>
 
-        <div class="text-muted small mt-2">
-          <i class="bi bi-clock"></i>
-          {{ record.notification.created_at.strftime("%d.%m.%Y %H:%M") }}
+          <!-- Кнопка переходу до місії (e.stopPropagation зупиняє клік по основному посиланню) -->
+          {% if record.notification.mission_id %}
+          <object>
+            <a
+              href="/mission/{{ record.notification.mission_id }}"
+              class="btn btn-sm btn-outline-primary"
+              onclick="event.stopPropagation()"
+            >
+              {{ t('go_to_mission') }} →
+            </a>
+          </object>
+          {% endif %}
         </div>
-      </div>
+      </a>
     </div>
     {% endfor %}
   </div>
@@ -57,4 +67,21 @@ MediaMission {% endblock %} {% block content %}
   </div>
   {% endif %}
 </section>
+
+<!-- Додаткові стилі для красивого hover-ефекту -->
+<style>
+  .notification-card {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+  }
+  .notification-card-unread {
+    border-left: 4px solid var(--bs-primary) !important;
+    background-color: #f8f9ff;
+  }
+</style>
 {% endblock %}

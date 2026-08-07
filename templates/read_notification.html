@@ -1,332 +1,364 @@
-<!doctype html>
-<html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ title }} - MediaMission</title>
-    <style>
-      :root {
-        --bg-color: #f4f6f9;
-        --card-bg: #ffffff;
-        --text-main: #2d3748;
-        --text-muted: #718096;
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --border: #e2e8f0;
-      }
+{% extends "base.html" %} {% block title %}{{ title }} | MediaMission{% endblock
+%} {% block style %}
+<style>
+  .notif-card {
+    border-radius: 16px;
+    overflow: hidden;
+  }
 
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-main);
-        margin: 0;
-        padding: 20px;
-      }
+  .notif-meta {
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color, #6c757d);
+  }
 
-      .container {
-        max-width: 750px;
-        margin: 30px auto;
-      }
+  .notif-body {
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
 
-      .card {
-        background: var(--card-bg);
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        margin-bottom: 24px;
-        border: 1px solid var(--border);
-      }
+  /* Реакції */
+  .reactions-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 
-      .notification-header {
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 16px;
-        margin-bottom: 20px;
-      }
+  .reaction-btn {
+    background: var(--bs-tertiary-bg, #f7fafc);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition:
+      transform 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+    color: var(--bs-body-color);
+  }
 
-      .notification-title {
-        font-size: 1.5rem;
-        margin: 0 0 8px 0;
-        color: #1a202c;
-      }
+  .reaction-btn:hover {
+    background: rgba(13, 110, 253, 0.08);
+    transform: translateY(-2px);
+  }
 
-      .notification-meta {
-        font-size: 0.875rem;
-        color: var(--text-muted);
-      }
+  .reaction-btn.active {
+    border-color: var(--bs-primary);
+    background-color: rgba(13, 110, 253, 0.12);
+  }
 
-      .notification-body {
-        font-size: 1.05rem;
-        line-height: 1.6;
-        margin-bottom: 24px;
-      }
+  .reaction-btn.pop {
+    animation: reactionPop 0.35s ease;
+  }
 
-      /* Блок реакцій */
-      .reactions-bar {
-        display: flex;
-        gap: 12px;
-        border-top: 1px solid var(--border);
-        padding-top: 16px;
-      }
+  @keyframes reactionPop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.35);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 
-      .reaction-btn {
-        background: #f7fafc;
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 6px 14px;
-        cursor: pointer;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s ease;
-      }
+  .reaction-emoji {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
 
-      .reaction-btn:hover {
-        background: #edf2f7;
-        transform: translateY(-1px);
-      }
+  /* Коментарі */
+  .comment-form textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
 
-      .reaction-btn.active {
-        border-color: var(--primary);
-        background-color: #eeefef;
-      }
+  .comment-item {
+    background: var(--bs-tertiary-bg, #f8fafc);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--bs-primary);
+    animation: commentIn 0.35s ease;
+  }
 
-      /* Блок коментарів */
-      .comments-section h3 {
-        margin-top: 0;
-        font-size: 1.2rem;
-      }
+  @keyframes commentIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-      .comment-form {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 24px;
-      }
+  .comment-author {
+    font-weight: 600;
+  }
 
-      .comment-form textarea {
-        width: 100%;
-        height: 80px;
-        padding: 12px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        resize: vertical;
-        font-family: inherit;
-        box-sizing: border-box;
-      }
+  .comment-date {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.85rem;
+  }
 
-      .comment-form textarea:focus {
-        outline: 2px solid var(--primary);
-        border-color: transparent;
-      }
+  .comment-text {
+    margin: 0;
+    line-height: 1.5;
+  }
 
-      .btn-submit {
-        align-self: flex-end;
-        background-color: var(--primary);
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background 0.2s;
-      }
+  /* Темна тема */
+  [data-theme="dark"] .notif-card {
+    background-color: #1a1f2b;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 
-      .btn-submit:hover {
-        background-color: var(--primary-hover);
-      }
+  [data-theme="dark"] .reaction-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
 
-      .comments-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
+  [data-theme="dark"] .reaction-btn:hover {
+    background: rgba(13, 110, 253, 0.18);
+  }
 
-      .comment-item {
-        background: #f8fafc;
-        border-radius: 8px;
-        padding: 14px;
-        border-left: 3px solid var(--primary);
-      }
+  [data-theme="dark"] .reaction-btn.active {
+    background-color: rgba(13, 110, 253, 0.25);
+  }
 
-      .comment-header {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.85rem;
-        margin-bottom: 6px;
-      }
+  [data-theme="dark"] .comment-item {
+    background: rgba(255, 255, 255, 0.05);
+  }
 
-      .comment-author {
-        font-weight: bold;
-        color: #2d3748;
-      }
+  [data-theme="dark"] .comment-form textarea {
+    background-color: #12161f;
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
 
-      .comment-date {
-        color: var(--text-muted);
-      }
+  [data-theme="dark"] .comment-form textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
 
-      .comment-text {
-        margin: 0;
-        font-size: 0.95rem;
-        line-height: 1.4;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <!-- Картка детального перегляду сповіщення -->
-      <div class="card" id="notification-card" data-id="{{ notification.id }}">
-        <div class="notification-header">
-          <h1 class="notification-title">{{ title }}</h1>
-          <div class="notification-meta">
-            Від:
-            <strong
-              >{{ notification.author.username if notification.author else
-              'Система' }}</strong
-            >
-            • {{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}
-          </div>
-        </div>
-
-        <div class="notification-body">{{ body|safe }}</div>
-
-        <!-- Блок реакцій -->
-        <div class="reactions-bar">
-          <button class="reaction-btn" onclick="sendReaction('like')">
-            👍 <span id="count-like">{{ reactions_count.like }}</span>
-          </button>
-          <button class="reaction-btn" onclick="sendReaction('heart')">
-            ❤️ <span id="count-heart">{{ reactions_count.heart }}</span>
-          </button>
-          <button class="reaction-btn" onclick="sendReaction('fire')">
-            🔥 <span id="count-fire">{{ reactions_count.fire }}</span>
-          </button>
+  [data-theme="dark"] .notif-meta,
+  [data-theme="dark"] hr {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+</style>
+{% endblock %} {% block content %}
+<section class="container py-5" style="max-width: 750px">
+  <!-- Картка детального перегляду сповіщення -->
+  <div
+    class="card shadow-sm border-0 notif-card mb-4"
+    id="notification-card"
+    data-id="{{ notification.id }}"
+  >
+    <div class="card-body p-4">
+      <div class="pb-3 mb-3 border-bottom">
+        <h1 class="fw-bold fs-3 mb-2">{{ title }}</h1>
+        <div class="notif-meta">
+          <i class="bi bi-person-circle me-1"></i>
+          <strong
+            >{{ notification.author.display_name if notification.author else
+            t('notification_system_author') }}</strong
+          >
+          <span class="mx-1">•</span>
+          <i class="bi bi-clock me-1"></i>{{
+          notification.created_at.strftime('%d.%m.%Y %H:%M') }}
         </div>
       </div>
 
-      <!-- Блок коментарів -->
-      <div class="card comments-section">
-        <h3>
-          Коментарі (<span id="comments-count"
-            >{{ notification.comments|length }}</span
-          >)
-        </h3>
+      <div class="notif-body mb-4">{{ body|safe }}</div>
 
-        <!-- Форма для нового коментаря -->
-        <form class="comment-form" onsubmit="submitComment(event)">
-          <textarea
-            id="comment-text"
-            placeholder="Напишіть свій коментар..."
-            required
-          ></textarea>
-          <button type="submit" class="btn-submit">Надіслати</button>
-        </form>
-
-        <!-- Список коментарів -->
-        <div class="comments-list" id="comments-list">
-          {% for comment in notification.comments %}
-          <div class="comment-item">
-            <div class="comment-header">
-              <span class="comment-author"
-                >{{ comment.user.username if comment.user else 'Користувач'
-                }}</span
-              >
-              <span class="comment-date"
-                >{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span
-              >
-            </div>
-            <p class="comment-text">{{ comment.text }}</p>
-          </div>
-          {% endfor %}
-        </div>
+      <!-- Блок реакцій -->
+      <div class="reactions-bar pt-3 border-top">
+        <button
+          class="reaction-btn"
+          onclick="sendReaction('like')"
+          data-type="like"
+        >
+          <span class="reaction-emoji">👍</span>
+          <span id="count-like">{{ reactions_count.like }}</span>
+        </button>
+        <button
+          class="reaction-btn"
+          onclick="sendReaction('heart')"
+          data-type="heart"
+        >
+          <span class="reaction-emoji">❤️</span>
+          <span id="count-heart">{{ reactions_count.heart }}</span>
+        </button>
+        <button
+          class="reaction-btn"
+          onclick="sendReaction('fire')"
+          data-type="fire"
+        >
+          <span class="reaction-emoji">🔥</span>
+          <span id="count-fire">{{ reactions_count.fire }}</span>
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- JavaScript для AJAX взаємодії -->
-    <script>
-      const notificationCard = document.getElementById("notification-card");
-      const notificationId = notificationCard
-        ? notificationCard.dataset.id
-        : null;
+  <!-- Блок коментарів -->
+  <div class="card shadow-sm border-0 notif-card">
+    <div class="card-body p-4">
+      <h3 class="fw-bold fs-5 mb-3">
+        <i class="bi bi-chat-dots-fill text-primary me-2"></i>{{
+        t('notification_comments_title') }} (<span id="comments-count"
+          >{{ notification.comments|length }}</span
+        >)
+      </h3>
 
-      // Відправка реакції
-      async function sendReaction(type) {
-        if (!notificationId) return;
+      <!-- Форма для нового коментаря -->
+      <form
+        class="comment-form d-flex flex-column gap-2 mb-4"
+        onsubmit="submitComment(event)"
+      >
+        <textarea
+          id="comment-text"
+          class="form-control"
+          placeholder="{{ t('notification_comment_placeholder') }}"
+          required
+        ></textarea>
+        <button
+          type="submit"
+          class="btn btn-primary align-self-end"
+          id="commentSubmitBtn"
+        >
+          <i class="bi bi-send-fill me-1"></i>{{
+          t('notification_comment_submit') }}
+        </button>
+      </form>
 
-        try {
-          const response = await fetch(
-            `/api/notifications/${notificationId}/react`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reaction: type }),
-            },
-          );
+      <!-- Список коментарів -->
+      <div class="d-flex flex-column gap-3" id="comments-list">
+        {% for comment in notification.comments %}
+        <div class="comment-item">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="comment-author"
+              >{{ comment.user.display_name if comment.user else
+              t('notification_unknown_user') }}</span
+            >
+            <span class="comment-date"
+              >{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span
+            >
+          </div>
+          <p class="comment-text">{{ comment.text }}</p>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small" id="noCommentsMsg">
+          {{ t('notification_no_comments') }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
 
-          const data = await response.json();
-          if (data.success) {
-            const countSpan = document.getElementById(`count-${type}`);
-            if (countSpan) {
-              countSpan.innerText = data.new_count;
-            }
-          }
-        } catch (error) {
-          console.error("Помилка при відправці реакції:", error);
+<script>
+  const notificationCard = document.getElementById("notification-card");
+  const notificationId = notificationCard ? notificationCard.dataset.id : null;
+
+  // Відправка реакції
+  async function sendReaction(type) {
+    if (!notificationId) return;
+
+    const btn = document.querySelector(`.reaction-btn[data-type="${type}"]`);
+
+    try {
+      const response = await fetch(
+        `/api/notifications/${notificationId}/react`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reaction: type }),
+        },
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        const countSpan = document.getElementById(`count-${type}`);
+        if (countSpan) countSpan.innerText = data.new_count;
+
+        if (btn) {
+          btn.classList.toggle("active", data.action === "added");
+          btn.classList.remove("pop");
+          void btn.offsetWidth; // reflow, щоб анімація перезапустилась
+          btn.classList.add("pop");
         }
       }
+    } catch (error) {
+      console.error("Помилка при відправці реакції:", error);
+    }
+  }
 
-      // Відправка коментаря
-      async function submitComment(event) {
-        event.preventDefault();
-        if (!notificationId) return;
+  // Відправка коментаря
+  async function submitComment(event) {
+    event.preventDefault();
+    if (!notificationId) return;
 
-        const textarea = document.getElementById("comment-text");
-        const text = textarea.value.trim();
+    const textarea = document.getElementById("comment-text");
+    const submitBtn = document.getElementById("commentSubmitBtn");
+    const text = textarea.value.trim();
 
-        if (!text) return;
+    if (!text) return;
 
-        try {
-          const response = await fetch(
-            `/api/notifications/${notificationId}/comment`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: text }),
-            },
-          );
+    const originalBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>...`;
 
-          const data = await response.json();
+    try {
+      const response = await fetch(
+        `/api/notifications/${notificationId}/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text }),
+        },
+      );
 
-          if (data.success) {
-            const commentsList = document.getElementById("comments-list");
-            const newCommentHtml = `
-              <div class="comment-item">
-                <div class="comment-header">
-                  <span class="comment-author">${escapeHtml(data.comment.author)}</span>
-                  <span class="comment-date">${data.comment.created_at}</span>
-                </div>
-                <p class="comment-text">${escapeHtml(data.comment.text)}</p>
-              </div>
-            `;
-            commentsList.insertAdjacentHTML("afterbegin", newCommentHtml);
+      const data = await response.json();
 
-            const countSpan = document.getElementById("comments-count");
-            if (countSpan) {
-              countSpan.innerText = parseInt(countSpan.innerText || "0") + 1;
-            }
-            textarea.value = "";
-          }
-        } catch (error) {
-          console.error("Помилка при додаванні коментаря:", error);
-        }
+      if (data.success) {
+        const noCommentsMsg = document.getElementById("noCommentsMsg");
+        if (noCommentsMsg) noCommentsMsg.remove();
+
+        const commentsList = document.getElementById("comments-list");
+        const newCommentHtml = `
+          <div class="comment-item">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="comment-author">${escapeHtml(data.comment.author)}</span>
+              <span class="comment-date">${data.comment.created_at}</span>
+            </div>
+            <p class="comment-text">${escapeHtml(data.comment.text)}</p>
+          </div>
+        `;
+        commentsList.insertAdjacentHTML("afterbegin", newCommentHtml);
+
+        const countSpan = document.getElementById("comments-count");
+        if (countSpan)
+          countSpan.innerText = parseInt(countSpan.innerText || "0") + 1;
+
+        textarea.value = "";
       }
+    } catch (error) {
+      console.error("Помилка при додаванні коментаря:", error);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
+  }
 
-      function escapeHtml(str) {
-        return str
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-      }
-    </script>
-  </body>
-</html>
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+</script>
+{% endblock %}

@@ -284,7 +284,7 @@ class NotificationRecipient(db.Model):
     read_at = db.Column(db.DateTime, nullable=True)
 
     notification = db.relationship("Notification") 
-    user = db.relationship("User") # тепер n.notification.title працює
+    user = db.relationship("Users")  # ← було "User"
 
 class NotificationComment(db.Model):
     __tablename__ = 'notification_comments'
@@ -295,7 +295,7 @@ class NotificationComment(db.Model):
     text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship("User")
+    user = db.relationship("Users")  # ← було "User"
 
 
 class NotificationReaction(db.Model):
@@ -304,15 +304,13 @@ class NotificationReaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    reaction_type = db.Column(db.String(20), nullable=False)  # 'like', 'heart', 'fire'
+    reaction_type = db.Column(db.String(20), nullable=False)
 
-    user = db.relationship("User")
-    
-    # Унікальний індекс: один користувач може залишити лише одну реакцію певного типу
+    user = db.relationship("Users")  # ← було "User"
+
     __table_args__ = (
         db.UniqueConstraint('notification_id', 'user_id', 'reaction_type', name='unique_user_reaction'),
     )
-
 
 class Achievement(db.Model):
     """Таблиця з усіма можливими досягненнями"""
@@ -709,6 +707,11 @@ def robots():
     return Response(
         f"""User-agent: *
 Allow: /
+
+Disallow: /profile
+Disallow: /notifications
+Disallow: /api/
+Disallow: /admin
 
 Sitemap: {request.url_root}sitemap.xml
 """,
@@ -2040,27 +2043,30 @@ def notifications():
     return render_template("notifications.html", items=items)
 
 
-
 @app.route('/notifications/<int:notification_id>')
 @login_required
 def read_notification(notification_id):
     # Отримуємо сповіщення або 404
     notification = Notification.query.get_or_404(notification_id)
-    
+
+    user = g.user
+    if not user:
+        return redirect(url_for('login'))
+
     # Автоматично позначаємо як прочитане для поточного користувача
     recipient = NotificationRecipient.query.filter_by(
-        notification_id=notification_id, 
-        user_id=g.user_id
+        notification_id=notification_id,
+        user_id=user.id
     ).first()
-    
+
     if recipient and not recipient.is_read:
         recipient.is_read = True
         recipient.read_at = datetime.utcnow()
         db.session.commit()
 
     # Парсинг JSON полів під мову користувача (за замовчуванням 'uk')
-    lang = getattr(g, 'lang', 'uk')  # або сесія session.get('lang', 'uk')
-    
+    lang = getattr(g, 'lang', 'uk')
+
     title = notification.title_json.get(lang) if notification.title_json else "Без заголовка"
     body = notification.body_json.get(lang) if notification.body_json else ""
 
@@ -2079,20 +2085,27 @@ def read_notification(notification_id):
         reactions_count=reactions_count
     )
 
-
+    
 @app.route('/api/notifications/<int:notification_id>/react', methods=['POST'])
-@login_required
 def add_reaction(notification_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    user = Users.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
     data = request.get_json() or {}
     reaction_type = data.get('reaction')
-    
+
     if reaction_type not in ['like', 'heart', 'fire']:
         return jsonify({"success": False, "error": "Некоректний тип реакції"}), 400
 
     # Перевіряємо, чи вже є така реакція від користувача
     existing_reaction = NotificationReaction.query.filter_by(
         notification_id=notification_id,
-        user_id=current_user.id,
+        user_id=user.id,
         reaction_type=reaction_type
     ).first()
 
@@ -2104,7 +2117,7 @@ def add_reaction(notification_id):
         # Якщо ні — додаємо
         new_reaction = NotificationReaction(
             notification_id=notification_id,
-            user_id=current_user.id,
+            user_id=user.id,
             reaction_type=reaction_type
         )
         db.session.add(new_reaction)
@@ -2114,7 +2127,7 @@ def add_reaction(notification_id):
 
     # Отримуємо оновлену кількість цієї реакції
     new_count = NotificationReaction.query.filter_by(
-        notification_id=notification_id, 
+        notification_id=notification_id,
         reaction_type=reaction_type
     ).count()
 
@@ -2122,8 +2135,15 @@ def add_reaction(notification_id):
 
 
 @app.route('/api/notifications/<int:notification_id>/comment', methods=['POST'])
-@login_required
 def add_comment(notification_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    user = Users.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
     data = request.get_json() or {}
     text = data.get('text', '').strip()
 
@@ -2132,7 +2152,7 @@ def add_comment(notification_id):
 
     comment = NotificationComment(
         notification_id=notification_id,
-        user_id=current_user.id,
+        user_id=user.id,
         text=text
     )
     db.session.add(comment)
@@ -2143,11 +2163,13 @@ def add_comment(notification_id):
         "success": True,
         "comment": {
             "id": comment.id,
-            "author": current_user.username if hasattr(current_user, 'username') else f"User #{current_user.id}",
+            "author": user.display_name,
             "created_at": comment.created_at.strftime("%d.%m.%Y %H:%M"),
             "text": comment.text
         }
     })
+
+
 
 
 @app.route("/api/notifications/mark_read", methods=["POST"])

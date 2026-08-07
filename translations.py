@@ -287,6 +287,12 @@ TRANSLATIONS = {
         "verify_error_prefix": "Помилка: ",
         "verify_generic_error": "Не вдалося надіслати лист.",
         "verify_network_error": "Помилка з'єднання з сервером.",
+        "notification_system_author": "Система",
+        "notification_comments_title": "Коментарі",
+        "notification_comment_placeholder": "Напишіть свій коментар...",
+        "notification_comment_submit": "Надіслати",
+        "notification_unknown_user": "Користувач",
+        "notification_no_comments": "Коментарів поки немає. Будьте першим!",
     },
     "de": {
         "no_connection_internet": "Keine Internetverbindung",
@@ -576,6 +582,12 @@ TRANSLATIONS = {
         "verify_error_prefix": "Fehler: ",
         "verify_generic_error": "E-Mail konnte nicht gesendet werden.",
         "verify_network_error": "Verbindungsfehler mit dem Server.",
+        "notification_system_author": "System",
+        "notification_comments_title": "Kommentare",
+        "notification_comment_placeholder": "Schreiben Sie Ihren Kommentar...",
+        "notification_comment_submit": "Senden",
+        "notification_unknown_user": "Benutzer",
+        "notification_no_comments": "Noch keine Kommentare. Sei der Erste!",
     },
     "en": {
         "no_connection_internet": "No internet connection",
@@ -866,6 +878,12 @@ TRANSLATIONS = {
         "verify_error_prefix": "Error: ",
         "verify_generic_error": "Failed to send email.",
         "verify_network_error": "Connection error with the server.",
+        "notification_system_author": "System",
+        "notification_comments_title": "Comments",
+        "notificatioon_comment_submit": "Submit",
+        "notification_unknown_user": "User",
+        "notification_n_comment_placeholder": "Write your comment...",
+        "notificatino_comments": "No comments yet. Be the first!",
     },
 }
 

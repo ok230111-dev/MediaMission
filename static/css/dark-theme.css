@@ -89,3 +89,50 @@
     color: var(--text-color);
 }
 
+[data-theme="dark"] .notification-dropdown {
+  background-color: #1a1f2b !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .notification-header {
+  background-color: #1a1f2b !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .notification-item {
+  background-color: #1a1f2b !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="dark"] .notification-item .fw-semibold {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="dark"] .notification-item .text-muted {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+[data-theme="dark"] .notification-dropdown hr {
+  border-color: rgba(255, 255, 255, 0.08);
+  opacity: 1;
+}
+
+[data-theme="dark"] .notification-list::-webkit-scrollbar-track {
+  background: #1a1f2b;
+}
+
+[data-theme="dark"] .notification-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .notification-item h5,
+[data-theme="dark"] .notification-card h5,
+[data-theme="dark"] .fw-bold {
+  color: rgba(255, 255, 255, 0.92);
+}

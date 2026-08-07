@@ -1,4 +1,5 @@
 import re
+import traceback
 import threading
 from flask import Flask, Response, current_app, render_template, request, redirect, url_for, session, g, abort, jsonify, flash, send_from_directory
 from translations import translate
@@ -2232,14 +2233,14 @@ def support():
 
 
 def send_async_email(app_obj, msg):
-    """Функція для відправки пошти у фоновому потоці"""
+    """Функція для відправки пошти у фоновому потоці з детальним логуванням"""
     with app_obj.app_context():
         try:
             mail.send(msg)
-            print(f"✉️ [SUCCESS] Email успішно надіслано!")
+            print(f"✉️ [SUCCESS] Email успішно надіслано на {msg.recipients}!")
         except Exception as e:
             print(f"❌ [MAIL ERROR] Не вдалося надіслати email: {e}")
-
+            traceback.print_exc()  # Виведе детальний стек помилки в логи Render
 
 
 

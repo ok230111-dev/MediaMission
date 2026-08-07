@@ -711,7 +711,7 @@ function renderTickets() {
             ).join('')}
           </select>
           <button class="btn btn-sm btn-success" onclick="saveTicketUpdate(${tk.id})">
-            <i class="bi bi-check-lg me-1"></i>Зберегти статус
+            <i class="bi bi-check-lg me-1"></i> (1) Зберегти статус
           </button>
           <button class="btn btn-sm btn-primary" onclick="toggleReplyBox(${tk.id})">
             <i class="bi bi-reply-fill me-1"></i>Відповісти
@@ -721,7 +721,7 @@ function renderTickets() {
         <div class="d-none mt-2" id="reply-box-${tk.id}">
           <textarea class="form-control form-control-sm mb-2" id="reply-text-${tk.id}" rows="2" placeholder="Ваша відповідь...">${tk.admin_reply || ''}</textarea>
           <button class="btn btn-sm btn-success" onclick="saveTicketUpdate(${tk.id})">
-            <i class="bi bi-check-lg me-1"></i>Зберегти
+            <i class="bi bi-check-lg me-1"></i> (2) Зберегти
           </button>
         </div>
 

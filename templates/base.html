@@ -112,6 +112,10 @@
     />
     <link
       rel="stylesheet"
+      href="{{ url_for('static', filename='css/dark-theme.css') }}?v={{ asset_version('css/dark-theme.css') }}"
+    />
+    <link
+      rel="stylesheet"
       href="{{ url_for('static', filename='css/components.css') }}?v={{ asset_version('css/components.css') }}"
     />
     <link
@@ -304,6 +308,40 @@
     data-t-status-answered="{{ t('support_status_answered') }}"
     data-t-status-solved="{{ t('support_status_solved') }}"
     data-t-status-closed="{{ t('support_status_closed') }}"
+    data-t-issue-wont-open="{{ t('issue_wont_open') }}"
+    data-t-issue-freezes="{{ t('issue_freezes') }}"
+    data-t-issue-button-not-working="{{ t('issue_button_not_working') }}"
+    data-t-issue-cant-login="{{ t('issue_cant_login') }}"
+    data-t-issue-cant-register="{{ t('issue_cant_register') }}"
+    data-t-issue-wrong-data="{{ t('issue_wrong_data') }}"
+    data-t-issue-xp-not-credited="{{ t('issue_xp_not_credited') }}"
+    data-t-issue-wrong-answer-check="{{ t('issue_wrong_answer_check') }}"
+    data-t-issue-missing-translation="{{ t('issue_missing_translation') }}"
+    data-t-issue-wrong-translation="{{ t('issue_wrong_translation') }}"
+    data-t-issue-upload-failed="{{ t('issue_upload_failed') }}"
+    data-t-issue-not-showing="{{ t('issue_not_showing') }}"
+    data-t-issue-not-receiving="{{ t('issue_not_receiving') }}"
+    data-t-issue-wrong-language="{{ t('issue_wrong_language') }}"
+    data-t-issue-wrong-position="{{ t('issue_wrong_position') }}"
+    data-t-issue-not-updating="{{ t('issue_not_updating') }}"
+    data-t-issue-other="{{ t('issue_other') }}"
+    data-t-support-category-label="{{ t('support_category_label') }}"
+    data-t-support-type-label="{{ t('support_type_label') }}"
+    data-t-support-sending="{{ t('support_sending') }}"
+    data-t-support-submit-error="{{ t('support_submit_error') }}"
+    data-t-support-network-error="{{ t('support_network_error') }}"
+    data-t-verify-no-email-error="{{ t('verify_no_email_error') }}"
+    data-t-verify-sending="{{ t('verify_sending') }}"
+    data-t-verify-sent="{{ t('verify_sent') }}"
+    data-t-verify-error-prefix="{{ t('verify_error_prefix') }}"
+    data-t-verify-generic-error="{{ t('verify_generic_error') }}"
+    data-t-verify-network-error="{{ t('verify_network_error') }}"
+    data-t-verify-email-btn="{{ t('verify_email') }}"
+    data-t-password-reset-sent="{{ t('password_reset_sent') }}"
+    data-t-password-reset-error-prefix="{{ t('password_reset_error_prefix') }}"
+    data-t-password-reset-generic-error="{{ t('password_reset_generic_error') }}"
+    data-t-password-reset-network-error="{{ t('password_reset_network_error') }}"
+    data-t-password-reset-no-email-error="{{ t('password_reset_no_email_error') }}"
     class="d-flex flex-column min-vh-100"
   >
     <!-- ==========================================================

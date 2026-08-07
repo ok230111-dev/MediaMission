@@ -210,5 +210,5 @@ MediaMission{% endblock %} {% block content %}
   }
 </style>
 
-<script src="{{ url_for('static', filename='js/support-wizard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/support-wizard.js') }}?v={{ asset_version('js/support-wizard.js') }}"></script>
 {% endblock %}

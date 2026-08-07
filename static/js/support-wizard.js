@@ -1,4 +1,6 @@
-// --- Мапа типів проблем залежно від категорії ---
+const body = document.body;
+
+// --- Мапа типів проблем залежно від категорії (ключі мовонезалежні) ---
 const ISSUE_TYPES = {
   bug: ["wont_open", "freezes", "button_not_working", "other"],
   account: ["cant_login", "cant_register", "wrong_data", "other"],
@@ -11,23 +13,23 @@ const ISSUE_TYPES = {
 };
 
 const ISSUE_LABELS = {
-  wont_open: "Не відкривається",
-  freezes: "Зависає",
-  button_not_working: "Не працює кнопка",
-  cant_login: "Не вдається увійти",
-  cant_register: "Не вдається зареєструватись",
-  wrong_data: "Неправильні дані",
-  xp_not_credited: "XP не зарахували",
-  wrong_answer_check: "Неправильна перевірка відповіді",
-  missing_translation: "Відсутній переклад",
-  wrong_translation: "Неправильний переклад",
-  upload_failed: "Не вдається завантажити",
-  not_showing: "Не відображається",
-  not_receiving: "Не отримую сповіщення",
-  wrong_language: "Неправильна мова",
-  wrong_position: "Неправильна позиція",
-  not_updating: "Не оновлюється",
-  other: "Інше"
+  wont_open: body.dataset.tIssueWontOpen,
+  freezes: body.dataset.tIssueFreeze,
+  button_not_working: body.dataset.tIssueButtonNotWorking,
+  cant_login: body.dataset.tIssueCantLogin,
+  cant_register: body.dataset.tIssueCantRegister,
+  wrong_data: body.dataset.tIssueWrongData,
+  xp_not_credited: body.dataset.tIssueXpNotCredited,
+  wrong_answer_check: body.dataset.tIssueWrongAnswerCheck,
+  missing_translation: body.dataset.tIssueMissingTranslation,
+  wrong_translation: body.dataset.tIssueWrongTranslation,
+  upload_failed: body.dataset.tIssueUploadFailed,
+  not_showing: body.dataset.tIssueNotShowing,
+  not_receiving: body.dataset.tIssueNotReceiving,
+  wrong_language: body.dataset.tIssueWrongLanguage,
+  wrong_position: body.dataset.tIssueWrongPosition,
+  not_updating: body.dataset.tIssueNotUpdating,
+  other: body.dataset.tIssueOther
 };
 
 let state = {
@@ -37,6 +39,7 @@ let state = {
   missionId: null,
   missionTitle: null,
   issueType: null,
+  issueTypeLabel: null,
 };
 
 const panels = document.querySelectorAll(".wizard-panel");
@@ -90,6 +93,7 @@ function buildIssueTypeOptions() {
       document.querySelectorAll(".issue-type-btn").forEach(b => b.classList.remove("selected"));
       btn.classList.add("selected");
       state.issueType = type;
+      state.issueTypeLabel = ISSUE_LABELS[type] || type;
       setTimeout(() => goToStep(3), 200);
     });
     container.appendChild(btn);
@@ -104,9 +108,13 @@ document.getElementById("missionSelect").addEventListener("change", (e) => {
 
 // --- Крок 3: підсумок ---
 function buildSummary() {
-  const lines = [`<strong>Категорія:</strong> ${state.categoryLabel}`];
-  if (state.missionTitle) lines.push(`<strong>Місія:</strong> ${state.missionTitle}`);
-  if (state.issueType) lines.push(`<strong>Тип:</strong> ${ISSUE_LABELS[state.issueType] || state.issueType}`);
+  const categoryLabel = body.dataset.tSupportCategoryLabel || "Category";
+  const missionLabel = body.dataset.tSupportMissionLabel || "Mission";
+  const typeLabel = body.dataset.tSupportTypeLabel || "Type";
+
+  const lines = [`<strong>${categoryLabel}:</strong> ${state.categoryLabel}`];
+  if (state.missionTitle) lines.push(`<strong>${missionLabel}:</strong> ${state.missionTitle}`);
+  if (state.issueTypeLabel) lines.push(`<strong>${typeLabel}:</strong> ${state.issueTypeLabel}`);
   document.getElementById("ticketSummary").innerHTML = lines.join("<br>");
 }
 
@@ -119,7 +127,7 @@ backBtn.addEventListener("click", () => {
 function collectBrowserInfo() {
   return {
     browser: navigator.userAgent,
-    language: navigator.language,
+    language: document.documentElement.getAttribute("lang") || navigator.language,
     theme: document.documentElement.getAttribute("data-theme") || "light",
     screen: `${window.screen.width}x${window.screen.height}`,
     url: window.location.href,
@@ -129,13 +137,20 @@ function collectBrowserInfo() {
 
 // --- Відправка ---
 submitBtn.addEventListener("click", async () => {
+  const sendingText = body.dataset.tSupportSending || "Sending...";
+  const submitErrorText = body.dataset.tSupportSubmitError || "Failed to submit ticket";
+  const networkErrorText = body.dataset.tSupportNetworkError || "Network error";
+  const originalBtnHtml = submitBtn.innerHTML;
+
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Відправка...`;
+  submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${sendingText}`;
 
   const formData = new FormData();
   formData.append("category", state.category);
+  formData.append("category_label", state.categoryLabel || "");
   if (state.missionId) formData.append("mission_id", state.missionId);
   formData.append("issue_type", state.issueType || "");
+  formData.append("issue_type_label", state.issueTypeLabel || "");
   formData.append("description", document.getElementById("descriptionInput").value.trim());
   formData.append("browser_info", JSON.stringify(collectBrowserInfo()));
 
@@ -153,14 +168,14 @@ submitBtn.addEventListener("click", async () => {
       document.getElementById("ticketIdDisplay").textContent = `#${data.ticket_id}`;
       goToStep(4);
     } else {
-      alert(data.error || "Помилка відправки звернення");
+      alert(data.error || submitErrorText);
       submitBtn.disabled = false;
-      submitBtn.innerHTML = `<i class="bi bi-send-fill me-1"></i>Відправити`;
+      submitBtn.innerHTML = originalBtnHtml;
     }
   } catch (err) {
     console.error(err);
-    alert("Мережева помилка при відправці");
+    alert(networkErrorText);
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<i class="bi bi-send-fill me-1"></i>Відправити`;
+    submitBtn.innerHTML = originalBtnHtml;
   }
 });

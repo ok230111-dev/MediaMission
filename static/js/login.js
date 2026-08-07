@@ -25,6 +25,37 @@ function showAlert(message, type = "danger") {
   }
 }
 
+async function sendResetPasswordEmail(email) {
+  try {
+    const response = await fetch('/api/auth/custom_reset_password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      showAlert("Перевірте вашу пошту! Ми надіслали лист для скидання паролю.", "success");
+    } else {
+      showAlert("Помилка: " + result.error, "danger");
+    }
+  } catch (err) {
+    console.error(err);
+    showAlert("Помилка з'єднання з сервером.", "danger");
+  }
+}
+
+document.getElementById("forgotPasswordLink")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      if (!email) {
+        showAlert("Введіть email для відновлення паролю", "warning");
+        return;
+      }
+      sendResetPasswordEmail(email);
+    });
+
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 

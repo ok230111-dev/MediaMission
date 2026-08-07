@@ -1,0 +1,91 @@
+[data-theme="dark"] .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.15) !important; color: #ffd970 !important; }
+[data-theme="dark"] .bg-info-subtle { background-color: rgba(13, 202, 240, 0.15) !important; color: #8fe3f5 !important; }
+[data-theme="dark"] .bg-success-subtle { background-color: rgba(25, 135, 84, 0.15) !important; color: #82d9ab !important; }
+[data-theme="dark"] .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.15) !important; color: #f5a3ab !important; }
+
+[data-theme="dark"] #myTicketsList .border {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #myTicketsList .bg-light {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+[data-theme="dark"] #myTicketsList .text-muted {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+[data-theme="dark"] #support-pane .card-header.bg-white {
+  background-color: #1a1f2b !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] #support-pane .card-header h4 {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] #support-pane .border {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #support-pane .border-top {
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] #support-pane .form-select {
+  background-color: #1a1f2b;
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .site-footer {
+  background-color: #12161f;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .footer-tags li {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .footer-links a {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme="dark"] .footer-links a:hover {
+  color: #6ea8fe;
+}
+
+[data-theme="dark"] .site-footer hr {
+  border-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+[data-theme="dark"] .site-footer h6 {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme="dark"] .info-account {
+    font-size: 0.9rem;
+    color: white;
+    margin-left: 8px;
+}
+
+/* Виправлення видимості outline-dark кнопок (GitHub, Google тощо) */
+[data-theme="dark"] .btn-outline-dark {
+  color: #f8f9fa !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+[data-theme="dark"] .btn-outline-dark:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Гамбургер у темній темі */
+[data-theme="dark"] .navbar-toggler {
+    border-color: white;
+    color: var(--text-color);
+}
+

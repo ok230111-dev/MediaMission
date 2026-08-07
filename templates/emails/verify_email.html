@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="uk">
+<html lang="{{ lang or 'uk' }}">
   <head>
     <meta charset="UTF-8" />
     <style>
@@ -43,51 +43,40 @@
     </style>
   </head>
   <body>
+    {% set texts = { 'uk': { 'title': 'Підтвердження електронної пошти',
+    'greeting': 'Вітаємо!', 'body': 'Дякуємо за реєстрацію. Будь ласка,
+    підтвердь свій email, натиснувши кнопку нижче:', 'button': 'Підтвердити
+    Email', 'link_hint': 'Якщо кнопка не працює, скопіюйте це посилання в
+    браузер:', 'footer': 'Якщо ти не реєструвався у MediaMission, просто ігноруй
+    цей лист.' }, 'de': { 'title': 'E-Mail-Adresse bestätigen', 'greeting':
+    'Hallo!', 'body': 'Vielen Dank für deine Registrierung. Bitte bestätige
+    deine E-Mail-Adresse, indem du auf den folgenden Button klickst:', 'button':
+    'E-Mail bestätigen', 'link_hint': 'Falls der Button nicht funktioniert,
+    kopiere bitte diesen Link in deinen Browser:', 'footer': 'Falls du dich
+    nicht bei MediaMission registriert hast, kannst du diese E-Mail einfach
+    ignorieren.' }, 'en': { 'title': 'Confirm Your Email', 'greeting': 'Hello!',
+    'body': 'Thanks for signing up. Please confirm your email by clicking the
+    button below:', 'button': 'Confirm Email', 'link_hint': "If the button
+    doesn't work, copy this link into your browser:", 'footer': "If you didn't
+    sign up for MediaMission, simply ignore this email." } } %} {% set t =
+    texts.get(lang, texts['en']) %}
+
     <div class="container">
-      <div class="logo">MediaMission (UKR)</div>
-      <h2>Підтвердження електронної пошти</h2>
-      <p>Вітаємо!</p>
-      <p>
-        Дякуємо за реєстрацію. Будь ласка, підтвердь свій email, натиснувши
-        кнопку нижче:
-      </p>
+      <div class="logo">MediaMission</div>
+      <h2>{{ t.title }}</h2>
+      <p>{{ t.greeting }}</p>
+      <p>{{ t.body }}</p>
 
       <div style="text-align: center">
-        <a href="{{ verify_link }}" class="btn">Підтвердити Email</a>
+        <a href="{{ verify_link }}" class="btn">{{ t.button }}</a>
       </div>
 
       <p style="margin-top: 25px; font-size: 13px; color: #555">
-        Якщо кнопка не працює, скопіюйте це посилання в браузер:<br />
+        {{ t.link_hint }}<br />
         <a href="{{ verify_link }}" style="color: #4f46e5">{{ verify_link }}</a>
       </p>
 
-      <div class="footer">
-        Якщо ти не реєструвався у MediaMission, просто ігноруй цей лист.
-      </div>
-    </div>
-    <div class="container">
-      <div class="logo">🚀 MediaMission (DEU)</div>
-      <h2>E-Mail-Adresse bestätigen</h2>
-      <p>Hallo!</p>
-      <p>
-        Vielen Dank für deine Registrierung. Bitte bestätige deine
-        E-Mail-Adresse, indem du auf den folgenden Button klickst:
-      </p>
-
-      <div style="text-align: center">
-        <a href="{{ verify_link }}" class="btn">E-Mail bestätigen</a>
-      </div>
-
-      <p style="margin-top: 25px; font-size: 13px; color: #555">
-        Falls der Button nicht funktioniert, kopiere bitte diesen Link in Ihren
-        Browser:<br />
-        <a href="{{ verify_link }}" style="color: #4f46e5">{{ verify_link }}</a>
-      </p>
-
-      <div class="footer">
-        Falls du dich nicht bei MediaMission registriert haben, kannst du diese
-        E-Mail einfach ignorieren.
-      </div>
+      <div class="footer">{{ t.footer }}</div>
     </div>
   </body>
 </html>

@@ -478,6 +478,22 @@ MediaMission{% endblock %} {% block style %}
           </span>
           {% endif %}
         </div>
+
+        <!-- Зміна паролю (лише для акаунтів з паролем, не для Google) -->
+        {% if user.provider == 'password' %}
+        <div class="mt-3">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button
+              id="changePasswordBtn"
+              class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+              aria-label="{{ t('change_password') }}"
+            >
+              <i class="bi bi-key-fill"></i> {{ t('change_password') }}
+            </button>
+          </div>
+          <div id="changePasswordStatus" class="mt-2 small" role="status"></div>
+        </div>
+        {% endif %}
       </div>
 
       <!-- Шкала прогресу до наступного рівня -->

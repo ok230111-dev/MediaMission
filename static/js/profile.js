@@ -1,6 +1,8 @@
 import { auth } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
+const body = document.body;
+
 // ============================================
 // ОБРОБКА СТАНУ АВТОРИЗАЦІЇ
 // ============================================
@@ -71,19 +73,26 @@ document.getElementById("verifyEmailBtn")?.addEventListener("click", async () =>
   const btn = document.getElementById("verifyEmailBtn");
   const statusEl = document.getElementById("verifyStatus");
 
+  const noEmailError = body.dataset.tVerifyNoEmailError || "User not authenticated or email missing.";
+  const sendingText = body.dataset.tVerifySending || "Sending...";
+  const sentText = body.dataset.tVerifySent || "Email sent! Check your inbox.";
+  const errorPrefix = body.dataset.tVerifyErrorPrefix || "Error: ";
+  const genericError = body.dataset.tVerifyGenericError || "Failed to send email.";
+  const networkError = body.dataset.tVerifyNetworkError || "Connection error with the server.";
+  const btnDefaultText = body.dataset.tVerifyEmailBtn || "Send verification email";
+
   if (!auth.currentUser || !auth.currentUser.email) {
     if (statusEl) {
-      statusEl.textContent = "Користувач не авторизований або email відсутній.";
+      statusEl.textContent = noEmailError;
       statusEl.className = "text-danger small mt-2";
     }
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Надсилання...";
+  btn.textContent = sendingText;
 
   try {
-    // Надсилаємо запит на кастомний Flask API ендпоінт
     const response = await fetch('/api/auth/custom_verify_email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -94,24 +103,24 @@ document.getElementById("verifyEmailBtn")?.addEventListener("click", async () =>
 
     if (result.success) {
       if (statusEl) {
-        statusEl.textContent = "Лист надіслано! Перевірте пошту.";
-        statusEl.className = "alert alert-success small mt-2"; // Стандартні класи Bootstrap
+        statusEl.textContent = sentText;
+        statusEl.className = "alert alert-success small mt-2";
       }
     } else {
       if (statusEl) {
-        statusEl.textContent = "Помилка: " + (result.error || "Не вдалося надіслати лист.");
+        statusEl.textContent = errorPrefix + (result.error || genericError);
         statusEl.className = "alert alert-danger small mt-2";
       }
     }
   } catch (error) {
     console.error("Помилка при відправці запиту на верифікацію:", error);
     if (statusEl) {
-      statusEl.textContent = "Помилка з'єднання з сервером.";
+      statusEl.textContent = networkError;
       statusEl.className = "alert alert-danger small mt-2";
     }
   } finally {
     btn.disabled = false;
-    btn.textContent = "Надіслати лист підтвердження";
+    btn.textContent = btnDefaultText;
   }
 });
 
@@ -138,6 +147,57 @@ setInterval(async () => {
     }
   }
 }, 5000); // перевірка кожні 5 секунд
+
+// ============================================
+// ЗМІНА ПАРОЛЮ ЧЕРЕЗ FLASK (CUSTOM)
+// ============================================
+document.getElementById("changePasswordBtn")?.addEventListener("click", async () => {
+  const btn = document.getElementById("changePasswordBtn");
+  const statusEl = document.getElementById("changePasswordStatus");
+
+  if (!auth.currentUser || !auth.currentUser.email) {
+    if (statusEl) {
+      statusEl.textContent = body.dataset.tPasswordResetNoEmailError || "User not authenticated.";
+      statusEl.className = "text-danger small mt-2";
+    }
+    return;
+  }
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span> ...`;
+
+  try {
+    const response = await fetch('/api/auth/custom_reset_password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: auth.currentUser.email })
+    });
+
+    const result = await response.json();
+
+    if (statusEl) {
+      if (result.success) {
+        statusEl.textContent = body.dataset.tPasswordResetSent || "Password reset email sent!";
+        statusEl.className = "alert alert-success small mt-2";
+      } else {
+        const errorPrefix = body.dataset.tPasswordResetErrorPrefix || "Error: ";
+        const genericError = body.dataset.tPasswordResetGenericError || "Failed to send email.";
+        statusEl.textContent = errorPrefix + (result.error || genericError);
+        statusEl.className = "alert alert-danger small mt-2";
+      }
+    }
+  } catch (error) {
+    console.error("Помилка при відправці запиту на зміну паролю:", error);
+    if (statusEl) {
+      statusEl.textContent = body.dataset.tPasswordResetNetworkError || "Connection error.";
+      statusEl.className = "alert alert-danger small mt-2";
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+});
 
 // ============================================
 // TOGGLE ДОДАТКОВОЇ СТАТИСТИКИ
@@ -216,10 +276,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-
-
-const body = document.body;
-
+// ============================================
+// СПОВІЩЕННЯ ПРО ЗВЕРНЕННЯ В ПІДТРИМКУ ("МОЇ ЗВЕРНЕННЯ")
+// ============================================
 const STATUS_CONFIG = {
   open:     { emoji: "🟡", label: body.dataset.tStatusOpen || "Open",         class: "bg-warning-subtle text-warning-emphasis" },
   answered: { emoji: "🔵", label: body.dataset.tStatusAnswered || "Answered", class: "bg-info-subtle text-info-emphasis" },

@@ -321,18 +321,20 @@ class SupportTicket(db.Model):
     __tablename__ = "support_tickets"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    category = db.Column(db.String(100), nullable=False)
-    mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"))
-    issue_type = db.Column(db.String(100), nullable=True)      # конкретний тип проблеми (xp_not_credited, wont_open, тощо)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    category_label = db.Column(db.String(100), nullable=True)  # НОВЕ — назва категорії мовою користувача
+    mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"), nullable=True)
+    issue_type = db.Column(db.String(100), nullable=True)
+    issue_type_label = db.Column(db.String(150), nullable=True)  # НОВЕ — назва типу мовою користувача
     description = db.Column(db.Text, nullable=True)
     screenshot_url = db.Column(db.String(500), nullable=True)
-    # Автоматично зібрана технічна інформація
-    browser_info = db.Column(JSON, nullable=True)  # {browser, os, theme, language, screen, url, timestamp}
-    status = db.Column(db.String(20), default="open")  # open, answered, solved, closed
+    browser_info = db.Column(JSON, nullable=True)
+    status = db.Column(db.String(20), default="open")
     admin_reply = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
     user = db.relationship("Users")
     mission = db.relationship("Missions")
 
@@ -1445,8 +1447,8 @@ def get_my_support_tickets():
     for tk in tickets:
         result.append({
             "id": tk.id,
-            "category": tk.category,
-            "issue_type": tk.issue_type,
+            "category": tk.category_label or tk.category,
+            "issue_type": tk.issue_type_label or tk.issue_type,
             "description": tk.description,
             "mission_title": tk.mission.title if tk.mission else None,
             "status": tk.status,
@@ -1455,38 +1457,6 @@ def get_my_support_tickets():
         })
 
     return jsonify({"success": True, "tickets": result})
-
-
-
-
-@app.route("/api/admin/support_tickets/<int:ticket_id>/status", methods=["POST"])
-def update_support_ticket_status(ticket_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return jsonify({"error": "Forbidden"}), 403
-
-    ticket = SupportTicket.query.get(ticket_id)
-    if not ticket:
-        return jsonify({"success": False, "error": "Звернення не знайдено"}), 404
-
-    data = request.get_json()
-    new_status = data.get("status")
-    admin_reply = data.get("admin_reply")
-
-    if new_status and new_status not in ("open", "answered", "solved", "closed"):
-        return jsonify({"success": False, "error": "Некоректний статус"}), 400
-
-    if new_status:
-        ticket.status = new_status
-    if admin_reply is not None:
-        ticket.admin_reply = admin_reply
-
-    db.session.commit()
-    return jsonify({"success": True})
 
 
 
@@ -2081,6 +2051,41 @@ def custom_verify_email():
 
 
 
+
+@app.route('/api/auth/custom_reset_password', methods=['POST'])
+def custom_reset_password():
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
+
+    # Визначаємо мову користувача (якщо він є в базі), інакше — поточна мова сесії
+    user = Users.query.filter_by(email=email).first()
+    lang = user.language if user and user.language else g.lang
+
+    try:
+        reset_link = auth.generate_password_reset_link(email)
+        html_body = render_template('emails/reset_password.html', reset_link=reset_link, lang=lang)
+
+        msg = Message(
+            subject=translate('reset_password_subject', lang),
+            recipients=[email],
+            html=html_body
+        )
+        mail.send(msg)
+
+        return jsonify({'success': True, 'message': 'Лист для відновлення паролю надіслано!'})
+    except firebase_auth.UserNotFoundError:
+        # Із міркувань безпеки не підтверджуємо/спростовуємо існування email
+        return jsonify({'success': True, 'message': 'Якщо email існує, лист надіслано.'})
+    except Exception as e:
+        print(f"Помилка відправки листа скидання паролю: {e}")
+        return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
+
+
+
+
 @app.route("/offline")
 def offline():
     return render_template("offline.html")
@@ -2227,8 +2232,10 @@ def submit_support_ticket():
     user_id = session.get("user_id")
 
     category = request.form.get("category", "").strip()
+    category_label = request.form.get("category_label", "").strip()
     mission_id = request.form.get("mission_id") or None
     issue_type = request.form.get("issue_type", "").strip()
+    issue_type_label = request.form.get("issue_type_label", "").strip()
     description = request.form.get("description", "").strip()
     browser_info_raw = request.form.get("browser_info", "{}")
 
@@ -2251,8 +2258,10 @@ def submit_support_ticket():
     ticket = SupportTicket(
         user_id=user_id,
         category=category,
+        category_label=category_label or category,
         mission_id=int(mission_id) if mission_id else None,
         issue_type=issue_type,
+        issue_type_label=issue_type_label or issue_type,
         description=description,
         screenshot_url=screenshot_url,
         browser_info=browser_info,
@@ -2261,10 +2270,11 @@ def submit_support_ticket():
     db.session.add(ticket)
     db.session.commit()
 
-    # --- Сповіщення адмінів: in-app + email ---
     notify_admins_new_ticket(ticket)
 
     return jsonify({"success": True, "ticket_id": ticket.id})
+
+
 
 
 def notify_admins_new_ticket(ticket):
@@ -2316,6 +2326,10 @@ def notify_admins_new_ticket(ticket):
     else:
         print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
 
+
+
+
+
 @app.route("/api/admin/support_tickets", methods=["GET"])
 def get_support_tickets():
     user_id = session.get("user_id")
@@ -2332,8 +2346,8 @@ def get_support_tickets():
     for tk in tickets:
         result.append({
             "id": tk.id,
-            "category": tk.category,
-            "issue_type": tk.issue_type,
+            "category": tk.category_label or tk.category,
+            "issue_type": tk.issue_type_label or tk.issue_type,
             "description": tk.description,
             "mission_title": tk.mission.title if tk.mission else None,
             "user_email": tk.user.email if tk.user else "Гість",

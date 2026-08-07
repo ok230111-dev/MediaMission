@@ -293,6 +293,11 @@ TRANSLATIONS = {
         "notification_comment_submit": "Надіслати",
         "notification_unknown_user": "Користувач",
         "notification_no_comments": "Коментарів поки немає. Будьте першим!",
+        "ai_chat_open": "Відкрити AI-помічника",
+        "ai_chat_title": "AI Помічник",
+        "ai_chat_greeting": "Привіт! Я можу допомогти з питаннями про медіаграмотність, пояснити місію або розповісти про сайт. Що тебе цікавить?",
+        "ai_chat_placeholder": "Напишіть повідомлення...",
+        "ai_chat_go_support": "Не допомогло? Створити звернення →",
     },
     "de": {
         "no_connection_internet": "Keine Internetverbindung",

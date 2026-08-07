@@ -6,6 +6,7 @@ from translations import translate
 from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from sqlalchemy import JSON
+import time
 import os
 import uuid
 import json
@@ -23,7 +24,8 @@ import cloudinary
 import cloudinary.uploader
 from functools import wraps
 from firebase_admin import messaging
-
+import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted, GoogleAPIError, NotFound
 
 load_dotenv()
 
@@ -84,6 +86,25 @@ cloudinary.config(
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
+
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+
+AI_SYSTEM_PROMPT = """Ти — AI-помічник платформи MediaMission, освітнього сайту для розвитку медіаграмотності та інформаційної грамотності серед українських дітей і підлітків у Німеччині (проєкт підтриманий грантом DAAD Zukunft Ukraine).
+
+Твої задачі:
+1. Пояснювати поняття медіаграмотності та інформаційної грамотності простою мовою, з прикладами.
+2. Допомагати розуміти, чому відповідь у місії правильна чи неправильна — пояснюй логіку, а не просто кажи "правильно/неправильно".
+3. Відповідати на типові питання про сайт: як отримати XP, як працюють ліги/рейтинг, як змінити мову, як відновити пароль, як зв'язатися з підтримкою тощо.
+4. Якщо не можеш допомогти або питання виходить за межі теми сайту — чесно скажи це і порадь звернутися в службу підтримки (сторінка /support).
+
+Правила:
+- Відповідай мовою, якою до тебе звертаються.
+- Будь доброзичливим і зрозумілим для підлітків — без зайвого канцеляриту.
+- Тримай відповіді короткими (2-5 речень), якщо не просять детальніше.
+- Ніколи не видавай прямі відповіді на питання тесту місії, якщо тебе просять "просто дай відповідь" — замість цього поясни логіку і принцип, за яким людина сама зможе визначити правильну відповідь.
+- Не обговорюй теми, не пов'язані з сайтом чи медіаграмотністю."""
+
 
 # 2. І ТІЛЬКИ ПОТІМ передаємо app у SQLAlchemy:
 db = SQLAlchemy(app)
@@ -2085,7 +2106,7 @@ def read_notification(notification_id):
         reactions_count=reactions_count
     )
 
-    
+
 @app.route('/api/notifications/<int:notification_id>/react', methods=['POST'])
 def add_reaction(notification_id):
     user_id = session.get("user_id")
@@ -2653,6 +2674,82 @@ def about():
 #         return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
 
 
+
+
+@app.route("/api/ai/chat", methods=["POST"])
+def ai_chat():
+    data = request.get_json() or {}
+    user_message = data.get("message", "").strip()
+    history = data.get("history", [])
+    mission_context = data.get("mission_context")
+
+    if not user_message:
+        return jsonify({"success": False, "error": "Порожнє повідомлення"}), 400
+
+    if len(user_message) > 2000:
+        return jsonify({"success": False, "error": "Повідомлення занадто довге"}), 400
+
+    system_prompt = AI_SYSTEM_PROMPT
+    if mission_context:
+        system_prompt += (
+            f"\n\nКонтекст поточної місії:\n"
+            f"Назва: {mission_context.get('title', '')}\n"
+            f"Завдання: {mission_context.get('exercise', '')}"
+        )
+
+    # Перетворюємо історію в формат Gemini (беремо останні 6 повідомлень, щоб не перевищувати ліміт токенів)
+    gemini_history = []
+    for msg in history[-6:]:
+        role = "user" if msg.get("role") == "user" else "model"
+        gemini_history.append({"role": role, "parts": [msg.get("content", "")]})
+
+    # Перелік дійсних назв моделей Gemini для фолбеку
+    candidate_models = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash-8b"
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-pro"
+    ]
+
+    for model_name in candidate_models:
+        for attempt in range(2):
+            try:
+                model = genai.GenerativeModel(
+                    model_name=model_name,
+                    system_instruction=system_prompt
+                )
+                chat = model.start_chat(history=gemini_history)
+                response = chat.send_message(user_message)
+
+                return jsonify({"success": True, "reply": response.text})
+
+            except ResourceExhausted as e:
+                print(f"⚠️ Квоту/ліміт для {model_name} вичерпано (Спроба {attempt + 1}).")
+                if attempt == 0:
+                    time.sleep(4)  # Затримка 4 секунди, щоб пройти ліміт часу (RPM)
+                    continue
+                break
+
+            except NotFound as e:
+                print(f"⚠️ Модель {model_name} не знайдена, переходимо до наступної.")
+                break
+
+            except GoogleAPIError as e:
+                print(f"❌ Помилка Gemini API ({model_name}): {e}")
+                break
+
+            except Exception as e:
+                print(f"❌ Несподівана помилка AI-чату: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": "Внутрішня помилка при зверненні до ШІ."
+                }), 500
+
+    return jsonify({
+        "success": False,
+        "error": "Перевищено ліміт запитів до ШІ. Будь ласка, зачекайте 15-20 секунд та спробуйте ще раз."
+    }), 429
 
 
 if __name__ == '__main__':

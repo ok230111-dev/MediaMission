@@ -901,7 +901,11 @@ def date_uk(value):
 
 @app.route("/")
 def index():
-    return render_template('index.html')
+    users_count = Users.query.count()
+    missions_count = Missions.query.count()
+    total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
+    
+    return render_template('index.html', users_count=users_count, missions_count=missions_count, total_xp=total_xp)
 
 
 

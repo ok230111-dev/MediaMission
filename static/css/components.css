@@ -544,3 +544,121 @@
   border-radius: 12px;
   font-weight: bold;
 }
+
+/* === COMMENTS SECTION === */
+.comments-title {
+  font-weight: 700;
+}
+
+.comment-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 2rem 1.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.comment-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.comment-rating {
+  color: #f5b301;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.comment-text {
+  font-size: 1rem;
+  color: #4a4a4a;
+  line-height: 1.6;
+  flex-grow: 1;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.comment-text::before {
+  content: "\201C";
+  font-size: 2.5rem;
+  color: var(--bs-primary, #4f46e5);
+  opacity: 0.15;
+  position: absolute;
+  top: -1.5rem;
+  left: -0.5rem;
+  line-height: 1;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.comment-avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  background: var(--bs-primary-bg-subtle, #eef0ff);
+  color: var(--bs-primary, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.comment-author h5 {
+  font-size: 0.95rem;
+}
+
+/* === STATS SECTION === */
+.stats-section {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 2.5rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background: var(--bs-primary-bg-subtle, #eef0ff);
+  color: var(--bs-primary, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+}
+
+.stat-number {
+  font-weight: 700;
+  font-size: 2.75rem;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 1rem;
+  margin-bottom: 0;
+}

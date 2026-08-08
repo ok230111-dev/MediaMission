@@ -136,3 +136,60 @@
 [data-theme="dark"] .fw-bold {
   color: rgba(255, 255, 255, 0.92);
 }
+
+/* === COMMENTS SECTION — DARK THEME === */
+[data-theme="dark"] .comment-card {
+  background: #1e1f26;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .comment-card:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .comment-text {
+  color: #c8c9d2;
+}
+
+[data-theme="dark"] .comment-text::before {
+  color: var(--bs-primary, #7c7ff5);
+  opacity: 0.25;
+}
+
+[data-theme="dark"] .comment-author h5 {
+  color: #f1f1f4;
+}
+
+[data-theme="dark"] .comment-avatar {
+  background: rgba(124, 127, 245, 0.15);
+  color: var(--bs-primary, #7c7ff5);
+}
+
+[data-theme="dark"] .comment-rating {
+  color: #f5c53e;
+}
+
+/* === STATS SECTION — DARK THEME === */
+[data-theme="dark"] .stat-card {
+  background: #1e1f26;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .stat-card:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .stat-icon {
+  background: rgba(124, 127, 245, 0.15);
+  color: var(--bs-primary, #7c7ff5);
+}
+
+[data-theme="dark"] .stat-number {
+  color: #f1f1f4;
+}
+
+[data-theme="dark"] .stat-label {
+  color: rgba(255, 255, 255, 0.55);
+}

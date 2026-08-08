@@ -1,3 +1,5 @@
+<!--МІЙ КОД -->
+
 {% extends "base.html" %} {% block title %}{{t('nav_home')}} | MediaMission{%
 endblock %} {% block content %}
 <head>
@@ -14,6 +16,16 @@ endblock %} {% block content %}
       <span class="highlight-text">{{ t('critical_think') }}</span>
     </h1>
     <p class="lead mt-3 mx-auto hero-subtitle">{{ t('index_hero1') }}</p>
+  </div>
+</section>
+
+<section class="hero py-5">
+  <div class="container text-center py-4">
+    <h1 class="display-4 fw-bold">
+      {{t('not_all_you_see')}}
+      <span class="highlight-text">{{t('internet_truth')}}</span>
+    </h1>
+    <p class="lead mt-3 mx-auto hero-subtitle">{{t('hero_2_text')}}</p>
   </div>
 </section>
 
@@ -109,7 +121,7 @@ endblock %} {% block content %}
   </div>
 </section>
 
-<!-- WHY IT MATTERS -->
+<!-- Не вір - перевіряй -->
 <section class="why-section container py-5">
   <h2 class="why-title text-center mb-5">{{ t('index_why') }}</h2>
   <div class="row g-4">
@@ -139,6 +151,121 @@ endblock %} {% block content %}
         <div class="why-icon"><i class="bi bi-controller"></i></div>
         <h3>{{ t('index_why_learn') }}</h3>
         <p>{{ t('index_why_learn_text') }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--Коментарі-->
+<section class="comments container py-5">
+  <div class="text-center mb-5">
+    <span class="section-badge">{{ t('comments_badge') }}</span>
+    <h2 class="comments-title mt-3">{{ t('comments_title') }}</h2>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+      <div class="comment-card h-100">
+        <div class="comment-rating">
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <p>{{ t('comment_1_text') }}</p>
+        <div class="comment-author">
+          <div class="comment-avatar">М</div>
+          <div>
+            <h5 class="fw-bold mb-0">{{ t('comment_1_name') }}</h5>
+            <span class="text-muted small">{{ t('comment_1_role') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="comment-card h-100">
+        <div class="comment-rating">
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <p>{{ t('comment_2_text') }}</p>
+        <div class="comment-author">
+          <div class="comment-avatar">О</div>
+          <div>
+            <h5 class="fw-bold mb-0">{{ t('comment_2_name') }}</h5>
+            <span class="text-muted small">{{ t('comment_2_role') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="comment-card h-100">
+        <div class="comment-rating">
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star"></i>
+        </div>
+        <p>{{ t('comment_3_text') }}</p>
+        <div class="comment-author">
+          <div class="comment-avatar">Д</div>
+          <div>
+            <h5 class="fw-bold mb-0">{{ t('comment_3_name') }}</h5>
+            <span class="text-muted small">{{ t('comment_3_role') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS / COUNTERS SECTION -->
+<section class="stats-section container py-5">
+  <div class="section-header text-center mb-5">
+    <span class="section-badge">{{ t('index_stats_badge') }}</span>
+    <h2 class="mt-3">
+      {{ t('index_stats_title') }}
+      <span class="text-primary d-block"
+        >{{ users_count }} {{ t('index_stats_title_users') }}</span
+      >
+    </h2>
+    <p class="section-desc">{{ t('index_stats_desc') }}</p>
+  </div>
+
+  <div class="row g-4 text-center">
+    <div class="col-md-4">
+      <div class="stat-card h-100">
+        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+        <h2 class="stat-number" data-count="{{ users_count }}">0</h2>
+        <p class="stat-label">{{ t('index_stats_users') }}</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card h-100">
+        <div class="stat-icon"><i class="bi bi-flag-fill"></i></div>
+        <h2 class="stat-number" data-count="{{ missions_count }}">0</h2>
+        <p class="stat-label">{{ t('index_stats_missions') }}</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card h-100">
+        <div class="stat-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <h2
+          class="stat-number"
+          data-count="{% if users_count > 0 %}{{ (total_xp / users_count) | round(0) }}{% else %}0{% endif %}"
+        >
+          0
+        </h2>
+        <p class="stat-label">{{ t('index_stats_xp') }}</p>
       </div>
     </div>
   </div>
@@ -195,5 +322,39 @@ endblock %} {% block content %}
   type="module"
   src="{{ url_for('static', filename='js/script.js') }}"
 ></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const counters = document.querySelectorAll(".stat-number");
+
+    const animateCount = (el) => {
+      const target = parseInt(el.dataset.count, 10);
+      const suffix = el.dataset.suffix || "";
+      const duration = 1500;
+      const start = performance.now();
+
+      const step = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const value = Math.floor(progress * target);
+        el.textContent = value.toLocaleString("uk-UA") + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            animateCount(entry.target);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.5 },
+    );
+
+    counters.forEach((el) => observer.observe(el));
+  });
+</script>
 
 {% endblock %}

@@ -69,6 +69,17 @@
   letter-spacing: 0.02em;
 }
 
+.section-badge {
+  display: inline-block;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 6px 18px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
 .section-header h2 {
   font-weight: 800;
   margin-top: 1rem;

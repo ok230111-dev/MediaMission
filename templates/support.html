@@ -87,6 +87,14 @@ MediaMission{% endblock %} {% block content %}
           <button
             type="button"
             class="btn btn-outline-primary text-start category-btn"
+            data-category="ai_assistant"
+            data-label="{{ t('support_cat_ai_assistant') }}"
+          >
+            <i class="bi bi-robot me-2"></i>{{ t('support_cat_ai_assistant') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
             data-category="other"
             data-label="{{ t('support_cat_other') }}"
           >

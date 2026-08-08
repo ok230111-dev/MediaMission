@@ -342,6 +342,10 @@
     data-t-password-reset-generic-error="{{ t('password_reset_generic_error') }}"
     data-t-password-reset-network-error="{{ t('password_reset_network_error') }}"
     data-t-password-reset-no-email-error="{{ t('password_reset_no_email_error') }}"
+    data-t-issue-ai-wrong-answer="{{ t('issue_ai_wrong_answer') }}"
+    data-t-issue-ai-not-responding="{{ t('issue_ai_not_responding') }}"
+    data-t-issue-ai-rate-limited="{{ t('issue_ai_rate_limited') }}"
+    data-t-issue-ai-gives-test-answers="{{ t('issue_ai_gives_test_answers') }}"
     class="d-flex flex-column min-vh-100"
   >
     <!-- ==========================================================
@@ -565,7 +569,11 @@
             <ul class="list-unstyled footer-links">
               <li><a href="/about">{{ t('nav_about') }}</a></li>
               <li><a href="/faq">{{ t('nav_faq') }}</a></li>
-              <li><a href="/support">{{ t('nav_ai_assistant') }}</a></li>
+              <li>
+                <a href="#" id="footerAiChatTrigger"
+                  >{{ t('nav_ai_assistant') }}</a
+                >
+              </li>
               <li><a href="/privacy">{{ t('nav_privacy') }}</a></li>
               <li><a href="/terms">{{ t('nav_terms') }}</a></li>
               <li><a href="/impressum">{{ t('nav_impressum') }}</a></li>
@@ -600,11 +608,29 @@
         <i class="bi bi-robot"></i>
       </button>
 
-      <div id="aiChatPanel" class="ai-chat-panel d-none">
-        <div class="ai-chat-header">
+      <!-- Додано data-user-id для прив'язки історії до поточного користувача -->
+      <div
+        id="aiChatPanel"
+        class="ai-chat-panel d-none"
+        data-user-id="{{ session.get('user_id', 'guest') }}"
+      >
+        <div
+          class="ai-chat-header d-flex justify-content-between align-items-center"
+        >
           <span><i class="bi bi-robot me-2"></i>{{ t('ai_chat_title') }}</span>
-          <button id="aiChatClose" class="btn-close btn-close-white"></button>
+          <div class="d-flex align-items-center gap-2">
+            <!-- Кнопка очищення історії -->
+            <button
+              id="aiChatClear"
+              class="btn btn-sm text-white-50 p-0 me-1"
+              title="{{ t('ai_chat_clear') | default('Очистити чат') }}"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+            <button id="aiChatClose" class="btn-close btn-close-white"></button>
+          </div>
         </div>
+        <div class="ai-chat-quota" id="aiChatQuota"></div>
         <div class="ai-chat-messages" id="aiChatMessages">
           <div class="ai-msg ai-msg-bot">{{ t('ai_chat_greeting') }}</div>
         </div>
@@ -735,6 +761,30 @@
         color: #fff;
         border-color: rgba(255, 255, 255, 0.15);
       }
+
+      .ai-chat-quota {
+        font-size: 0.72rem;
+        color: var(--bs-secondary-color, #6c757d);
+        padding: 6px 14px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .ai-chat-quota.low {
+        color: #dc3545;
+        font-weight: 600;
+      }
+
+      [data-theme="dark"] .ai-chat-quota {
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      [data-theme="dark"] .ai-chat-quota.low {
+        color: #f5a3ab;
+      }
     </style>
 
     {% if request.path not in hide_ai_chat_paths and not is_mission_detail %}
@@ -750,6 +800,22 @@
 
     <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ asset_version('js/theme.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <
+    <script>
+      const footerTrigger = document.getElementById("footerAiChatTrigger");
+      if (footerTrigger) {
+        footerTrigger.addEventListener("click", (e) => {
+          e.preventDefault(); // Запобігаємо перезавантаженню сторінки
+
+          // Показуємо панель чату та фокусуємо інпут
+          panel.classList.remove("d-none");
+          input.focus();
+
+          // Плавно прокручуємо еран до віджета, якщо він не зафіксований на екрані
+          panel.scrollIntoView({ behavior: "smooth" });
+        });
+      }
+    </script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

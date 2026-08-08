@@ -1,13 +1,19 @@
 const toggleBtn = document.getElementById("aiChatToggle");
 const closeBtn = document.getElementById("aiChatClose");
+const clearBtn = document.getElementById("aiChatClear");
 const panel = document.getElementById("aiChatPanel");
 const messagesEl = document.getElementById("aiChatMessages");
 const input = document.getElementById("aiChatInput");
 const sendBtn = document.getElementById("aiChatSend");
 
-let history = JSON.parse(sessionStorage.getItem("aiChatHistory") || "[]");
+// Отримуємо ID користувача та створюємо унікальний ключ для localStorage
+const currentUserId = panel?.dataset.userId || "guest";
+const storageKey = `aiChatHistory_${currentUserId}`;
 
-// Відновлюємо історію у вигляді на екрані
+// Завантажуємо історію саме поточного користувача
+let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+// Відновлюємо збережені повідомлення під час завантаження
 history.forEach(msg => appendMessage(msg.role === "user" ? "user" : "bot", msg.content));
 
 toggleBtn.addEventListener("click", () => {
@@ -15,6 +21,19 @@ toggleBtn.addEventListener("click", () => {
   if (!panel.classList.contains("d-none")) input.focus();
 });
 closeBtn.addEventListener("click", () => panel.classList.add("d-none"));
+
+// Обробник для кнопки очищення чату
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    history = [];
+    localStorage.removeItem(storageKey);
+    
+    // Скидаємо вікно чату до початкового привітання
+    messagesEl.innerHTML = '';
+    const greetingText = panel.dataset.greeting || "Привіт! Чим я можу допомогти?";
+    appendMessage("bot", greetingText);
+  });
+}
 
 function appendMessage(role, text) {
   const div = document.createElement("div");
@@ -38,7 +57,6 @@ async function sendMessage() {
   messagesEl.appendChild(typingEl);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
-  // Контекст місії, якщо ми на сторінці місії
   const missionTitleEl = document.querySelector("[data-mission-title]");
   const missionExerciseEl = document.querySelector("[data-mission-exercise]");
   const missionContext = missionTitleEl ? {
@@ -58,9 +76,15 @@ async function sendMessage() {
 
     if (data.success) {
       appendMessage("bot", data.reply);
+      
+      // Зберігаємо в історію та залишаємо тільки останні 10 повідомлень
       history.push({ role: "user", content: text });
       history.push({ role: "assistant", content: data.reply });
-      sessionStorage.setItem("aiChatHistory", JSON.stringify(history));
+      if (history.length > 10) history = history.slice(-10);
+      
+      localStorage.setItem(storageKey, JSON.stringify(history));
+
+      updateQuotaDisplay(data.rate_limit);
     } else {
       appendMessage("bot", data.error || "Помилка. Спробуйте ще раз.");
     }
@@ -70,6 +94,29 @@ async function sendMessage() {
   } finally {
     sendBtn.disabled = false;
   }
+}
+
+function updateQuotaDisplay(rateLimit) {
+  const quotaEl = document.getElementById("aiChatQuota");
+  if (!quotaEl || !rateLimit) return;
+
+  const remainingReq = rateLimit.remaining_requests;
+  const limitReq = rateLimit.limit_requests;
+  const remainingTok = rateLimit.remaining_tokens;
+  const limitTok = rateLimit.limit_tokens;
+
+  if (remainingReq === null || remainingReq === undefined) {
+    quotaEl.textContent = "";
+    return;
+  }
+
+  quotaEl.innerHTML = `Запитів: ${remainingReq}/${limitReq} · Токенів (хв): ${remainingTok}/${limitTok}`;
+
+  const reqPercent = limitReq ? (parseInt(remainingReq) / parseInt(limitReq)) * 100 : 100;
+  const tokPercent = limitTok ? (parseInt(remainingTok) / parseInt(limitTok)) * 100 : 100;
+  const lowest = Math.min(reqPercent, tokPercent);
+
+  quotaEl.classList.toggle("low", lowest < 15);
 }
 
 sendBtn.addEventListener("click", sendMessage);

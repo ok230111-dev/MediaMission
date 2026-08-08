@@ -1,6 +1,5 @@
 const body = document.body;
 
-// --- Мапа типів проблем залежно від категорії (ключі мовонезалежні) ---
 const ISSUE_TYPES = {
   bug: ["wont_open", "freezes", "button_not_working", "other"],
   account: ["cant_login", "cant_register", "wrong_data", "other"],
@@ -9,12 +8,13 @@ const ISSUE_TYPES = {
   avatar: ["upload_failed", "not_showing", "other"],
   notifications: ["not_receiving", "wrong_language", "other"],
   leaderboard: ["wrong_position", "not_updating", "other"],
+  ai_assistant: ["ai_wrong_answer", "ai_not_responding", "ai_rate_limited", "ai_gives_test_answers", "other"],
   other: ["other"]
 };
 
 const ISSUE_LABELS = {
   wont_open: body.dataset.tIssueWontOpen,
-  freezes: body.dataset.tIssueFreeze,
+  freezes: body.dataset.tIssueFreezes,
   button_not_working: body.dataset.tIssueButtonNotWorking,
   cant_login: body.dataset.tIssueCantLogin,
   cant_register: body.dataset.tIssueCantRegister,
@@ -29,6 +29,10 @@ const ISSUE_LABELS = {
   wrong_language: body.dataset.tIssueWrongLanguage,
   wrong_position: body.dataset.tIssueWrongPosition,
   not_updating: body.dataset.tIssueNotUpdating,
+  ai_wrong_answer: body.dataset.tIssueAiWrongAnswer,
+  ai_not_responding: body.dataset.tIssueAiNotResponding,
+  ai_rate_limited: body.dataset.tIssueAiRateLimited,
+  ai_gives_test_answers: body.dataset.tIssueAiGivesTestAnswers,
   other: body.dataset.tIssueOther
 };
 

@@ -26,6 +26,7 @@ from functools import wraps
 from firebase_admin import messaging
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted, GoogleAPIError, NotFound
+from groq import Groq
 
 load_dotenv()
 
@@ -89,21 +90,30 @@ cloudinary.config(
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
+groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-AI_SYSTEM_PROMPT = """Ти — AI-помічник платформи MediaMission, освітнього сайту для розвитку медіаграмотності та інформаційної грамотності серед українських дітей і підлітків у Німеччині (проєкт підтриманий грантом DAAD Zukunft Ukraine).
+
+AI_SYSTEM_PROMPT = """Ти — mmsAI, офіційний AI-Помічник освітнього сайту MediaMission для розвитку медіаграмотності та інформаційної грамотності серед українських дітей і підлітків у Німеччині (проєкт підтриманий грантом DAAD Zukunft Ukraine).
 
 Твої задачі:
-1. Пояснювати поняття медіаграмотності та інформаційної грамотності простою мовою, з прикладами.
+1. Представлятися як mmsAI та пояснювати поняття медіаграмотності й інформаційної грамотності простою мовою, з прикладами.
 2. Допомагати розуміти, чому відповідь у місії правильна чи неправильна — пояснюй логіку, а не просто кажи "правильно/неправильно".
 3. Відповідати на типові питання про сайт: як отримати XP, як працюють ліги/рейтинг, як змінити мову, як відновити пароль, як зв'язатися з підтримкою тощо.
 4. Якщо не можеш допомогти або питання виходить за межі теми сайту — чесно скажи це і порадь звернутися в службу підтримки (сторінка /support).
 
 Правила:
+- Твоє ім'я — mmsAI. Називай себе так, якщо користувач запитує "Хто ти?".
 - Відповідай мовою, якою до тебе звертаються.
 - Будь доброзичливим і зрозумілим для підлітків — без зайвого канцеляриту.
-- Тримай відповіді короткими (2-5 речень), якщо не просять детальніше.
-- Ніколи не видавай прямі відповіді на питання тесту місії, якщо тебе просять "просто дай відповідь" — замість цього поясни логіку і принцип, за яким людина сама зможе визначити правильну відповідь.
-- Не обговорюй теми, не пов'язані з сайтом чи медіаграмотністю."""
+- Тримай відповіді короткими (2-3 речень), якщо не просять детальніше.
+- Ніколи не видавай прямі відповіді на питання тесту місії — замість цього поясни логіку і принцип.
+- Не обговорюй теми, не пов'язані з сайтом, інфограмотністю чи медіаграмотністю."""
+
+GROQ_CANDIDATE_MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    # "gemma2-9b-it",
+]
 
 
 # 2. І ТІЛЬКИ ПОТІМ передаємо app у SQLAlchemy:
@@ -2675,9 +2685,15 @@ def about():
 
 
 
-
 @app.route("/api/ai/chat", methods=["POST"])
 def ai_chat():
+    now = datetime.now(timezone.utc)
+    chat_log = session.get("ai_chat_log", [])
+    chat_log = [t for t in chat_log if now - datetime.fromisoformat(t) < timedelta(minutes=5)]
+
+    if len(chat_log) >= 15:
+        return jsonify({"success": False, "error": "Забагато повідомлень. Зачекайте кілька хвилин."}), 429
+
     data = request.get_json() or {}
     user_message = data.get("message", "").strip()
     history = data.get("history", [])
@@ -2697,58 +2713,55 @@ def ai_chat():
             f"Завдання: {mission_context.get('exercise', '')}"
         )
 
-    # Перетворюємо історію в формат Gemini (беремо останні 6 повідомлень, щоб не перевищувати ліміт токенів)
-    gemini_history = []
-    for msg in history[-6:]:
-        role = "user" if msg.get("role") == "user" else "model"
-        gemini_history.append({"role": role, "parts": [msg.get("content", "")]})
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in history[-10:]:
+        role = "user" if msg.get("role") == "user" else "assistant"
+        messages.append({"role": role, "content": msg.get("content", "")})
+    messages.append({"role": "user", "content": user_message})
 
-    # Перелік дійсних назв моделей Gemini для фолбеку
-    candidate_models = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash-8b"
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-pro"
-    ]
+    for model_name in GROQ_CANDIDATE_MODELS:
+        try:
+            raw_response = groq_client.chat.completions.with_raw_response.create(
+                model=model_name,
+                messages=messages,
+                max_tokens=500,
+                temperature=0.7,
+            )
+            headers = raw_response.headers
+            completion = raw_response.parse()
+            reply_text = completion.choices[0].message.content
 
-    for model_name in candidate_models:
-        for attempt in range(2):
-            try:
-                model = genai.GenerativeModel(
-                    model_name=model_name,
-                    system_instruction=system_prompt
-                )
-                chat = model.start_chat(history=gemini_history)
-                response = chat.send_message(user_message)
+            chat_log.append(now.isoformat())
+            session["ai_chat_log"] = chat_log
 
-                return jsonify({"success": True, "reply": response.text})
+            rate_limit_info = {
+                "remaining_requests": headers.get("x-ratelimit-remaining-requests"),
+                "limit_requests": headers.get("x-ratelimit-limit-requests"),
+                "remaining_tokens": headers.get("x-ratelimit-remaining-tokens"),
+                "limit_tokens": headers.get("x-ratelimit-limit-tokens"),
+            }
 
-            except ResourceExhausted as e:
-                print(f"⚠️ Квоту/ліміт для {model_name} вичерпано (Спроба {attempt + 1}).")
-                if attempt == 0:
-                    time.sleep(4)  # Затримка 4 секунди, щоб пройти ліміт часу (RPM)
-                    continue
-                break
+            return jsonify({
+                "success": True,
+                "reply": reply_text,
+                "rate_limit": rate_limit_info
+            })
 
-            except NotFound as e:
-                print(f"⚠️ Модель {model_name} не знайдена, переходимо до наступної.")
-                break
-
-            except GoogleAPIError as e:
-                print(f"❌ Помилка Gemini API ({model_name}): {e}")
-                break
-
-            except Exception as e:
-                print(f"❌ Несподівана помилка AI-чату: {e}")
-                return jsonify({
-                    "success": False,
-                    "error": "Внутрішня помилка при зверненні до ШІ."
-                }), 500
+        except Exception as e:
+            error_str = str(e)
+            if "rate_limit" in error_str.lower() or "429" in error_str:
+                print(f"⚠️ Ліміт вичерпано для {model_name}: {error_str}")
+                continue
+            elif "not found" in error_str.lower() or "404" in error_str:
+                print(f"⚠️ Модель {model_name} не знайдена: {error_str}")
+                continue
+            else:
+                print(f"❌ Помилка Groq API ({model_name}): {error_str}")
+                continue
 
     return jsonify({
         "success": False,
-        "error": "Перевищено ліміт запитів до ШІ. Будь ласка, зачекайте 15-20 секунд та спробуйте ще раз."
+        "error": "AI-помічник тимчасово перевантажений. Спробуйте через хвилину, або зверніться в підтримку."
     }), 429
 
 

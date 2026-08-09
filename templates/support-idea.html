@@ -1,0 +1,275 @@
+{% extends "base.html" %} {% block title %}{{ t('idea_title') }} |
+MediaMission{% endblock %} {% block content %}
+<section class="container py-5" style="max-width: 700px">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold mb-2">
+      <i class="bi bi-lightbulb-fill text-primary me-2"></i>{{ t('idea_title')
+      }}
+    </h1>
+    <p class="text-muted">{{ t('idea_subtitle') }}</p>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <!-- Прогрес-індикатор -->
+      <div class="d-flex justify-content-between mb-4" id="ideaWizardSteps">
+        <div class="wizard-step active" data-step="1">1</div>
+        <div class="wizard-step" data-step="2">2</div>
+        <div class="wizard-step" data-step="3">3</div>
+        <div class="wizard-step" data-step="4">4</div>
+      </div>
+
+      <!-- КРОК 1: Сторінка -->
+      <div class="wizard-panel" data-panel="1">
+        <h5 class="fw-bold mb-3">{{ t('idea_step1_title') }}</h5>
+        <div class="d-flex flex-column gap-2" id="pageOptions">
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="home"
+            data-label="{{ t('idea_page_home') }}"
+          >
+            <i class="bi bi-house-door-fill me-2"></i>{{ t('idea_page_home') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="missions"
+            data-label="{{ t('idea_page_missions') }}"
+          >
+            <i class="bi bi-journal-check me-2"></i>{{ t('idea_page_missions')
+            }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="leaderboard"
+            data-label="{{ t('idea_page_leaderboard') }}"
+          >
+            <i class="bi bi-trophy-fill me-2"></i>{{ t('idea_page_leaderboard')
+            }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="profile"
+            data-label="{{ t('idea_page_profile') }}"
+          >
+            <i class="bi bi-person-circle me-2"></i>{{ t('idea_page_profile') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="ai_assistant"
+            data-label="{{ t('idea_page_ai_assistant') }}"
+          >
+            <i class="bi bi-robot me-2"></i>{{ t('idea_page_ai_assistant') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="ai_assistant"
+            data-label="{{ t('idea_page_result') }}"
+          >
+            <i class="bi bi-robot me-2"></i>{{ t('idea_page_result') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="ai_assistant"
+            data-label="{{ t('idea_page_emails') }}"
+          >
+            <i class="bi bi-robot me-2"></i>{{ t('idea_page_emails') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="ai_assistant"
+            data-label="{{ t('idea_page_faq') }}"
+          >
+            <i class="bi bi-robot me-2"></i>{{ t('idea_page_faq') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="ai_assistant"
+            data-label="{{ t('idea_page_notifications') }}"
+          >
+            <i class="bi bi-robot me-2"></i>{{ t('idea_page_notifications') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start page-btn"
+            data-page="other"
+            data-label="{{ t('idea_page_other') }}"
+          >
+            <i class="bi bi-three-dots me-2"></i>{{ t('idea_page_other') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- КРОК 2: Категорія -->
+      <div class="wizard-panel d-none" data-panel="2">
+        <h5 class="fw-bold mb-3">{{ t('idea_step2_title') }}</h5>
+        <div class="d-flex flex-column gap-2" id="ideaCategoryOptions">
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="mission"
+            data-label="{{ t('idea_cat_mission') }}"
+          >
+            <i class="bi bi-journal-plus me-2"></i>{{ t('idea_cat_mission') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="feature"
+            data-label="{{ t('idea_cat_feature') }}"
+          >
+            <i class="bi bi-stars me-2"></i>{{ t('idea_cat_feature') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="design"
+            data-label="{{ t('idea_cat_design') }}"
+          >
+            <i class="bi bi-palette-fill me-2"></i>{{ t('idea_cat_design') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="content"
+            data-label="{{ t('idea_cat_content') }}"
+          >
+            <i class="bi bi-newspaper me-2"></i>{{ t('idea_cat_content') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
+            data-category="other"
+            data-label="{{ t('idea_cat_other') }}"
+          >
+            <i class="bi bi-three-dots me-2"></i>{{ t('idea_cat_other') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- КРОК 3: Опис -->
+      <div class="wizard-panel d-none" data-panel="3">
+        <h5 class="fw-bold mb-3">{{ t('idea_step3_title') }}</h5>
+
+        <div class="alert alert-light border small" id="ideaSummary"></div>
+
+        <label class="form-label fw-semibold" for="ideaTitleInput">
+          {{ t('idea_title_label') }}
+        </label>
+        <input
+          type="text"
+          class="form-control mb-3"
+          id="ideaTitleInput"
+          placeholder="{{ t('idea_title_placeholder') }}"
+          maxlength="100"
+        />
+
+        <label class="form-label fw-semibold" for="ideaDescriptionInput">
+          {{ t('idea_description_label') }}
+        </label>
+        <textarea
+          class="form-control mb-1"
+          id="ideaDescriptionInput"
+          rows="5"
+          placeholder="{{ t('idea_description_placeholder') }}"
+          maxlength="1000"
+        ></textarea>
+        <div class="form-text text-end mb-3">
+          <span id="ideaCharCount">0</span>/1000
+        </div>
+
+        <label class="form-label fw-semibold" for="ideaAttachmentInput">
+          {{ t('idea_attachment_label') }}
+        </label>
+        <input
+          type="file"
+          class="form-control"
+          id="ideaAttachmentInput"
+          accept="image/*"
+        />
+        <div class="form-text">{{ t('idea_attachment_hint') }}</div>
+      </div>
+
+      <!-- КРОК 4: Готово -->
+      <div class="wizard-panel d-none text-center py-4" data-panel="4">
+        <i
+          class="bi bi-check-circle-fill text-success"
+          style="font-size: 3rem"
+        ></i>
+        <h5 class="fw-bold mt-3">{{ t('idea_success_title') }}</h5>
+        <p class="text-muted">{{ t('idea_success_text') }}</p>
+      </div>
+
+      <!-- Навігація -->
+      <div class="d-flex justify-content-between mt-4" id="ideaWizardNav">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          id="ideaBackBtn"
+          disabled
+        >
+          <i class="bi bi-arrow-left me-1"></i>{{ t('idea_back') }}
+        </button>
+        <button type="button" class="btn btn-primary d-none" id="ideaSubmitBtn">
+          <i class="bi bi-send-fill me-1"></i>{{ t('idea_submit') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .wizard-step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bs-secondary-bg, #e9ecef);
+    color: var(--bs-secondary-color, #6c757d);
+    font-weight: bold;
+    font-size: 0.9rem;
+    flex: 1;
+    margin: 0 4px;
+    position: relative;
+  }
+  .wizard-step.active {
+    background: var(--bs-primary);
+    color: #fff;
+  }
+  .wizard-step.done {
+    background: #198754;
+    color: #fff;
+  }
+  .page-btn.selected,
+  .category-btn.selected {
+    background-color: var(--bs-primary);
+    color: #fff;
+  }
+  [data-theme="dark"] .alert-light {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+</style>
+
+<script>
+  window.ideaTranslations = {
+    summaryPage: "{{ t('idea_summary_page') }}",
+    summaryCategory: "{{ t('idea_summary_category') }}",
+    sending: "{{ t('idea_sending') }}",
+    submit: "{{ t('idea_submit') }}",
+    error: "{{ t('idea_error') }}",
+  };
+</script>
+<script src="{{ url_for('static', filename='js/support-idea.js') }}?v={{ asset_version('js/support-idea.js') }}"></script>
+{% endblock %}

@@ -32,7 +32,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "avif"}
+
+MAX_IDEA_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 # app.py
 cred_path = os.environ.get(
@@ -401,6 +403,37 @@ class SupportTicket(db.Model):
 
     user = db.relationship("Users")
     mission = db.relationship("Missions")
+
+class Idea(db.Model):
+    __tablename__ = "ideas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    page = db.Column(db.String(50), nullable=False)
+    page_label = db.Column(db.String(150), nullable=True)       # назва сторінки мовою користувача
+    category = db.Column(db.String(50), nullable=False)
+    category_label = db.Column(db.String(100), nullable=True)   # назва категорії мовою користувача
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    attachment_url = db.Column(db.String(500), nullable=True)
+    status = db.Column(db.String(20), default="new")            # new / reviewed / done / rejected
+    admin_reply = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    status = db.Column(db.String(20), default="new")  # new / good / must_have / not_needed / not_now
+
+    user = db.relationship("Users")
+
+class IdeaAdminView(SecureModelView):
+    column_list = ['id', 'title', 'category_label', 'page_label', 'status', 'created_at']
+    column_searchable_list = ['title', 'description']
+    column_filters = ['status', 'category', 'page']
+
+admin.add_view(IdeaAdminView(Idea, db))
 
 UKRAINIAN_MONTHS = [
     "січня", "лютого", "березня", "квітня", "травня", "червня",
@@ -904,7 +937,7 @@ def index():
     users_count = Users.query.count()
     missions_count = Missions.query.count()
     total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
-    
+
     return render_template('index.html', users_count=users_count, missions_count=missions_count, total_xp=total_xp)
 
 
@@ -2428,6 +2461,13 @@ def support():
 
 
 
+@app.route("/support-idea")
+def support_idea():
+    missions = Missions.query.order_by(Missions.title).all()
+    return render_template("support-idea.html", missions=missions)
+
+
+
 
 def send_async_email(app_obj, msg):
     """Функція для відправки пошти у фоновому потоці з детальним логуванням"""
@@ -2551,57 +2591,6 @@ def submit_support_ticket():
 
     # Відповідь користувачу віддається миттєво
     return jsonify({"success": True, "ticket_id": ticket.id})
-
-
-
-# def notify_admins_new_ticket(ticket):
-#     reporter_email = ticket.user.email if ticket.user else "Гість"
-#     category_label = ticket.category
-#     summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
-
-#     # In-app сповіщення адмінам (як і раніше)
-#     admins = Users.query.filter_by(admin=True).all()
-#     if admins:
-#         notif = Notification(
-#             title_json={
-#                 "uk": "Нове звернення в підтримку",
-#                 "de": "Neue Support-Anfrage",
-#                 "en": "New support ticket"
-#             },
-#             body_json={
-#                 "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
-#                 "de": f"#{ticket.id}: {summary} (von {reporter_email})",
-#                 "en": f"#{ticket.id}: {summary} (from {reporter_email})"
-#             },
-#             created_by=ticket.user_id
-#         )
-#         db.session.add(notif)
-#         db.session.flush()
-
-#         admin_ids = [a.id for a in admins]
-#         db.session.bulk_insert_mappings(NotificationRecipient, [
-#             {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
-#         ])
-#         db.session.commit()
-
-#     # Email на адресу з .env (MAIL_USERNAME)
-#     support_email = os.environ.get("MAIL_USERNAME")
-#     if support_email:
-#         try:
-#             msg = Message(
-#                 subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
-#                 recipients=[support_email],
-#                 html=render_template(
-#                     "emails/new_support_ticket.html",
-#                     ticket=ticket,
-#                     reporter_email=reporter_email
-#                 )
-#             )
-#             mail.send(msg)
-#         except Exception as e:
-#             print(f"Не вдалося надіслати email про звернення #{ticket.id}: {e}")
-#     else:
-#         print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
 
 
 
@@ -2767,6 +2756,203 @@ def ai_chat():
         "success": False,
         "error": "AI-помічник тимчасово перевантажений. Спробуйте через хвилину, або зверніться в підтримку."
     }), 429
+
+
+
+
+def notify_admins_new_idea(idea):
+    """Створює одне сповіщення й розсилає його всім адмінам, плюс email на підтримку."""
+    admins = Users.query.filter_by(admin=True).all()
+    if not admins:
+        return
+
+    notification = Notification(
+        title_json={
+            "uk": f"Нова ідея: {idea.title}",
+            "en": f"New idea: {idea.title}",
+            "de": f"Neue Idee: {idea.title}",
+        },
+        body_json={
+            "uk": f"{idea.user.display_name} запропонував(ла) ідею для «{idea.page_label or idea.page}» ({idea.category_label or idea.category})",
+            "en": f"{idea.user.display_name} suggested an idea for \"{idea.page_label or idea.page}\" ({idea.category_label or idea.category})",
+            "de": f"{idea.user.display_name} hat eine Idee für „{idea.page_label or idea.page}“ vorgeschlagen ({idea.category_label or idea.category})",
+        },
+        mission_id=None,
+        created_by=idea.user_id,
+    )
+    db.session.add(notification)
+    db.session.flush()  # щоб отримати notification.id до commit
+
+    recipients = [
+        NotificationRecipient(notification_id=notification.id, user_id=admin.id)
+        for admin in admins
+    ]
+    db.session.bulk_save_objects(recipients)
+    db.session.commit()
+
+    # === Асинхронний email на адресу підтримки ===
+    support_email = os.environ.get("MAIL_USERNAME")
+    if support_email:
+        try:
+            html_content = f"""
+                <h3>Нова ідея #{idea.id}</h3>
+                <p><strong>Від:</strong> {idea.user.display_name} ({idea.user.email})</p>
+                <p><strong>Сторінка:</strong> {idea.page_label or idea.page}</p>
+                <p><strong>Категорія:</strong> {idea.category_label or idea.category}</p>
+                <p><strong>Заголовок:</strong> {idea.title}</p>
+                <p><strong>Опис:</strong> {idea.description}</p>
+            """
+
+            msg = Message(
+                subject=f"[MediaMission] Нова ідея #{idea.id}",
+                recipients=[support_email],
+                html=html_content
+            )
+
+            app_obj = current_app._get_current_object()
+            threading.Thread(target=send_async_email, args=(app_obj, msg)).start()
+
+        except Exception as e:
+            print(f"Не вдалося підготувати email про ідею #{idea.id}: {e}")
+    else:
+        print("⚠️ MAIL_USERNAME не задано — email про ідею не надіслано")
+
+    return notification
+
+
+
+
+def allowed_idea_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+@app.route("/api/ideas", methods=["POST"])
+def submit_idea():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "unauthorized"}), 401
+
+    user = db.session.get(Users, user_id)
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
+
+    page = request.form.get("page", "").strip()
+    page_label = request.form.get("page_label", "").strip()
+    category = request.form.get("category", "").strip()
+    category_label = request.form.get("category_label", "").strip()
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if not page or not category or not title or not description:
+        return jsonify({"error": "missing_fields"}), 400
+
+    if len(title) > 100 or len(description) > 1000:
+        return jsonify({"error": "too_long"}), 400
+
+    attachment_url = None
+    file = request.files.get("attachment")
+    if file and file.filename:
+        if not allowed_idea_file(file.filename):
+            return jsonify({"error": "invalid_file_type"}), 400
+
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0)
+        if size > MAX_IDEA_FILE_SIZE:
+            return jsonify({"error": "file_too_large"}), 400
+
+        upload_result = upload_to_cloudinary(file, folder="mediamission_ideas", resource_type="image")
+        if upload_result["success"]:
+            attachment_url = upload_result["url"]
+        else:
+            print(f"Помилка завантаження вкладення ідеї: {upload_result.get('error')}")
+
+    idea = Idea(
+        user_id=user.id,
+        page=page,
+        page_label=page_label or None,
+        category=category,
+        category_label=category_label or None,
+        title=title,
+        description=description,
+        attachment_url=attachment_url,
+    )
+    db.session.add(idea)
+    db.session.commit()
+
+    notify_admins_new_idea(idea)
+
+    return jsonify({"success": True, "idea_id": idea.id}), 201
+
+
+
+
+IDEA_STATUSES = ("new", "good", "must_have", "not_needed", "not_now")
+
+
+@app.route("/api/admin/ideas", methods=["GET"])
+def get_admin_ideas():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    ideas = Idea.query.order_by(Idea.created_at.desc()).all()
+
+    result = []
+    for idea in ideas:
+        result.append({
+            "id": idea.id,
+            "title": idea.title,
+            "description": idea.description,
+            "page": idea.page_label or idea.page,
+            "category": idea.category_label or idea.category,
+            "attachment_url": idea.attachment_url,
+            "status": idea.status,
+            "admin_reply": idea.admin_reply,
+            "user_name": idea.user.display_name if idea.user else "—",
+            "user_email": idea.user.email if idea.user else "—",
+            "created_at": idea.created_at.strftime("%d.%m.%Y %H:%M"),
+        })
+
+    return jsonify({"success": True, "ideas": result})
+
+
+@app.route("/api/admin/ideas/<int:idea_id>/status", methods=["POST"])
+def update_idea_status(idea_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    idea = Idea.query.get(idea_id)
+    if not idea:
+        return jsonify({"success": False, "error": "Ідею не знайдено"}), 404
+
+    data = request.get_json()
+    new_status = data.get("status")
+    admin_reply = data.get("admin_reply")
+
+    if new_status and new_status not in IDEA_STATUSES:
+        return jsonify({"success": False, "error": "Некоректний статус"}), 400
+
+    if new_status:
+        idea.status = new_status
+    if admin_reply is not None:
+        idea.admin_reply = admin_reply
+
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+
 
 
 if __name__ == '__main__':

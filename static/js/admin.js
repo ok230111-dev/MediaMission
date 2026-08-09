@@ -774,3 +774,130 @@ document.addEventListener("DOMContentLoaded", () => {
     filterEl.addEventListener("change", renderTickets);
   }
 });
+
+const IDEA_STATUS_LABELS = {
+  new: { label: "На розгляді", badge: "badge-idea-new", icon: "🆕" },
+  good: { label: "Добре", badge: "badge-idea-good", icon: "✅" },
+  must_have: { label: "Обов'язково", badge: "badge-idea-must_have", icon: "🔥" },
+  not_needed: { label: "Не потрібно", badge: "badge-idea-not_needed", icon: "🚫" },
+  not_now: { label: "Не на часі", badge: "badge-idea-not_now", icon: "⏳" },
+};
+
+let allIdeas = [];
+
+async function loadIdeas() {
+  const container = document.getElementById("ideasContainer");
+  container.innerHTML = `<div class="text-center text-muted py-4">Завантаження...</div>`;
+
+  try {
+    const res = await fetch("/api/admin/ideas");
+    const data = await res.json();
+
+    if (!data.success) {
+      container.innerHTML = `<div class="text-center text-danger py-4">Помилка завантаження</div>`;
+      return;
+    }
+
+    allIdeas = data.ideas;
+    renderIdeas();
+  } catch (err) {
+    container.innerHTML = `<div class="text-center text-danger py-4">Помилка мережі</div>`;
+  }
+}
+
+function renderIdeas() {
+  const container = document.getElementById("ideasContainer");
+  const filter = document.getElementById("ideaStatusFilter").value;
+
+  const filtered =
+    filter === "all" ? allIdeas : allIdeas.filter((i) => i.status === filter);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="text-center text-muted py-4">Немає ідей за цим фільтром</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered
+    .map((idea) => {
+      const statusInfo = IDEA_STATUS_LABELS[idea.status] || IDEA_STATUS_LABELS.new;
+
+      const statusButtons = Object.entries(IDEA_STATUS_LABELS)
+        .map(
+          ([key, info]) => `
+          <button
+            type="button"
+            class="btn btn-sm ${idea.status === key ? "btn-primary" : "btn-outline-secondary"}"
+            onclick="setIdeaStatus(${idea.id}, '${key}')"
+          >
+            ${info.icon} ${info.label}
+          </button>
+        `
+        )
+        .join("");
+
+      return `
+        <div class="idea-card">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <h5 class="fw-bold mb-1">${escapeHtml(idea.title)}</h5>
+              <div class="text-muted small mb-2">
+                ${escapeHtml(idea.user_name)} (${escapeHtml(idea.user_email)}) ·
+                ${idea.created_at} ·
+                <span class="fw-semibold">${escapeHtml(idea.page)}</span> /
+                ${escapeHtml(idea.category)}
+              </div>
+            </div>
+            <span class="badge ${statusInfo.badge} status-badge">
+              ${statusInfo.icon} ${statusInfo.label}
+            </span>
+          </div>
+
+          <p class="mb-2">${escapeHtml(idea.description)}</p>
+
+          ${
+            idea.attachment_url
+              ? `<img src="${idea.attachment_url}" class="idea-image-preview mb-2" onclick="window.open('${idea.attachment_url}', '_blank')" />`
+              : ""
+          }
+
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            ${statusButtons}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function setIdeaStatus(ideaId, status) {
+  try {
+    const res = await fetch(`/api/admin/ideas/${ideaId}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      const idea = allIdeas.find((i) => i.id === ideaId);
+      if (idea) idea.status = status;
+      renderIdeas();
+    } else {
+      alert(data.error || "Не вдалося оновити статус");
+    }
+  } catch (err) {
+    alert("Помилка мережі");
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+
+document.getElementById("ideaStatusFilter")?.addEventListener("change", renderIdeas);
+
+document
+  .getElementById("support_idea-tab")
+  ?.addEventListener("shown.bs.tab", loadIdeas);

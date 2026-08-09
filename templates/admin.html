@@ -76,6 +76,16 @@
         >
           <i class="bi bi-support-fill me-1"></i> Служба Підтримки
         </button>
+        <button
+          class="btn"
+          id="support_idea-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#support_idea-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-idea-fill me-1"></i> Ідеї для вдосконалення
+        </button>
       </div>
     </div>
   </div>
@@ -869,6 +879,41 @@
           </div>
         </div>
         <div class="card-body p-3" id="supportTicketsContainer">
+          <div class="text-center text-muted py-4">Завантаження...</div>
+        </div>
+      </div>
+    </div>
+    <!-- 7. Вкладка Ідеї для вдосконалення -->
+    <div class="tab-pane fade" id="support_idea-pane" role="tabpanel">
+      <div class="card shadow-sm">
+        <div
+          class="card-header py-3 d-flex justify-content-between align-items-center"
+        >
+          <h4 class="m-0 fw-bold">
+            <i class="bi bi-lightbulb-fill me-2"></i>Ідеї для вдосконалення
+          </h4>
+          <div class="d-flex gap-2 align-items-center">
+            <select
+              class="form-select form-select-sm"
+              id="ideaStatusFilter"
+              style="width: auto"
+            >
+              <option value="all">Усі статуси</option>
+              <option value="new">🆕 На розгляді</option>
+              <option value="good">✅ Добре</option>
+              <option value="must_have">🔥 Обов'язково</option>
+              <option value="not_needed">🚫 Не потрібно</option>
+              <option value="not_now">⏳ Не на часі</option>
+            </select>
+            <button
+              class="btn btn-sm btn-outline-primary"
+              onclick="loadIdeas()"
+            >
+              <i class="bi bi-arrow-clockwise me-1"></i> Оновити
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-3" id="ideasContainer">
           <div class="text-center text-muted py-4">Завантаження...</div>
         </div>
       </div>

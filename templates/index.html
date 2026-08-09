@@ -9,7 +9,7 @@ endblock %} {% block content %}
   />
 </head>
 <!-- HERO SECTION -->
-<section class="hero py-5">
+<section class="hero py-5 section-bg-1">
   <div class="container text-center py-4">
     <h1 class="display-4 fw-bold">
       {{ t('learn') }}
@@ -19,18 +19,19 @@ endblock %} {% block content %}
   </div>
 </section>
 
-<section class="hero py-5">
+<section class="hero py-5 section-bg-1">
   <div class="container text-center py-4">
     <h1 class="display-4 fw-bold">
-      {{t('not_all_you_see')}}
-      <span class="highlight-text">{{t('internet_truth')}}</span>
+      <span class="step-neutral">{{ t('find') }}</span>
+      <span class="step-primary">{{ t('verify') }}</span>
+      <span class="step-success">{{ t('protect') }}</span>
     </h1>
     <p class="lead mt-3 mx-auto hero-subtitle">{{t('hero_2_text')}}</p>
   </div>
 </section>
 
 <!-- FEATURES SECTION -->
-<section class="features-section py-5">
+<section class="features-section py-5 section-bg-2">
   <div class="container">
     <div class="section-header text-center mb-5">
       <span class="section-badge">{{ t('index_features') }}</span>
@@ -122,7 +123,7 @@ endblock %} {% block content %}
 </section>
 
 <!-- Не вір - перевіряй -->
-<section class="why-section container py-5">
+<section class="why-section container py-5 section-bg-1">
   <h2 class="why-title text-center mb-5">{{ t('index_why') }}</h2>
   <div class="row g-4">
     <div class="col-md-6 col-lg-3">
@@ -156,69 +157,122 @@ endblock %} {% block content %}
   </div>
 </section>
 
-<!--Коментарі-->
-<section class="comments container py-5">
-  <div class="text-center mb-5">
-    <span class="section-badge">{{ t('comments_badge') }}</span>
-    <h2 class="comments-title mt-3">{{ t('comments_title') }}</h2>
+<!-- MOBILE APP SHOWCASE -->
+<section class="app-showcase py-5 section-bg-1">
+  <div class="container">
+    <div
+      class="row align-items-center g-3 g-lg-4 flex-nowrap flex-lg-wrap app-showcase-row"
+    >
+      <div class="col-7 col-lg-7 order-1">
+        <span class="section-badge d-none d-sm-inline-block"
+          >{{ t('app_showcase_badge') }}</span
+        >
+        <h2 class="mt-2 mt-lg-3 fw-bold app-showcase-title">
+          {{ t('app_showcase_title') }}
+        </h2>
+        <p class="section-desc mb-3 mb-lg-4 app-showcase-text">
+          {{ t('app_showcase_text') }}
+        </p>
+
+        <ul
+          class="list-unstyled d-flex flex-column gap-2 gap-lg-3 mb-0 text-start app-feature-list"
+        >
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-1"></i>
+            <span>{{ t('app_showcase_feature1') }}</span>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-1"></i>
+            <span>{{ t('app_showcase_feature2') }}</span>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-1"></i>
+            <span>{{ t('app_showcase_feature3') }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="col-5 col-lg-5 order-2">
+        <div class="app-mockup-wrapper">
+          <div class="app-mockup-glow"></div>
+
+          <img
+            src="{{ url_for('static', filename='image/app-mockup.png') }}"
+            alt="{{ t('app_showcase_alt') }}"
+            class="app-mockup-img"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <div class="row g-4">
-    <div class="col-md-6 col-lg-4">
-      <div class="comment-card h-100">
-        <div class="comment-rating">
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-        </div>
-        <p>{{ t('comment_1_text') }}</p>
-        <div class="comment-author">
-          <div class="comment-avatar">М</div>
-          <div>
-            <h5 class="fw-bold mb-0">{{ t('comment_1_name') }}</h5>
-            <span class="text-muted small">{{ t('comment_1_role') }}</span>
+<!--Коментарі-->
+<section class="comments py-5 section-bg-2">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="section-badge">{{ t('comments_badge') }}</span>
+      <h2 class="comments-title mt-3">{{ t('comments_title') }}</h2>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="comment-card h-100">
+          <div class="comment-rating">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+          </div>
+          <p>{{ t('comment_1_text') }}</p>
+          <div class="comment-author">
+            <div class="comment-avatar">М</div>
+            <div>
+              <h5 class="fw-bold mb-0">{{ t('comment_1_name') }}</h5>
+              <span class="text-muted small">{{ t('comment_1_role') }}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-6 col-lg-4">
-      <div class="comment-card h-100">
-        <div class="comment-rating">
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-        </div>
-        <p>{{ t('comment_2_text') }}</p>
-        <div class="comment-author">
-          <div class="comment-avatar">О</div>
-          <div>
-            <h5 class="fw-bold mb-0">{{ t('comment_2_name') }}</h5>
-            <span class="text-muted small">{{ t('comment_2_role') }}</span>
+      <div class="col-md-6 col-lg-4">
+        <div class="comment-card h-100">
+          <div class="comment-rating">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+          </div>
+          <p>{{ t('comment_2_text') }}</p>
+          <div class="comment-author">
+            <div class="comment-avatar">О</div>
+            <div>
+              <h5 class="fw-bold mb-0">{{ t('comment_2_name') }}</h5>
+              <span class="text-muted small">{{ t('comment_2_role') }}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-6 col-lg-4">
-      <div class="comment-card h-100">
-        <div class="comment-rating">
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star-fill"></i>
-          <i class="bi bi-star"></i>
-        </div>
-        <p>{{ t('comment_3_text') }}</p>
-        <div class="comment-author">
-          <div class="comment-avatar">Д</div>
-          <div>
-            <h5 class="fw-bold mb-0">{{ t('comment_3_name') }}</h5>
-            <span class="text-muted small">{{ t('comment_3_role') }}</span>
+      <div class="col-md-6 col-lg-4">
+        <div class="comment-card h-100">
+          <div class="comment-rating">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star"></i>
+          </div>
+          <p>{{ t('comment_3_text') }}</p>
+          <div class="comment-author">
+            <div class="comment-avatar">Д</div>
+            <div>
+              <h5 class="fw-bold mb-0">{{ t('comment_3_name') }}</h5>
+              <span class="text-muted small">{{ t('comment_3_role') }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -227,7 +281,7 @@ endblock %} {% block content %}
 </section>
 
 <!-- STATS / COUNTERS SECTION -->
-<section class="stats-section container py-5">
+<section class="stats-section container py-5 section-bg-1">
   <div class="section-header text-center mb-5">
     <span class="section-badge">{{ t('index_stats_badge') }}</span>
     <h2 class="mt-3">
@@ -272,7 +326,7 @@ endblock %} {% block content %}
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="how-it-works container py-5">
+<section class="how-it-works container py-5 section-bg-1">
   <div class="row text-center g-4">
     <div class="col-6 col-md-3">
       <div class="step-card">
@@ -305,16 +359,79 @@ endblock %} {% block content %}
   </div>
 </section>
 
+<!-- IDEAS / SUGGEST SECTION -->
+<section class="ideas-section py-5 section-bg-2">
+  <div class="container">
+    <div class="ideas-card">
+      <div class="ideas-icon">
+        <i class="bi bi-lightbulb-fill"></i>
+      </div>
+
+      <div class="ideas-content">
+        <span class="section-badge">{{ t('ideas_label') }}</span>
+        <span class="section-badge">{{ t('ideas_label_2') }}</span>
+
+        <h2 class="mt-3">
+          {{ t('ideas_title') }}
+          <span class="text-primary d-block"
+            >{{ t('ideas_title_highlight') }}</span
+          >
+        </h2>
+
+        <p class="section-desc">{{ t('ideas_text') }}</p>
+        <p class="section-desc">{{t('ideas_text_2')}}</p>
+
+        <a href="/support-idea" class="btn btn-primary">
+          <i class="bi bi-lightbulb me-2"></i>
+          {{ t('ideas_btn') }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Support (Єпроблема) -->
+<section class="ideas-section py-5 section-bg-2">
+  <div class="container support_container">
+    <div class="ideas-card ideas-card-reverse">
+      <div class="ideas-content">
+        <span class="section-badge">{{ t('support_label') }}</span>
+        <span class="section-badge">{{ t('support_label_2') }}</span>
+
+        <h2 class="mt-3">
+          {{ t('support_title') }}
+          <span class="text-primary d-block"
+            >{{ t('support_title_highlight') }}</span
+          >
+        </h2>
+
+        <p class="section-desc">{{ t('support_text') }}</p>
+        <p class="section-desc">{{t('support_text_2')}}</p>
+
+        <a href="/support-idea" class="btn btn-primary">
+          <i class="bi bi-bug me-2"></i>
+          {{ t('support_btn') }}
+        </a>
+      </div>
+      <div class="ideas-icon">
+        <i class="bi bi-bug-fill"></i>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- CTA SECTION -->
-<section class="container pb-5">
-  <div class="cta-box text-center p-5 rounded-4">
-    <h2 class="fw-bold mb-3">{{ t('index_cta_ready') }}</h2>
-    <p class="mb-4 mx-auto" style="max-width: 600px">
-      {{ t('index_cta_ready_text') }}
-    </p>
-    <a href="/register" class="btn btn-primary btn-lg px-4 py-2 hero-btn"
-      >{{ t('index_cta_btn') }}</a
-    >
+<section class="py-5 section-bg-1">
+  <div class="container pb-5">
+    <div class="cta-box text-center p-5 rounded-4">
+      <h2 class="fw-bold mb-3">{{ t('index_cta_ready') }}</h2>
+      <p class="mb-4 mx-auto" style="max-width: 600px">
+        {{ t('index_cta_ready_text') }}
+      </p>
+      <a href="/register" class="btn btn-primary btn-lg px-4 py-2 hero-btn"
+        >{{ t('index_cta_btn') }}</a
+      >
+    </div>
   </div>
 </section>
 

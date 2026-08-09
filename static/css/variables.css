@@ -68,6 +68,11 @@
     --bs-emphasis-color: var(--text-color);
     --bs-link-color: var(--primary-color);
     --bs-link-hover-color: var(--primary-dark);
+
+    /* index backgroung-color */
+    --section-bg-1: var(--background-color);   /* #F8FAFC — база */
+    --section-bg-2: #EEF1F6;  
+                      /* трохи темніше за базу */
 }
 
 [data-theme="dark"] {
@@ -108,6 +113,10 @@
     --bs-emphasis-color: var(--text-color);
     --bs-link-color: var(--primary-color);
     --bs-link-hover-color: var(--primary-dark);
+
+    /* index background-color */
+    --section-bg-1: var(--background-color);   /* #0F1115 — база */
+    --section-bg-2: #171A20;                    /* трохи світліше за базу */
 }
 
 /* Плавний перехід кольорів при перемиканні теми */

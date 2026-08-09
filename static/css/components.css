@@ -544,47 +544,48 @@
   border-radius: 12px;
   font-weight: bold;
 }
-
 /* === COMMENTS SECTION === */
 .comments-title {
   font-weight: 700;
+  color: var(--text-color);
 }
 
 .comment-card {
-  background: #fff;
-  border-radius: 1rem;
+  background: var(--surface-color);
+  border-radius: var(--radius-large);
   padding: 2rem 1.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-small);
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: var(--transition-normal);
 }
 
 .comment-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-large);
 }
 
 .comment-rating {
-  color: #f5b301;
+  color: var(--warning-color);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
 
-.comment-text {
+.comment-text,
+.comment-card p {
   font-size: 1rem;
-  color: #4a4a4a;
+  color: var(--text-light);
   line-height: 1.6;
   flex-grow: 1;
   margin-bottom: 1.5rem;
   position: relative;
 }
 
-.comment-text::before {
+.comment-card p::before {
   content: "\201C";
   font-size: 2.5rem;
-  color: var(--bs-primary, #4f46e5);
+  color: var(--primary-color);
   opacity: 0.15;
   position: absolute;
   top: -1.5rem;
@@ -604,8 +605,8 @@
   height: 42px;
   min-width: 42px;
   border-radius: 50%;
-  background: var(--bs-primary-bg-subtle, #eef0ff);
-  color: var(--bs-primary, #4f46e5);
+  background: var(--surface-alt);
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -615,6 +616,7 @@
 
 .comment-author h5 {
   font-size: 0.95rem;
+  color: var(--text-color);
 }
 
 /* === STATS SECTION === */
@@ -624,17 +626,17 @@
 }
 
 .stat-card {
-  background: #fff;
-  border-radius: 1rem;
+  background: var(--surface-color);
+  border-radius: var(--radius-large);
   padding: 2.5rem 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: var(--shadow-small);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
 }
 
 .stat-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-large);
 }
 
 .stat-icon {
@@ -642,8 +644,8 @@
   height: 64px;
   margin: 0 auto 1.25rem;
   border-radius: 50%;
-  background: var(--bs-primary-bg-subtle, #eef0ff);
-  color: var(--bs-primary, #4f46e5);
+  background: var(--surface-alt);
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -654,11 +656,313 @@
   font-weight: 700;
   font-size: 2.75rem;
   margin-bottom: 0.5rem;
-  color: #1a1a1a;
+  color: var(--text-color);
 }
 
 .stat-label {
-  color: #6c757d;
+  color: var(--text-light);
   font-size: 1rem;
   margin-bottom: 0;
+}
+/* index background-color */
+.section-bg-1 { background-color: var(--section-bg-1); }
+.section-bg-2 { background-color: var(--section-bg-2); }
+
+.step-neutral {
+  color: var(--text-color) !important
+}
+
+.step-primary {
+  color: var(--primary-color) !important;
+}
+
+.step-success {
+  color: var(--warning-color) !important;
+}
+
+/* === IDEAS SECTION === */
+.ideas-card {
+  background: transparent;
+  border-radius: 0;
+  padding: 40px 0;
+  box-shadow: none;
+  border: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  max-width: 900px;
+  width: 100%;
+  /*margin-left: auto;
+  margin-right: 8%;*/
+  margin: 0;
+}
+
+.ideas-card-reverse {
+  margin-left: auto;
+  margin-right: 2%; /* менший відступ справа = сильніше зсунуто вправо */
+}
+/* hover ефект прибираємо повністю — видаліть правило .ideas-card:hover, якщо воно є */
+
+.ideas-icon {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--surface-alt);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  margin-top: 4px;
+}
+
+.ideas-content h2 {
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: var(--space-sm);
+}
+
+.ideas-content .section-desc {
+  color: var(--text-light);
+  margin-bottom: var(--space-md);
+  max-width: 640px;
+}
+
+.ideas-content {
+  max-width: 640px;
+}
+
+.ideas-content .section-badge {
+  display: inline-block;
+}
+
+.ideas-section .container {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 5%;
+}
+
+.support_container {
+  padding-right: 1% !important;
+}
+
+@media (max-width: 768px) {
+  .ideas-card {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-md);
+  }
+}
+
+/* === IDEAS ADMIN STATUS BADGES === */
+.badge-idea-new {
+  background-color: var(--surface-alt);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+}
+
+.badge-idea-good {
+  background-color: var(--badge-success-bg);
+  color: var(--badge-success-color);
+  border: 1px solid var(--badge-success-border);
+}
+
+.badge-idea-must_have {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: var(--danger-color);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-idea-not_needed {
+  background-color: var(--surface-alt);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  text-decoration: line-through;
+}
+
+.badge-idea-not_now {
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-color);
+  border: 1px solid var(--badge-warning-border);
+}
+
+.idea-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.idea-card .idea-image-preview {
+  max-width: 120px;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+}
+
+/* ===== App Showcase Section ===== */
+.app-mockup-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.app-mockup-glow {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(13, 110, 253, 0.25) 0%, rgba(13, 110, 253, 0) 70%);
+  border-radius: 50%;
+  filter: blur(10px);
+  z-index: 0;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.1); opacity: 1; }
+}
+
+.app-mockup-img {
+  position: relative;
+  z-index: 1;
+  max-width: 260px;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.18));
+  transition: transform 0.35s ease;
+  animation: floatMockup 5s ease-in-out infinite;
+}
+
+@keyframes floatMockup {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+.app-mockup-wrapper:hover .app-mockup-img {
+  transform: scale(1.03);
+}
+
+/* Плаваючі бейджі навколо телефону */
+.app-floating-badge {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bs-body-bg, #fff);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  animation: badgeFloat 3.5s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+.app-floating-badge i {
+  color: var(--bs-primary);
+  font-size: 1rem;
+}
+
+.badge-top-left {
+  top: 8%;
+  left: -4%;
+  animation-delay: 0s;
+}
+
+.badge-bottom-right {
+  bottom: 10%;
+  right: -6%;
+  animation-delay: 1.2s;
+}
+
+@keyframes badgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.app-feature-list li span {
+  font-size: 0.98rem;
+}
+
+/* ===== Темна тема ===== */
+[data-theme="dark"] .app-mockup-glow {
+  background: radial-gradient(circle, rgba(13, 110, 253, 0.35) 0%, rgba(13, 110, 253, 0) 70%);
+}
+
+[data-theme="dark"] .app-mockup-img {
+  filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.6));
+}
+
+[data-theme="dark"] .app-floating-badge {
+  background: #1a1f2b;
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Мобільна адаптація (телефон завжди збоку) ===== */
+@media (max-width: 991.98px) {
+  .app-showcase-title {
+    font-size: 1.4rem;
+  }
+
+  .app-showcase-text {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .app-feature-list li span {
+    font-size: 0.8rem;
+  }
+
+  .app-feature-list li i {
+    font-size: 0.9rem;
+  }
+
+  .app-mockup-img {
+    max-width: 140px;
+  }
+
+  .app-mockup-glow {
+    width: 160px;
+    height: 160px;
+  }
+
+  .app-floating-badge {
+    font-size: 0.62rem;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .app-floating-badge i {
+    font-size: 0.75rem;
+  }
+
+  .badge-top-left {
+    top: 2%;
+    left: -8%;
+  }
+
+  .badge-bottom-right {
+    bottom: 4%;
+    right: -10%;
+  }
+}
+
+@media (max-width: 400px) {
+  .app-showcase-title {
+    font-size: 1.2rem;
+  }
+
+  .app-mockup-img {
+    max-width: 115px;
+  }
+
+  .app-floating-badge {
+    display: none;
+  }
 }

@@ -193,3 +193,21 @@
 [data-theme="dark"] .stat-label {
   color: rgba(255, 255, 255, 0.55);
 }
+
+[data-theme="dark"] .language-dropdown-toggle:hover,
+[data-theme="dark"] .language-dropdown-toggle:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .language-dropdown-menu {
+  background-color: #1a1f2b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .language-dropdown-menu .dropdown-item {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"] .language-dropdown-menu .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}

@@ -361,22 +361,47 @@
           class="d-flex align-items-center gap-2 ms-lg-4 me-lg-auto order-lg-2"
         >
           <!-- Перемикач мови -->
-          <div class="language-switch">
-            <a
-              href="/set_language/uk"
-              class="{% if g.lang=='uk' %}active{% endif %}"
-              >ua</a
+          <div class="dropdown language-dropdown">
+            <button
+              class="btn language-dropdown-toggle"
+              type="button"
+              id="languageDropdownBtn"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
             >
-            <a
-              href="/set_language/de"
-              class="{% if g.lang=='de' %}active{% endif %}"
-              >de</a
+              <i class="bi bi-globe2"></i>
+              <span class="language-current">{{ g.lang|upper }}</span>
+            </button>
+
+            <ul
+              class="dropdown-menu dropdown-menu-end language-dropdown-menu"
+              aria-labelledby="languageDropdownBtn"
             >
-            <a
-              href="/set_language/en"
-              class="{% if g.lang=='en' %}active{% endif %}"
-              >en</a
-            >
+              <li>
+                <a
+                  class="dropdown-item {% if g.lang=='uk' %}active{% endif %}"
+                  href="/set_language/uk"
+                >
+                  Українська
+                </a>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item {% if g.lang=='de' %}active{% endif %}"
+                  href="/set_language/de"
+                >
+                  Deutsch
+                </a>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item {% if g.lang=='en' %}active{% endif %}"
+                  href="/set_language/en"
+                >
+                  English
+                </a>
+              </li>
+            </ul>
           </div>
 
           <!-- Дзвоник сповіщень -->

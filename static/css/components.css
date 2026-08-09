@@ -41,6 +41,50 @@
     border-radius: 1.2rem;
 }
 
+.language-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--bs-body-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: background-color 0.15s ease;
+}
+
+.language-dropdown-toggle:hover,
+.language-dropdown-toggle:focus {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.language-dropdown-toggle i {
+  font-size: 1.1rem;
+}
+
+.language-current {
+  text-transform: uppercase;
+}
+
+.language-dropdown-menu {
+  min-width: 160px;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+.language-dropdown-menu .dropdown-item {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.language-dropdown-menu .dropdown-item.active {
+  background-color: var(--bs-primary);
+  color: #fff;
+}
+
 /* Картки */
 .card,
 .card-without-hover {

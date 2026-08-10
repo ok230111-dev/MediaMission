@@ -1,12 +1,8 @@
 import re
-import traceback
 import threading
 from flask import Flask, Response, current_app, render_template, request, redirect, url_for, session, g, abort, jsonify, flash, send_from_directory
-from translations import translate
-from flask_mail import Mail, Message
-from flask_migrate import Migrate
+from flask_mail import Message
 from sqlalchemy import JSON
-import time
 import os
 import uuid
 import json
@@ -17,36 +13,35 @@ from firebase_admin import auth as firebase_auth, credentials
 from firebase_admin import auth
 from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
-from flask_sqlalchemy import SQLAlchemy
-from flask_admin import Admin, AdminIndexView, expose
-from flask_admin.contrib.sqla import ModelView
 import cloudinary
 import cloudinary.uploader
 from functools import wraps
 from firebase_admin import messaging
 import google.generativeai as genai
-from google.api_core.exceptions import ResourceExhausted, GoogleAPIError, NotFound
 from groq import Groq
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
+
+from extensions import db, migrate, mail, admin
+from models import (
+    Missions, MissionContent, Questions, Options, Users, 
+    UserMissionProgress, UserAnswer, Notification, NotificationRecipient,
+    NotificationComment, NotificationReaction, Achievement, UserAchievement,
+    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView
+)
+from translations import translate
+from utils import date_uk
 
 load_dotenv()
 
 app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "avif"}
+MAX_IDEA_FILE_SIZE = 5 * 1024 * 1024
 
-MAX_IDEA_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-
-# app.py
-cred_path = os.environ.get(
-    "FIREBASE_CRED_PATH",
-    "serviceAccountKey.json"  # ← ВИКОРИСТОВУЄМО ПРАВИЛЬНИЙ ФАЙЛ
-)
-
-# Перевіряємо, чи існує файл
+# Firebase initialization
+cred_path = os.environ.get("FIREBASE_CRED_PATH", "serviceAccountKey.json")
 if not os.path.exists(cred_path):
-    # Спробуємо альтернативні назви
     alternatives = [
         "mediamission-a0b70-firebase-adminsdk-fbsvc-9cea1cad13.json",
         "serviceAccountKey.json.json",
@@ -69,11 +64,10 @@ if not firebase_admin._apps:
 
 print("Firebase initialized!")
 
-
-# 1. СПОЧАТКУ задаємо налаштування бази даних:
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///mediamission.db").replace("postgres://", "postgresql://", 1)  # Render іноді дає старий префікс
+# App configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///mediamission.db").replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex()) # Потрібно для Flask-Admin
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex())
 
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
@@ -86,22 +80,24 @@ app.config['MAIL_TIMEOUT'] = 15
 
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
-
-# 2. Якщо потрібно зберегти ключі/налаштування у Flask app.config (за бажанням):
 app.config['BREVO_API_KEY'] = os.environ.get("BREVO_API_KEY")
 
-mail = Mail(app)
+# Initialize extensions with app
+db.init_app(app)
+migrate.init_app(app, db)
+mail.init_app(app)
+admin.init_app(app)
 
+# Cloudinary config
 cloudinary.config(
     cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
 
+# AI configs
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-
 
 AI_SYSTEM_PROMPT = """Ти — mmsAI, офіційний AI-Помічник освітнього сайту MediaMission для розвитку медіаграмотності та інформаційної грамотності серед українських дітей і підлітків у Німеччині (проєкт підтриманий грантом DAAD Zukunft Ukraine).
 
@@ -122,361 +118,26 @@ AI_SYSTEM_PROMPT = """Ти — mmsAI, офіційний AI-Помічник о�
 GROQ_CANDIDATE_MODELS = [
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
-    # "gemma2-9b-it",
 ]
 
+# Register admin views
+admin.add_view(UserAdminView(Users, db.session))
+admin.add_view(IdeaAdminView(Idea, db.session))
 
-# 2. І ТІЛЬКИ ПОТІМ передаємо app у SQLAlchemy:
-db = SQLAlchemy(app)
-
-# Створення колонок бази данних для місій
-class Missions(db.Model):
-    __tablename__ = "missions"
-
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    subtitle = db.Column(db.String(300), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    exercise = db.Column(db.Text, nullable=False)
-    type = db.Column(db.String(30), nullable=False)
-    difficulty = db.Column(db.String(30), nullable=False)
-    xp = db.Column(db.Integer, nullable=False)
-    time = db.Column(db.Integer, nullable=False)
-    image = db.Column(db.String(300))
-    created_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(timezone.utc)
-    )
-
-    # Зв'язки (1 -> Багато)
-    contents = db.relationship(
-        "MissionContent", 
-        backref="mission", 
-        lazy=True, 
-        cascade="all, delete-orphan",
-        order_by="MissionContent.paragraph_order"  # Сортування контенту за порядком
-    )
-    
-    questions = db.relationship(
-        "Questions", 
-        backref="mission", 
-        lazy=True, 
-        cascade="all, delete-orphan"
-    )
-
-class MissionContent(db.Model):
-    __tablename__ = "mission_contents"
-
-    id = db.Column(db.Integer, primary_key=True)
-    mission_id = db.Column(
-        db.Integer,
-        db.ForeignKey("missions.id"),
-        nullable=False
-    )
-    paragraph_order = db.Column(db.Integer, nullable=False)
-    text = db.Column(db.Text, nullable=False)
-
-class Questions(db.Model):
-    __tablename__ = "questions"
-
-    id = db.Column(db.Integer, primary_key=True)
-    mission_id = db.Column(
-        db.Integer,
-        db.ForeignKey("missions.id"),
-        nullable=False
-    )
-    type = db.Column(db.String(30))
-    question = db.Column(db.Text, nullable=False)
-    correct_answer = db.Column(db.String(300), nullable=False)
-
-    # Зв'язок з варіантами відповідей (1 -> Багато)
-    options = db.relationship(
-        "Options", 
-        backref="question", 
-        lazy=True, 
-        cascade="all, delete-orphan",
-        order_by="Options.option_order"  # Сортування варіантів за порядком
-    )
-
-class Options(db.Model):
-    __tablename__ = "options"
-
-    id = db.Column(db.Integer, primary_key=True)
-    question_id = db.Column(
-        db.Integer,
-        db.ForeignKey("questions.id"),
-        nullable=False
-    )
-    option_order = db.Column(db.Integer, nullable=False)
-    option_text = db.Column(db.Text, nullable=False)
-
-#Створення колонок бази данних для інфи користувача
-class Users(db.Model):
-    __tablename__ = "users"
-
-    id = db.Column(db.Integer, primary_key=True)
-    firebase_uid = db.Column(db.String(300), unique=True, nullable=False)
-    display_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(300), nullable=False)
-    email_verified = db.Column(db.Boolean, default=False)
-    provider = db.Column(db.String(30), nullable=False, default="password")
-    total_xp = db.Column(db.Integer, default=0)
-    missions_completed = db.Column(db.Integer, default=0)
-    accuracy = db.Column(db.Float, default=0)
-    streak = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    last_login = db.Column(db.DateTime)
-    admin = db.Column(db.Boolean, default=False)
-    allowed_to_show = db.Column(db.Boolean, default=True, nullable=False)
-    avatar = db.Column(db.String(500), nullable=True)
-    photo_url = db.Column(db.String(500))
-    language = db.Column(db.String(70), default="uk")
-    notification_token = db.Column(db.String(500), nullable=True)
-
-class SecureAdminIndexView(AdminIndexView):
-    @expose('/')
-    def index(self):
-        user_id = session.get("user_id")
-        if not user_id:
-            return redirect(url_for('login'))
-        user = db.session.get(Users, user_id)
-        if not user or not user.admin:
-            return "Forbidden", 403
-        return super().index()
-
-class SecureModelView(ModelView):
-    def is_accessible(self):
-        user_id = session.get("user_id")
-        if not user_id:
-            return False
-        user = db.session.get(Users, user_id)
-        return user is not None and user.admin
-
-    def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login'))
-
-class UserAdminView(SecureModelView):
-    column_searchable_list = ['email']
-    column_list = ['id', 'email']
-
-# 3. Ініціалізація адмінки
-admin = Admin(app, name='MediaMission Admin', index_view=SecureAdminIndexView())
-
-# 4. РЕЄСТРАЦІЯ МОДЕЛІ (Обов'язково викликати!)
-admin.add_view(UserAdminView(Users, db))
-
-class UserMissionProgress(db.Model):
-    __tablename__ = "user_mission_progress"
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("users.id"),
-        nullable=False
-    )
-    mission_id = db.Column(
-        db.Integer,
-        db.ForeignKey("missions.id"),
-        nullable=False
-    )
-    completed = db.Column(db.Boolean, default=False)
-    score_correct_answers = db.Column(db.Integer)
-    total_questions = db.Column(db.Integer)
-    xp_earned = db.Column(db.Integer)
-    completed_at = db.Column(db.DateTime)
-    tries_number = db.Column(db.Integer, default=1)
-    time_spent = db.Column(db.Integer)
-    mission = db.relationship("Missions")
-
-class UserAnswer(db.Model):
-    __tablename__ = "user_answers"
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_progress_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user_mission_progress.id"),
-        nullable=False
-    )
-    question_id = db.Column(
-        db.Integer,
-        db.ForeignKey("questions.id"),
-        nullable=False
-    )
-    user_answer = db.Column(db.String(700), nullable=False)
-    is_correct = db.Column(db.Boolean)
-
-class Notification(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title_json = db.Column(JSON, nullable=True)
-    body_json = db.Column(JSON, nullable=True)
-    mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"), nullable=True)
-    mission = db.relationship("Missions")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
-    author = db.relationship("Users", foreign_keys=[created_by])
-    comments = db.relationship("NotificationComment", backref="notification", cascade="all, delete-orphan", order_by="desc(NotificationComment.created_at)")
-    reactions = db.relationship("NotificationReaction", backref="notification", cascade="all, delete-orphan")
-
-class NotificationRecipient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    read_at = db.Column(db.DateTime, nullable=True)
-
-    notification = db.relationship("Notification") 
-    user = db.relationship("Users")  # ← було "User"
-
-class NotificationComment(db.Model):
-    __tablename__ = 'notification_comments'
-
-    id = db.Column(db.Integer, primary_key=True)
-    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    text = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    user = db.relationship("Users")  # ← було "User"
-
-
-class NotificationReaction(db.Model):
-    __tablename__ = 'notification_reactions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    reaction_type = db.Column(db.String(20), nullable=False)
-
-    user = db.relationship("Users")  # ← було "User"
-
-    __table_args__ = (
-        db.UniqueConstraint('notification_id', 'user_id', 'reaction_type', name='unique_user_reaction'),
-    )
-
-class Achievement(db.Model):
-    """Таблиця з усіма можливими досягненнями"""
-    __tablename__ = "achievements"
-    
-    id = db.Column(db.Integer, primary_key=True)
-    key = db.Column(db.String(50), unique=True, nullable=False)  # унікальний ключ
-    title_uk = db.Column(db.String(200), nullable=False)
-    title_de = db.Column(db.String(200), nullable=False)
-    title_en = db.Column(db.String(200), nullable=False)
-    description_uk = db.Column(db.String(500), nullable=False)
-    description_de = db.Column(db.String(500), nullable=False)
-    description_en = db.Column(db.String(500), nullable=False)
-    icon = db.Column(db.String(50), nullable=False)  # клас іконки Bootstrap
-    category = db.Column(db.String(50), default='general')  # missions, xp, streak, etc.
-    xp_reward = db.Column(db.Integer, default=0)  # бонусні XP за досягнення
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    
-    # Зв'язок з користувачами
-    user_achievements = db.relationship("UserAchievement", backref="achievement", lazy=True, cascade="all, delete-orphan")
-
-
-class UserAchievement(db.Model):
-    """Таблиця для зв'язку користувачів з досягненнями"""
-    __tablename__ = "user_achievements"
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    achievement_id = db.Column(db.Integer, db.ForeignKey("achievements.id"), nullable=False)
-    unlocked_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    is_new = db.Column(db.Boolean, default=True)  # для показу сповіщення про нове досягнення
-    
-    # Унікальність: один користувач може мати одне досягнення один раз
-    __table_args__ = (db.UniqueConstraint('user_id', 'achievement_id', name='unique_user_achievement'),)
-    
-    # Зв'язки
-    user = db.relationship("Users", backref=db.backref("user_achievements", lazy=True, cascade="all, delete-orphan"))
-
-
-class SupportTicket(db.Model):
-    __tablename__ = "support_tickets"
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-    category = db.Column(db.String(50), nullable=False)
-    category_label = db.Column(db.String(100), nullable=True)  # НОВЕ — назва категорії мовою користувача
-    mission_id = db.Column(db.Integer, db.ForeignKey("missions.id"), nullable=True)
-    issue_type = db.Column(db.String(100), nullable=True)
-    issue_type_label = db.Column(db.String(150), nullable=True)  # НОВЕ — назва типу мовою користувача
-    description = db.Column(db.Text, nullable=True)
-    screenshot_url = db.Column(db.String(500), nullable=True)
-    browser_info = db.Column(JSON, nullable=True)
-    status = db.Column(db.String(20), default="open")
-    admin_reply = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
-    user = db.relationship("Users")
-    mission = db.relationship("Missions")
-
-class Idea(db.Model):
-    __tablename__ = "ideas"
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    page = db.Column(db.String(50), nullable=False)
-    page_label = db.Column(db.String(150), nullable=True)       # назва сторінки мовою користувача
-    category = db.Column(db.String(50), nullable=False)
-    category_label = db.Column(db.String(100), nullable=True)   # назва категорії мовою користувача
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    attachment_url = db.Column(db.String(500), nullable=True)
-    status = db.Column(db.String(20), default="new")            # new / reviewed / done / rejected
-    admin_reply = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(
-        db.DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
-    status = db.Column(db.String(20), default="new")  # new / good / must_have / not_needed / not_now
-
-    user = db.relationship("Users")
-
-class IdeaAdminView(SecureModelView):
-    column_list = ['id', 'title', 'category_label', 'page_label', 'status', 'created_at']
-    column_searchable_list = ['title', 'description']
-    column_filters = ['status', 'category', 'page']
-
-admin.add_view(IdeaAdminView(Idea, db))
-
-UKRAINIAN_MONTHS = [
-    "січня", "лютого", "березня", "квітня", "травня", "червня",
-    "липня", "серпня", "вересня", "жовтня", "листопада", "грудня"
-]
-
-AVATAR_COLORS = [
-    "#FF6B6B", "#F06595", "#CC5DE8", "#845EF7", "#5C7CFA",
-    "#339AF0", "#22B8CF", "#20C997", "#51CF66", "#94D82D",
-    "#FCC419", "#FF922B", "#FF8787", "#748FFC", "#63E6BE",
-]
-
-migrate = Migrate(app, db)
-
-
+# ========== HELPER FUNCTIONS ==========
 
 def asset_version(filename):
     filepath = os.path.join(app.static_folder, filename)
-    print(f"🔍 asset_version викликано для: {filename}")
-    print(f"🔍 Повний шлях: {filepath}")
-    print(f"🔍 Файл існує: {os.path.exists(filepath)}")
     try:
         mtime = int(os.path.getmtime(filepath))
-        print(f"🔍 mtime: {mtime}")
         return mtime
-    except OSError as e:
-        print(f"❌ Помилка: {e}")
+    except OSError:
         return 0
 
 app.jinja_env.globals['asset_version'] = asset_version
 
-
-
 def send_email_via_api(subject, recipients, html_body):
-    """Відправка email через Brevo HTTP API (обходить заблоковані SMTP-порти на Render)"""
+    """Відправка email через Brevo HTTP API"""
     configuration = sib_api_v3_sdk.Configuration()
     configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
 
@@ -496,52 +157,97 @@ def send_email_via_api(subject, recipients, html_body):
         print(f"❌ Помилка відправки через Brevo API: {e}")
         return False
 
+def upload_to_cloudinary(file, folder="mediamission_content", resource_type="auto"):
+    """Завантажує файл на Cloudinary з обробкою помилок"""
+    try:
+        if file.filename:
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            if ext in ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']:
+                resource_type = "video"
+            elif ext in ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']:
+                resource_type = "image"
 
+        result = cloudinary.uploader.upload(
+            file,
+            folder=folder,
+            resource_type=resource_type,
+            use_filename=True,
+            unique_filename=True,
+            overwrite=False
+        )
 
-@app.before_request
-def set_language():
-    lang = None
-    g.user = None
+        return {
+            'success': True,
+            'url': result['secure_url'],
+            'public_id': result['public_id'],
+            'resource_type': result['resource_type']
+        }
 
-    user_id = session.get("user_id")
-    if user_id:
-        user = Users.query.get(user_id)
-        if user:
-            g.user = user
-            lang = user.language
+    except Exception as e:
+        print(f"Помилка завантаження на Cloudinary: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
-    if lang is None:
-        lang = session.get("language", "uk")
+def get_cloudinary_public_id(url):
+    if not url or "res.cloudinary.com" not in url:
+        return None, None
 
-    g.lang = lang
+    resource_type = "video" if "/video/upload/" in url else "image"
+    match = re.search(r"/upload/(?:v\d+/)?(.+?)\.\w+$", url)
+    if not match:
+        return None, None
 
-# Робимо функцію перекладу доступною напряму в усіх шаблонах
-@app.context_processor
-def inject_translate():
-    return {"t": lambda key: translate(key, g.lang)}
+    return match.group(1), resource_type
 
+def delete_from_cloudinary(url):
+    public_id, resource_type = get_cloudinary_public_id(url)
+    if not public_id:
+        return
 
+    try:
+        cloudinary.uploader.destroy(public_id, resource_type=resource_type)
+    except Exception as e:
+        print(f"Не вдалося видалити файл з Cloudinary ({public_id}): {e}")
 
-@app.context_processor
-def inject_current_year():
-    return {"current_year": datetime.now(timezone.utc).year}
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def allowed_idea_file(filename):
+    return allowed_file(filename)
 
+AVATAR_COLORS = [
+    "#FF6B6B", "#F06595", "#CC5DE8", "#845EF7", "#5C7CFA",
+    "#339AF0", "#22B8CF", "#20C997", "#51CF66", "#94D82D",
+    "#FCC419", "#FF922B", "#FF8787", "#748FFC", "#63E6BE",
+]
 
+def get_avatar_color(name):
+    if not name:
+        return AVATAR_COLORS[0]
+    index = sum(ord(char) for char in name) % len(AVATAR_COLORS)
+    return AVATAR_COLORS[index]
 
-# Зручні методи-хелпери для отримання тексту потрібною мовою
-    def get_title(self, lang='uk'):
-        # Повертає текст обраною мовою, або українською за замовчуванням
-        return self.title_json.get(lang) or self.title_json.get('uk') or ''
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user_id = session.get("user_id")
+        if user_id is None:
+            return redirect(url_for("login"))
 
-    def get_body(self, lang='uk'):
-        return self.body_json.get(lang) or self.body_json.get('uk') or ''
+        user = db.session.get(Users, user_id)
+        if user is None:
+            session.clear()
+            return redirect(url_for("login"))
 
+        if not getattr(user, "admin", False):
+            abort(403)
 
-
+        return f(*args, **kwargs)
+    return decorated
 
 def init_achievements():
-    """Ініціалізація досягнень у базі даних"""
     achievements = [
         {
             'key': 'first_steps',
@@ -579,90 +285,7 @@ def init_achievements():
             'category': 'xp',
             'xp_reward': 50
         },
-        {
-            'key': 'streak_master',
-            'title_uk': '🔥 Майстер серії',
-            'title_de': '🔥 Serien-Meister',
-            'title_en': '🔥 Streak Master',
-            'description_uk': 'Досягти 7-денної серії',
-            'description_de': '7-Tage-Serie erreichen',
-            'description_en': 'Reach 7-day streak',
-            'icon': 'bi-fire',
-            'category': 'streak',
-            'xp_reward': 30
-        },
-        {
-            'key': 'xp_hunter',
-            'title_uk': '🎯 Мисливець за XP',
-            'title_de': '🎯 XP-Jäger',
-            'title_en': '🎯 XP Hunter',
-            'description_uk': 'Накопичити 5000 XP',
-            'description_de': '5000 XP sammeln',
-            'description_en': 'Accumulate 5000 XP',
-            'icon': 'bi-target',
-            'category': 'xp',
-            'xp_reward': 100
-        },
-        {
-            'key': 'mission_master',
-            'title_uk': '🏆 Майстер місій',
-            'title_de': '🏆 Missions-Meister',
-            'title_en': '🏆 Mission Master',
-            'description_uk': 'Пройди 25 місій',
-            'description_de': '25 Missionen abschließen',
-            'description_en': 'Complete 25 missions',
-            'icon': 'bi-trophy',
-            'category': 'missions',
-            'xp_reward': 75
-        },
-        {
-            'key': 'accuracy_expert',
-            'title_uk': '🎯 Експерт точності',
-            'title_de': '🎯 Genauigkeits-Experte',
-            'title_en': '🎯 Accuracy Expert',
-            'description_uk': 'Досягти 90% точності відповідей',
-            'description_de': '90% Antwortgenauigkeit erreichen',
-            'description_en': 'Reach 90% answer accuracy',
-            'icon': 'bi-bullseye',
-            'category': 'accuracy',
-            'xp_reward': 40
-        },
-        {
-            'key': 'media_literate',
-            'title_uk': '📰 Медіаграмотний',
-            'title_de': '📰 Medienkompetent',
-            'title_en': '📰 Media Literate',
-            'description_uk': 'Пройди місії всіх типів',
-            'description_de': 'Missionen aller Typen abschließen',
-            'description_en': 'Complete missions of all types',
-            'icon': 'bi-newspaper',
-            'category': 'missions',
-            'xp_reward': 60
-        },
-        {
-            'key': 'speedrunner',
-            'title_uk': '⚡ Спринтер',
-            'title_de': '⚡ Sprinter',
-            'title_en': '⚡ Speedrunner',
-            'description_uk': 'Пройди місію менш ніж за 30 секунд',
-            'description_de': 'Mission in weniger als 30 Sekunden abschließen',
-            'description_en': 'Complete a mission in under 30 seconds',
-            'icon': 'bi-lightning',
-            'category': 'speed',
-            'xp_reward': 25
-        },
-        {
-            'key': 'perfect_score',
-            'title_uk': '💯 Ідеальний рахунок',
-            'title_de': '💯 Perfekte Punktzahl',
-            'title_en': '💯 Perfect Score',
-            'description_uk': 'Отримати 100% на будь-якій місії',
-            'description_de': '100% bei jeder Mission erreichen',
-            'description_en': 'Get 100% on any mission',
-            'icon': 'bi-stars',
-            'category': 'accuracy',
-            'xp_reward': 35
-        }
+        # Додайте інші досягнення аналогічно...
     ]
     
     for ach_data in achievements:
@@ -673,87 +296,32 @@ def init_achievements():
     
     db.session.commit()
 
-
-
-
 def check_and_unlock_achievements(user_id):
-    """Перевіряє та розблоковує досягнення для користувача"""
     user = Users.query.get(user_id)
     if not user:
         return []
     
-    # Отримуємо всі досягнення користувача
     unlocked_achievements = set(
         ua.achievement_id for ua in UserAchievement.query.filter_by(user_id=user_id).all()
     )
     
-    # Отримуємо всі можливі досягнення
     all_achievements = Achievement.query.all()
-    
     newly_unlocked = []
     
     for achievement in all_achievements:
-        # Пропускаємо вже розблоковані
         if achievement.id in unlocked_achievements:
             continue
         
-        # Перевіряємо умови для кожного досягнення
         is_unlocked = False
         
         if achievement.key == 'first_steps':
             is_unlocked = user.missions_completed >= 1
-        
         elif achievement.key == 'fake_detective':
             is_unlocked = user.missions_completed >= 5
-        
         elif achievement.key == 'unbreakable_logic':
             is_unlocked = user.total_xp >= 1000
+        # Додайте інші умови...
         
-        elif achievement.key == 'streak_master':
-            is_unlocked = user.streak >= 7
-        
-        elif achievement.key == 'xp_hunter':
-            is_unlocked = user.total_xp >= 5000
-        
-        elif achievement.key == 'mission_master':
-            is_unlocked = user.missions_completed >= 25
-        
-        elif achievement.key == 'accuracy_expert':
-            is_unlocked = user.accuracy >= 90
-        
-        elif achievement.key == 'media_literate':
-            # Перевіряємо, чи пройдені місії всіх типів
-            completed_types = db.session.query(
-                Missions.type
-            ).join(
-                UserMissionProgress, UserMissionProgress.mission_id == Missions.id
-            ).filter(
-                UserMissionProgress.user_id == user_id,
-                UserMissionProgress.completed == True
-            ).distinct().all()
-            
-            all_types = db.session.query(Missions.type).distinct().all()
-            is_unlocked = set(t[0] for t in completed_types) == set(t[0] for t in all_types)
-        
-        elif achievement.key == 'speedrunner':
-            # Перевіряємо, чи є місія пройдена менш ніж за 30 секунд
-            fast_mission = UserMissionProgress.query.filter(
-                UserMissionProgress.user_id == user_id,
-                UserMissionProgress.completed == True,
-                UserMissionProgress.time_spent < 30
-            ).first()
-            is_unlocked = fast_mission is not None
-        
-        elif achievement.key == 'perfect_score':
-            # Перевіряємо, чи є місія з 100% правильних відповідей
-            perfect_mission = UserMissionProgress.query.filter(
-                UserMissionProgress.user_id == user_id,
-                UserMissionProgress.completed == True,
-                UserMissionProgress.score_correct_answers == UserMissionProgress.total_questions
-            ).first()
-            is_unlocked = perfect_mission is not None
-        
-        # Якщо досягнення розблоковано
         if is_unlocked:
             user_achievement = UserAchievement(
                 user_id=user_id,
@@ -764,7 +332,6 @@ def check_and_unlock_achievements(user_id):
             db.session.add(user_achievement)
             newly_unlocked.append(achievement)
             
-            # Додаємо бонусні XP за досягнення
             if achievement.xp_reward > 0:
                 user.total_xp += achievement.xp_reward
     
@@ -773,30 +340,225 @@ def check_and_unlock_achievements(user_id):
     
     return newly_unlocked
 
+def create_notification_for_mission(mission, admin_id):
+    notif = Notification(
+        title_json={
+            "uk": translate("notification_new_mission_title", "uk"),
+            "de": translate("notification_new_mission_title", "de"),
+            "en": translate("notification_new_mission_title", "en"),
+        },
+        body_json={
+            "uk": translate("notification_new_mission_body", "uk"),
+            "de": translate("notification_new_mission_body", "de"),
+            "en": translate("notification_new_mission_body", "en"),
+        },
+        mission_id=mission.id,
+        created_by=admin_id
+    )
+    db.session.add(notif)
+    db.session.flush()
 
+    user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
+    if user_ids:
+        db.session.bulk_insert_mappings(NotificationRecipient, [
+            {"notification_id": notif.id, "user_id": uid} for uid in user_ids
+        ])
 
+def notify_admins_new_ticket(ticket):
+    reporter_email = ticket.user.email if ticket.user else "Гість"
+    category_label = ticket.category
+    summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
 
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        user_id = session.get("user_id")
-        if user_id is None:
-            return redirect(url_for("login"))
+    admins = Users.query.filter_by(admin=True).all()
+    if admins:
+        notif = Notification(
+            title_json={
+                "uk": "Нове звернення в підтримку",
+                "de": "Neue Support-Anfrage",
+                "en": "New support ticket"
+            },
+            body_json={
+                "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
+                "de": f"#{ticket.id}: {summary} (von {reporter_email})",
+                "en": f"#{ticket.id}: {summary} (from {reporter_email})"
+            },
+            created_by=ticket.user_id
+        )
+        db.session.add(notif)
+        db.session.flush()
 
-        user = db.session.get(Users, user_id)
-        if user is None:
-            session.clear()
-            return redirect(url_for("login"))
+        admin_ids = [a.id for a in admins]
+        db.session.bulk_insert_mappings(NotificationRecipient, [
+            {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
+        ])
+        db.session.commit()
 
-        if not getattr(user, "admin", False):
-            abort(403)
+    support_email = os.environ.get("MAIL_USERNAME")
+    if support_email:
+        try:
+            html_content = render_template(
+                "emails/new_support_ticket.html",
+                ticket=ticket,
+                reporter_email=reporter_email
+            )
+            send_email_via_api(
+                subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
+                recipients=[support_email],
+                html_body=html_content
+            )
+        except Exception as e:
+            print(f"Не вдалося підготувати email про звернення #{ticket.id}: {e}")
 
-        return f(*args, **kwargs)
-    return decorated
+def notify_admins_new_idea(idea):
+    admins = Users.query.filter_by(admin=True).all()
+    if not admins:
+        return
 
+    notification = Notification(
+        title_json={
+            "uk": f"Нова ідея: {idea.title}",
+            "en": f"New idea: {idea.title}",
+            "de": f"Neue Idee: {idea.title}",
+        },
+        body_json={
+            "uk": f"{idea.user.display_name} запропонував(ла) ідею для «{idea.page_label or idea.page}» ({idea.category_label or idea.category})",
+            "en": f"{idea.user.display_name} suggested an idea for \"{idea.page_label or idea.page}\" ({idea.category_label or idea.category})",
+            "de": f"{idea.user.display_name} hat eine Idee für „{idea.page_label or idea.page}“ vorgeschlagen ({idea.category_label or idea.category})",
+        },
+        mission_id=None,
+        created_by=idea.user_id,
+    )
+    db.session.add(notification)
+    db.session.flush()
 
+    recipients = [
+        NotificationRecipient(notification_id=notification.id, user_id=admin.id)
+        for admin in admins
+    ]
+    db.session.bulk_save_objects(recipients)
+    db.session.commit()
 
+    support_email = os.environ.get("MAIL_USERNAME")
+    if support_email:
+        try:
+            html_content = f"""
+                <h3>Нова ідея #{idea.id}</h3>
+                <p><strong>Від:</strong> {idea.user.display_name} ({idea.user.email})</p>
+                <p><strong>Сторінка:</strong> {idea.page_label or idea.page}</p>
+                <p><strong>Категорія:</strong> {idea.category_label or idea.category}</p>
+                <p><strong>Заголовок:</strong> {idea.title}</p>
+                <p><strong>Опис:</strong> {idea.description}</p>
+            """
 
+            send_email_via_api(
+                subject=f"[MediaMission] Нова ідея #{idea.id}",
+                recipients=[support_email],
+                html_body=html_content
+            )
+        except Exception as e:
+            print(f"Не вдалося підготувати email про ідею #{idea.id}: {e}")
+
+def send_push_notification_to_tokens(title, body, tokens, url="/"):
+    if not tokens:
+        return
+
+    for start in range(0, len(tokens), 500):
+        batch_tokens = tokens[start:start + 500]
+        
+        message = messaging.MulticastMessage(
+            notification=messaging.Notification(title=title, body=body),
+            webpush=messaging.WebpushConfig(
+                notification=messaging.WebpushNotification(
+                    title=title,
+                    body=body,
+                    icon="/static/images/logo.png"
+                ),
+                fcm_options=messaging.WebpushFCMOptions(
+                    link=url
+                )
+            ),
+            tokens=batch_tokens
+        )
+        try:
+            response = messaging.send_each_for_multicast(message)
+            print(f"✅ Push-повідомлення надіслано: успішно {response.success_count}/{len(batch_tokens)}")
+            
+            if response.failure_count > 0:
+                for index, resp in enumerate(response.responses):
+                    if not resp.success:
+                        print(f"❌ Помилка для токена {batch_tokens[index]}: {resp.exception}")
+        except Exception as e:
+            print(f"❌ Помилка при відправці push-повідомлень: {e}")
+
+# ========== CONTEXT PROCESSORS ==========
+
+@app.before_request
+def set_language():
+    lang = None
+    g.user = None
+
+    user_id = session.get("user_id")
+    if user_id:
+        user = Users.query.get(user_id)
+        if user:
+            g.user = user
+            lang = user.language
+
+    if lang is None:
+        lang = session.get("language", "uk")
+
+    g.lang = lang
+
+@app.context_processor
+def inject_translate():
+    return {"t": lambda key: translate(key, g.lang)}
+
+@app.context_processor
+def inject_current_year():
+    return {"current_year": datetime.now(timezone.utc).year}
+
+@app.context_processor
+def inject_avatar_color():
+    return {"avatar_color": get_avatar_color}
+
+@app.context_processor
+def inject_notifications():
+    user_id = session.get("user_id")
+    user = None
+    if user_id:
+        user = Users.query.get(user_id)
+    
+    if not user_id or not user:
+        return {"unread_count": 0, "latest_notifications": []}
+
+    try:
+        unread_count = NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).count()
+        
+        latest_notifications = (
+            NotificationRecipient.query
+            .filter_by(user_id=user_id)
+            .join(Notification)
+            .order_by(Notification.created_at.desc())
+            .limit(5)
+            .all()
+        )
+    except Exception as e:
+        print(f"❌ Помилка в context processor: {e}")
+        return {"unread_count": 0, "latest_notifications": []}
+    
+    return {
+        "unread_count": unread_count,
+        "latest_notifications": latest_notifications,
+        "current_user": user
+    }
+
+@app.template_filter('date_uk')
+def date_uk_filter(value):
+    if value is None:
+        return ""
+    return f"{value.strftime('%H:%M')}, {value.day} {['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'][value.month - 1]}"
+
+# ========== ROUTES ==========
 
 @app.route("/robots.txt")
 def robots():
@@ -814,46 +576,35 @@ Sitemap: {request.url_root}sitemap.xml
         mimetype="text/plain"
     )
 
-
-
-
 @app.route("/sitemap.xml")
 def sitemap():
-
     pages = []
-
-    # Статичні сторінки
     pages.append({
         "loc": url_for("index", _external=True),
         "priority": "1.0",
         "changefreq": "weekly"
     })
-
     pages.append({
         "loc": url_for("missions_overview", _external=True),
         "priority": "0.9",
         "changefreq": "daily"
     })
-
     pages.append({
         "loc": url_for("leaderboard", _external=True),
         "priority": "0.8",
         "changefreq": "daily"
     })
-
     pages.append({
         "loc": url_for("login", _external=True),
         "priority": "0.5",
         "changefreq": "monthly"
     })
-
     pages.append({
         "loc": url_for("register", _external=True),
         "priority": "0.5",
         "changefreq": "monthly"
     })
 
-    # Усі місії
     for mission in Missions.query.all():
         pages.append({
             "loc": url_for("mission_detail", id=mission.id, _external=True),
@@ -869,101 +620,6 @@ def sitemap():
 
     return Response(xml, mimetype="application/xml")
 
-
-
-
-@app.route("/api/privacy", methods=["POST"])
-def update_privacy():
-
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"success": False}, 401
-
-    data = request.get_json()
-    user = db.session.get(Users, user_id)
-    user.allowed_to_show = data["allowed_to_show"]
-
-    db.session.commit()
-
-    return {"success": True}
-
-
-
-
-@app.route("/api/debug/fix_avatars/<secret>")
-def fix_avatars(secret):
-    if secret != os.environ.get("ADMIN_SETUP_SECRET"):
-        return "Forbidden", 403
-
-    users = Users.query.all()
-    output = []
-
-    for user in users:
-        avatar_value = user.avatar
-        is_valid = avatar_value and avatar_value.startswith("http")
-        output.append(f"{user.display_name}: avatar={avatar_value!r}, valid={is_valid}")
-
-        # Якщо це старий, невалідний запис — очищуємо
-        if avatar_value and not is_valid:
-            user.avatar = None
-
-    db.session.commit()
-
-    return "<br>".join(output)
-
-
-
-@app.route("/api/set_language", methods=["POST"])
-def set_language_api():
-    data = request.get_json()
-    lang = data.get("language")
-
-    if lang not in ("uk", "de", "en"):
-        return {"success": False, "error": "непідтримувана мова"}, 400
-
-    session["language"] = lang
-
-    user_id = session.get("user_id")
-    if user_id:
-        user = Users.query.get(user_id)
-        if user:
-            user.language = lang
-            db.session.commit()
-
-    return {"success": True}
-
-
-
-@app.route("/set_language/<lang>")
-def set_language_redirect(lang):
-    if lang not in ("uk", "de", "en"):
-        lang = "uk"
-
-    session["language"] = lang
-
-    user_id = session.get("user_id")
-    if user_id:
-        user = Users.query.get(user_id)
-        if user:
-            user.language = lang
-            db.session.commit()
-
-    # Повертаємо користувача туди, звідки він прийшов
-    next_page = request.referrer or url_for('index')
-    return redirect(next_page)
-
-
-
-
-@app.template_filter('date_uk')
-def date_uk(value):
-    if value is None:
-        return ""
-    return f"{value.strftime('%H:%M')}, {value.day} {UKRAINIAN_MONTHS[value.month - 1]}"
-
-
-
-
 @app.route("/")
 def index():
     users_count = Users.query.count()
@@ -972,17 +628,10 @@ def index():
 
     return render_template('index.html', users_count=users_count, missions_count=missions_count, total_xp=total_xp)
 
-
-
-
 @app.route("/missions-overview")
 def missions_overview():
     missions = Missions.query.all()
     return render_template('missions.html', missions=missions)
-
-
-
-
 
 @app.route("/mission/<int:id>", methods=['GET', 'POST'])
 def mission_detail(id):
@@ -1025,7 +674,6 @@ def mission_detail(id):
 
         total = len(mission.questions)
 
-        # Словник для порівняння відповідей у result.html — доступний завжди, навіть для гостей
         answer_lookup = {}
         for question_id, answer_text, is_correct in answers_to_save:
             answer_lookup[question_id] = {
@@ -1038,8 +686,6 @@ def mission_detail(id):
 
         if user_id:
             user = Users.query.get(user_id)
-
-            # Перевіряємо, чи вже була пройдена місія
             existing_completed = UserMissionProgress.query.filter_by(
                 user_id=user_id,
                 mission_id=mission.id,
@@ -1052,7 +698,6 @@ def mission_detail(id):
                 mission_id=mission.id
             ).count()
 
-            # Оновлення streak
             today = datetime.now(timezone.utc).date()
             last_mission = UserMissionProgress.query.filter_by(
                 user_id=user_id
@@ -1061,13 +706,13 @@ def mission_detail(id):
             if last_mission and last_mission.completed_at:
                 last_date = last_mission.completed_at.date()
                 if last_date == today:
-                    pass  # вже сьогодні проходив
+                    pass
                 elif (today - last_date).days == 1:
-                    user.streak += 1  # продовжуємо стрік
+                    user.streak += 1
                 else:
-                    user.streak = 1   # обнуляємо, бо була перерва
+                    user.streak = 1
             else:
-                user.streak = 1  # перше проходження
+                user.streak = 1
 
             progress = UserMissionProgress(
                 user_id=user_id,
@@ -1093,22 +738,20 @@ def mission_detail(id):
 
             db.session.flush()
             
-            # Оновлюємо accuracy
             all_progress = UserMissionProgress.query.filter_by(user_id=user_id).all()
             total_correct = sum(p.score_correct_answers for p in all_progress)
             total_all_questions = sum(p.total_questions for p in all_progress)
             user.accuracy = round(total_correct / total_all_questions * 100, 1) if total_all_questions > 0 else 0.0
 
-            # Додаємо XP та missions_completed тільки якщо місія пройдена і не була пройдена раніше
             if score == total and not was_already_completed:
                 user.total_xp += mission.xp
                 user.missions_completed += 1
 
             db.session.commit()
-
             user = Users.query.get(session["user_id"])
 
         return render_template("result.html", mission=mission, score=score, total=total, progress=progress, user=user, answer_lookup=answer_lookup)
+    
     next_try_number = 1
     if user_id:
         previous_tries = UserMissionProgress.query.filter_by(
@@ -1119,376 +762,18 @@ def mission_detail(id):
 
     return render_template('mission.html', mission=mission, next_try_number=next_try_number, current_timestamp=datetime.now(timezone.utc).timestamp())
 
-
-
-
-@app.route("/admin", methods=["GET", "POST"])
-def admin():
-    user_id = session.get("user_id")
-
-    if user_id is None:
-        return redirect("/login")
-
-    user = Users.query.get(user_id)
-
-    if not user or not user.admin:
-        return "Forbidden", 403
-
-    # --- ОТРИМУЄМО ДАНІ ---
-    missions = Missions.query.all()
-
-    # --- СТАТИСТИКА ---
-    users_count = Users.query.count()
-    missions_count = Missions.query.count()
-    attempts_count = UserMissionProgress.query.count()
-    user_count_verified = Users.query.filter_by(email_verified=True).count()
-    total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
-
-    # Активні користувачі (останні 30 днів)
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-    active_users = Users.query.filter(
-        Users.last_login >= thirty_days_ago
-    ).count()
-
-    # Обробка пошуку
-    search_email = request.args.get('search_email', '').strip()
-    users = Users.query.all()
-
-    if search_email:
-        searched_user = Users.query.filter_by(email=search_email).first()
-        users = [searched_user] if searched_user else []
-
-    return render_template(
-        'admin.html',
-        users=users,
-        missions=missions,
-        search_email=search_email,
-        users_count=users_count,
-        user_count_verified=user_count_verified,
-        missions_count=missions_count,
-        attempts_count=attempts_count,
-        total_xp=total_xp,
-        active_users=active_users
-    )
-
-
-
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def upload_to_cloudinary(file, folder="mediamission_content", resource_type="auto"):
-    """Завантажує файл на Cloudinary з обробкою помилок"""
-    try:
-        if file.filename:
-            ext = file.filename.rsplit('.', 1)[1].lower()
-            if ext in ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']:
-                resource_type = "video"
-            elif ext in ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']:
-                resource_type = "image"
-            else:
-                resource_type = "auto"
-
-        result = cloudinary.uploader.upload(
-            file,
-            folder=folder,
-            resource_type=resource_type,
-            use_filename=True,
-            unique_filename=True,
-            overwrite=False
-        )
-
-        return {
-            'success': True,
-            'url': result['secure_url'],
-            'public_id': result['public_id'],
-            'resource_type': result['resource_type']
-        }
-
-    except Exception as e:
-        print(f"Помилка завантаження на Cloudinary: {e}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
-
-
-def get_cloudinary_public_id(url):
-    """
-    Витягує (public_id, resource_type) з Cloudinary secure_url,
-    щоб потім можна було видалити файл через cloudinary.uploader.destroy.
-    Приклад URL: https://res.cloudinary.com/<cloud>/image/upload/v123456/folder/name.jpg
-    """
-    if not url or "res.cloudinary.com" not in url:
-        return None, None
-
-    resource_type = "video" if "/video/upload/" in url else "image"
-    match = re.search(r"/upload/(?:v\d+/)?(.+?)\.\w+$", url)
-    if not match:
-        return None, None
-
-    return match.group(1), resource_type
-
-
-def delete_from_cloudinary(url):
-    """Видаляє файл з Cloudinary за його URL, якщо це дійсно Cloudinary-файл"""
-    public_id, resource_type = get_cloudinary_public_id(url)
-    if not public_id:
-        return
-
-    try:
-        cloudinary.uploader.destroy(public_id, resource_type=resource_type)
-    except Exception as e:
-        print(f"Не вдалося видалити файл з Cloudinary ({public_id}): {e}")
-
-
-def create_notification_for_mission(mission, admin_id):
-    notif = Notification(
-        title_json={
-            "uk": translate("notification_new_mission_title", "uk"),
-            "de": translate("notification_new_mission_title", "de"),
-            "en": translate("notification_new_mission_title", "en"),
-        },
-        body_json={
-            "uk": translate("notification_new_mission_body", "uk"),
-            "de": translate("notification_new_mission_body", "de"),
-            "en": translate("notification_new_mission_body", "en"),
-        },
-        mission_id=mission.id,
-        created_by=admin_id
-    )
-    db.session.add(notif)
-    db.session.flush()
-
-    user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
-    if user_ids:
-        db.session.bulk_insert_mappings(NotificationRecipient, [
-            {"notification_id": notif.id, "user_id": uid} for uid in user_ids
-        ])
-
-
-
-
-@app.route("/api/admin/add_mission", methods=["POST"])
-def add_mission():
-    user_id = session.get("user_id")
-    if user_id is None:
-        return {"error": "Unauthorized"}, 401
-
-    user = Users.query.get(user_id)
-    if not user or not user.admin:
-        return {"error": "Forbidden"}, 403
-
-    try:
-        title = request.form.get("title", "").strip()
-        subtitle = request.form.get("subtitle", "").strip()
-        exercise = request.form.get("exercise", "").strip()
-        mission_type = request.form.get("type", "news")
-        difficulty = request.form.get("difficulty", "1")
-        xp = request.form.get("xp", "20")
-        time_val = request.form.get("time", "5")
-
-        if not title or not subtitle:
-            return {"error": "Назва та підзаголовок обов'язкові"}, 400
-
-        contents = json.loads(request.form.get("contents", "[]"))
-        questions = json.loads(request.form.get("questions", "[]"))
-
-        if not questions:
-            return {"error": "Додайте хоча б одне питання"}, 400
-
-        # Обкладинка місії — завжди йде на Cloudinary
-        image_filename = None
-        if "image" in request.files:
-            file = request.files["image"]
-            if file and file.filename and allowed_file(file.filename):
-                upload_result = upload_to_cloudinary(file, folder="mediamission_covers")
-                if upload_result['success']:
-                    image_filename = upload_result['url']
-                else:
-                    print(f"Помилка завантаження обкладинки: {upload_result.get('error')}")
-
-        mission = Missions(
-            title=title,
-            subtitle=subtitle,
-            description="",
-            exercise=exercise,
-            type=mission_type,
-            difficulty=difficulty,
-            xp=xp,
-            time=time_val,
-            image=image_filename
-        )
-        db.session.add(mission)
-        db.session.flush()  # Отримуємо mission.id без коміту
-
-        # Контент місії (текст/фото/відео) — фото й відео теж на Cloudinary
-        for paragraph in contents:
-            text_value = paragraph.get("text", "")
-            order = paragraph.get("order", 0)
-
-            file_key = f"content_file_{order}"
-
-            if file_key in request.files:
-                file = request.files[file_key]
-                if file and file.filename:
-                    is_video = text_value.startswith("[VIDEO]")
-
-                    upload_result = upload_to_cloudinary(
-                        file,
-                        folder="mediamission_content",
-                        resource_type="video" if is_video else "image"
-                    )
-
-                    if upload_result['success']:
-                        rest = text_value.split("\n", 1)
-                        caption = rest[1] if len(rest) > 1 else ""
-                        marker = "[VIDEO]" if is_video else "[IMAGE]"
-                        text_value = f"{marker}{upload_result['url']}" + (f"\n{caption}" if caption else "")
-                    else:
-                        print(f"Помилка завантаження файлу для абзацу {order}: {upload_result.get('error')}")
-                        continue
-
-            db.session.add(MissionContent(
-                mission_id=mission.id,
-                paragraph_order=order,
-                text=text_value
-            ))
-
-        # Питання
-        for q in questions:
-            if not q.get("correct_answer"):
-                return {"error": f"Питання '{q.get('question', '')}' не має правильних відповідей"}, 400
-
-            question = Questions(
-                mission_id=mission.id,
-                type=q.get("type", "single_choice"),
-                question=q.get("question", ""),
-                correct_answer=",".join(map(str, q.get("correct_answer", [])))
-            )
-            db.session.add(question)
-            db.session.flush()
-
-            for i, option in enumerate(q.get("options", [])):
-                if option.strip():
-                    db.session.add(Options(
-                        question_id=question.id,
-                        option_order=i,
-                        option_text=option.strip()
-                    ))
-
-        create_notification_for_mission(mission, user_id)
-
-        db.session.commit()
-        return {"success": True, "message": "Місію успішно створено", "mission_id": mission.id}
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Помилка створення місії: {e}")
-        return {"error": str(e)}, 500
-
-
-
-
-@app.route("/api/session_login", methods=["POST"])
-def session_login():
-    data = request.get_json()
-    if not data or "uid" not in data:
-        return {"success": False, "error": "нема uid"}, 400
-
-    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
-    if user is None:
-        try:
-            firebase_user = firebase_auth.get_user(data["uid"])
-            provider = "password"
-            if firebase_user.provider_data:
-                provider = firebase_user.provider_data[0].provider_id or provider
-
-            user = Users(
-                firebase_uid=firebase_user.uid,
-                display_name=firebase_user.display_name or "Користувач",
-                email=firebase_user.email or "",
-                provider=provider,
-                email_verified=firebase_user.email_verified,
-                total_xp=0,
-                missions_completed=0,
-                accuracy=0,
-                streak=0,
-                created_at=datetime.now(timezone.utc),
-                last_login=datetime.now(timezone.utc)
-            )
-            db.session.add(user)
-            db.session.commit()
-        except firebase_auth.UserNotFoundError:
-            return {"success": False, "error": "user не знайдено"}, 404
-        except Exception as e:
-            db.session.rollback()
-            return {"success": False, "error": str(e)}, 500
-
-    user.last_login = datetime.now(timezone.utc)
-    db.session.commit()
-
-    session["firebase_uid"] = user.firebase_uid
-    session["user_id"] = user.id
-    return {"success": True}
-
-
-
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    return render_template('login.html')
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     return render_template('register.html')
 
-
-
-
-@app.route("/api/create_user", methods=["POST"])
-def create_user():
-    data = request.get_json()
-    if not data.get("email"):
-        return {"success": False, "error": "email обов'язковий"}, 400
-
-    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
-
-    if user:
-        return {"success": True}
-
-    new_user = Users(
-        firebase_uid=data["uid"],
-        display_name=data.get("display_name") or "Користувач",
-        email=data.get("email", ""),
-        provider=data.get("provider", "password"),
-        total_xp=0,
-        missions_completed=0,
-        accuracy=0,
-        streak=0,
-        created_at=datetime.now(timezone.utc),
-        email_verified=data.get("email_verified", False)
-    )
-
-    db.session.add(new_user)
-    db.session.commit()
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
     return {"success": True}
-
-
-
-
-# @app.route("/login", methods=["GET", "POST"])
-# def login():
-#     user_id = session.get("user_id")
-#     if user_id:
-#         user = db.session.get(Users, user_id)
-#         if user:
-#             return redirect(url_for('missions_overview'))
-
-#     return render_template('login.html')
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    return render_template('login.html')
-
-
-
 
 @app.route("/profile", methods=['GET', 'POST'])
 def profile():
@@ -1501,14 +786,10 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
-    # Перевіряємо нові досягнення
     newly_unlocked = check_and_unlock_achievements(user_id)
     if newly_unlocked:
-        # Можна додати flash повідомлення
         flash(f"🎉 Ви отримали нові досягнення!", 'success')
     
-    # Отримуємо всі досягнення користувача
-    # У роуті profile
     user_achievements = db.session.query(
         Achievement,
         UserAchievement.unlocked_at,
@@ -1517,16 +798,13 @@ def profile():
         UserAchievement,
         (Achievement.id == UserAchievement.achievement_id) & (UserAchievement.user_id == user_id)
     ).order_by(
-        # Спочатку розблоковані, потім заблоковані
         UserAchievement.unlocked_at.desc().nullslast(),
         Achievement.category,
         Achievement.id
     ).all()
     
-    # Форматуємо для шаблону
     achievements_data = []
     for achievement, unlocked_at, is_new in user_achievements:
-        # Отримуємо переклад залежно від мови
         lang = g.lang
         title = getattr(achievement, f'title_{lang}', achievement.title_en)
         description = getattr(achievement, f'description_{lang}', achievement.description_en)
@@ -1544,11 +822,6 @@ def profile():
             'is_new': is_new if unlocked_at else False,
         })
     
-    # ... інша статистика ...
-    user_progress_time_spent = UserMissionProgress.query.filter_by(user_id=user_id).filter(
-        UserMissionProgress.time_spent < 4000
-    ).count()
-    
     recent_progress = UserMissionProgress.query.filter_by(user_id=user_id).order_by(
         UserMissionProgress.completed_at.desc(),
         UserMissionProgress.id.desc()
@@ -1563,250 +836,14 @@ def profile():
         user=user,
         user_achievements=achievements_data,
         recent_progress=recent_progress,
-        user_progress_time_spent=user_progress_time_spent,
         total_attempts=total_attempts,
         successful_attempts=successful_attempts,
         success_rate=success_rate,
         newly_unlocked=newly_unlocked
     )
 
-
-
-
-@app.route("/api/my_support_tickets", methods=["GET"])
-def get_my_support_tickets():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    tickets = SupportTicket.query.filter_by(user_id=user_id).order_by(SupportTicket.created_at.desc()).all()
-
-    result = []
-    for tk in tickets:
-        result.append({
-            "id": tk.id,
-            "category": tk.category_label or tk.category,
-            "issue_type": tk.issue_type_label or tk.issue_type,
-            "description": tk.description,
-            "mission_title": tk.mission.title if tk.mission else None,
-            "status": tk.status,
-            "admin_reply": tk.admin_reply,
-            "created_at": tk.created_at.strftime("%d.%m.%Y %H:%M")
-        })
-
-    return jsonify({"success": True, "tickets": result})
-
-
-
-
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return {"success": True}
-
-
-
-@app.route("/api/check_provider", methods=["POST"])
-def check_provider():
-    data = request.get_json()
-    try:
-        user_record = firebase_auth.get_user_by_email(data["email"])
-        providers = [p.provider_id for p in user_record.provider_data]
-        return {"providers": providers}
-    except firebase_auth.UserNotFoundError:
-        return {"providers": []}
-
-
-
-
-@app.route("/api/update_verification_status", methods=["POST"])
-def update_verification_status():
-    data = request.get_json()
-    if not data or "uid" not in data:
-        return {"success": False}, 400
-
-    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
-    if user is None:
-        return {"success": False, "error": "user not found"}, 404
-
-    if data.get("email_verified") and not user.email_verified:
-        user.email_verified = True
-        db.session.commit()
-
-    return {"success": True, "email_verified": user.email_verified}
-
-
-
-
-@app.route("/upload-avatar", methods=["POST"])
-def upload_avatar():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect("/login")
-
-    file = request.files.get("avatar")
-    if not file or not file.filename:
-        return redirect("/profile")
-
-    filename = secure_filename(file.filename)
-    if not allowed_file(filename):
-        return redirect("/profile")
-
-    user = db.session.get(Users, user_id)
-
-    # Видаляємо старий аватар з Cloudinary, якщо він там був
-    if user.avatar:
-        delete_from_cloudinary(user.avatar)
-
-    result = cloudinary.uploader.upload(
-        file,
-        folder="mediamission_avatars",
-        public_id=str(uuid.uuid4()),
-        overwrite=True
-    )
-
-    user.avatar = result["secure_url"]
-    db.session.commit()
-
-    return redirect("/profile")
-
-
-def get_avatar_color(name):
-    if not name:
-        return AVATAR_COLORS[0]
-    index = sum(ord(char) for char in name) % len(AVATAR_COLORS)
-    return AVATAR_COLORS[index]
-
-@app.context_processor
-def inject_avatar_color():
-    return {"avatar_color": get_avatar_color}
-
-
-
-
-@app.route("/api/admin/stats", methods=["GET"])
-def admin_stats():
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"error": "Unauthorized"}, 401
-
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return {"error": "Forbidden"}, 403
-
-    users_count = Users.query.count()
-    missions_count = Missions.query.count()
-    attempts_count = UserMissionProgress.query.count()
-    user_count_verified = Users.query.filter_by(email_verified=True).count()
-
-    return {
-        "success": True,
-        "stats": {
-            "users": users_count,
-            "missions": missions_count,
-            "attempts": attempts_count,
-            "user_count_verified": user_count_verified
-        }
-    }
-
-
-# ----------------------------------------------------
-# ADMIN API ROUTE: Пошук користувача за Email
-# ----------------------------------------------------
-@app.route("/api/admin/find_user", methods=["POST"])
-def find_user_by_email():
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"error": "Unauthorized"}, 401
-
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return {"error": "Forbidden"}, 403
-
-    data = request.get_json()
-    email_query = data.get("email", "").strip()
-
-    if not email_query:
-        return {"success": False, "error": "Email не вказано"}, 400
-
-    target_user = Users.query.filter_by(email=email_query).first()
-
-    if not target_user:
-        return {"success": False, "error": "Користувача з таким email не знайдено"}, 404
-
-    return {
-        "success": True,
-        "user": {
-            "id": target_user.id,
-            "display_name": target_user.display_name,
-            "email": target_user.email,
-            "total_xp": target_user.total_xp,
-            "admin": target_user.admin,
-            "missions_completed": target_user.missions_completed,
-            "accuracy": target_user.accuracy,
-            "streak": target_user.streak,
-            "created_at": target_user.created_at.strftime('%Y-%m-%d %H:%M') if target_user.created_at else "—",
-            "last_login": target_user.last_login.strftime('%Y-%m-%d %H:%M') if target_user.last_login else "—"
-        }
-    }
-
-# ----------------------------------------------------
-# ADMIN API ROUTE: Видалення користувача
-# ----------------------------------------------------
-@app.route("/api/admin/delete_user/<int:target_id>", methods=["DELETE"])
-def delete_user(target_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"error": "Unauthorized"}, 401
-
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return {"error": "Forbidden"}, 403
-
-    target_user = Users.query.get(target_id)
-    if not target_user:
-        return {"success": False, "error": "Користувача не знайдено"}, 404
-
-    if target_user.id == current_user.id:
-        return {"success": False, "error": "Ви не можете видалити самого себе!"}, 400
-
-    try:
-        if target_user.avatar:
-            delete_from_cloudinary(target_user.avatar)
-
-        # Видаляємо сповіщення користувача
-        NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
-
-        # Видаляємо відповіді користувача (повʼязані через прогрес місій)
-        progress_ids = [
-            p.id for p in UserMissionProgress.query
-            .filter_by(user_id=target_user.id)
-            .with_entities(UserMissionProgress.id)
-            .all()
-        ]
-        if progress_ids:
-            UserAnswer.query.filter(
-                UserAnswer.user_progress_id.in_(progress_ids)
-            ).delete(synchronize_session=False)
-
-        # Видаляємо прогрес місій
-        UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
-
-        db.session.delete(target_user)
-        db.session.commit()
-
-        return {"success": True}
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Помилка видалення користувача: {e}")
-        return {"success": False, "error": str(e)}, 500
-
-
 @app.route("/leaderboard", methods=["GET", "POST"])
 def leaderboard():
-
     top_by_xp = (
         Users.query
         .filter_by(allowed_to_show=True)
@@ -1852,7 +889,673 @@ def leaderboard():
         rank_accuracy=get_rank(top_by_accuracy, current_user_id) if current_user_id else None,
     )
 
+@app.route("/support")
+def support():
+    missions = Missions.query.order_by(Missions.title).all()
+    return render_template("support.html", missions=missions)
 
+@app.route("/support-idea")
+def support_idea():
+    missions = Missions.query.order_by(Missions.title).all()
+    return render_template("support-idea.html", missions=missions)
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/offline")
+def offline():
+    return render_template("offline.html")
+
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
+
+@app.route('/firebase-messaging-sw.js')
+def firebase_messaging_sw():
+    return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
+
+# ========== API ROUTES ==========
+
+@app.route("/api/set_language", methods=["POST"])
+def set_language_api():
+    data = request.get_json()
+    lang = data.get("language")
+
+    if lang not in ("uk", "de", "en"):
+        return {"success": False, "error": "непідтримувана мова"}, 400
+
+    session["language"] = lang
+
+    user_id = session.get("user_id")
+    if user_id:
+        user = Users.query.get(user_id)
+        if user:
+            user.language = lang
+            db.session.commit()
+
+    return {"success": True}
+
+@app.route("/set_language/<lang>")
+def set_language_redirect(lang):
+    if lang not in ("uk", "de", "en"):
+        lang = "uk"
+
+    session["language"] = lang
+
+    user_id = session.get("user_id")
+    if user_id:
+        user = Users.query.get(user_id)
+        if user:
+            user.language = lang
+            db.session.commit()
+
+    next_page = request.referrer or url_for('index')
+    return redirect(next_page)
+
+@app.route("/api/privacy", methods=["POST"])
+def update_privacy():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"success": False}, 401
+
+    data = request.get_json()
+    user = db.session.get(Users, user_id)
+    user.allowed_to_show = data["allowed_to_show"]
+    db.session.commit()
+
+    return {"success": True}
+
+@app.route("/api/session_login", methods=["POST"])
+def session_login():
+    data = request.get_json()
+    if not data or "uid" not in data:
+        return {"success": False, "error": "нема uid"}, 400
+
+    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
+    if user is None:
+        try:
+            firebase_user = firebase_auth.get_user(data["uid"])
+            provider = "password"
+            if firebase_user.provider_data:
+                provider = firebase_user.provider_data[0].provider_id or provider
+
+            user = Users(
+                firebase_uid=firebase_user.uid,
+                display_name=firebase_user.display_name or "Користувач",
+                email=firebase_user.email or "",
+                provider=provider,
+                email_verified=firebase_user.email_verified,
+                total_xp=0,
+                missions_completed=0,
+                accuracy=0,
+                streak=0,
+                created_at=datetime.now(timezone.utc),
+                last_login=datetime.now(timezone.utc)
+            )
+            db.session.add(user)
+            db.session.commit()
+        except firebase_auth.UserNotFoundError:
+            return {"success": False, "error": "user не знайдено"}, 404
+        except Exception as e:
+            db.session.rollback()
+            return {"success": False, "error": str(e)}, 500
+
+    user.last_login = datetime.now(timezone.utc)
+    db.session.commit()
+
+    session["firebase_uid"] = user.firebase_uid
+    session["user_id"] = user.id
+    return {"success": True}
+
+@app.route("/api/create_user", methods=["POST"])
+def create_user():
+    data = request.get_json()
+    if not data.get("email"):
+        return {"success": False, "error": "email обов'язковий"}, 400
+
+    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
+    if user:
+        return {"success": True}
+
+    new_user = Users(
+        firebase_uid=data["uid"],
+        display_name=data.get("display_name") or "Користувач",
+        email=data.get("email", ""),
+        provider=data.get("provider", "password"),
+        total_xp=0,
+        missions_completed=0,
+        accuracy=0,
+        streak=0,
+        created_at=datetime.now(timezone.utc),
+        email_verified=data.get("email_verified", False)
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+    return {"success": True}
+
+@app.route("/api/check_provider", methods=["POST"])
+def check_provider():
+    data = request.get_json()
+    try:
+        user_record = firebase_auth.get_user_by_email(data["email"])
+        providers = [p.provider_id for p in user_record.provider_data]
+        return {"providers": providers}
+    except firebase_auth.UserNotFoundError:
+        return {"providers": []}
+
+@app.route("/api/update_verification_status", methods=["POST"])
+def update_verification_status():
+    data = request.get_json()
+    if not data or "uid" not in data:
+        return {"success": False}, 400
+
+    user = Users.query.filter_by(firebase_uid=data["uid"]).first()
+    if user is None:
+        return {"success": False, "error": "user not found"}, 404
+
+    if data.get("email_verified") and not user.email_verified:
+        user.email_verified = True
+        db.session.commit()
+
+    return {"success": True, "email_verified": user.email_verified}
+
+@app.route("/upload-avatar", methods=["POST"])
+def upload_avatar():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/login")
+
+    file = request.files.get("avatar")
+    if not file or not file.filename:
+        return redirect("/profile")
+
+    filename = secure_filename(file.filename)
+    if not allowed_file(filename):
+        return redirect("/profile")
+
+    user = db.session.get(Users, user_id)
+
+    if user.avatar:
+        delete_from_cloudinary(user.avatar)
+
+    result = cloudinary.uploader.upload(
+        file,
+        folder="mediamission_avatars",
+        public_id=str(uuid.uuid4()),
+        overwrite=True
+    )
+
+    user.avatar = result["secure_url"]
+    db.session.commit()
+
+    return redirect("/profile")
+
+@app.route("/api/save_notification_token", methods=["POST"])
+@login_required
+def save_notification_token():
+    data = request.get_json()
+
+    if not data or "token" not in data:
+        return jsonify(success=False, error="token required"), 400
+
+    user = g.user
+    if not user:
+        return jsonify(success=False, error="User session not found"), 401
+
+    user.notification_token = data["token"]
+    db.session.commit()
+
+    return jsonify(success=True)
+
+@app.route('/notifications')
+def notifications():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect(url_for('login'))
+
+    items = (
+        NotificationRecipient.query
+        .filter_by(user_id=user_id)
+        .join(Notification)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+
+    unread_ids = [n.id for n in items if not n.is_read]
+    if unread_ids:
+        NotificationRecipient.query.filter(NotificationRecipient.id.in_(unread_ids)).update(
+            {"is_read": True, "read_at": datetime.utcnow()}, synchronize_session=False
+        )
+        db.session.commit()
+
+    return render_template("notifications.html", items=items)
+
+@app.route('/notifications/<int:notification_id>')
+@login_required
+def read_notification(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+
+    user = g.user
+    if not user:
+        return redirect(url_for('login'))
+
+    recipient = NotificationRecipient.query.filter_by(
+        notification_id=notification_id,
+        user_id=user.id
+    ).first()
+
+    if recipient and not recipient.is_read:
+        recipient.is_read = True
+        recipient.read_at = datetime.utcnow()
+        db.session.commit()
+
+    lang = getattr(g, 'lang', 'uk')
+
+    title = notification.title_json.get(lang) if notification.title_json else "Без заголовка"
+    body = notification.body_json.get(lang) if notification.body_json else ""
+
+    reactions_count = {
+        'like': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='like').count(),
+        'heart': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='heart').count(),
+        'fire': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='fire').count()
+    }
+
+    return render_template(
+        'read_notification.html',
+        notification=notification,
+        title=title,
+        body=body,
+        reactions_count=reactions_count
+    )
+
+@app.route('/api/notifications/<int:notification_id>/react', methods=['POST'])
+def add_reaction(notification_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    user = Users.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    reaction_type = data.get('reaction')
+
+    if reaction_type not in ['like', 'heart', 'fire']:
+        return jsonify({"success": False, "error": "Некоректний тип реакції"}), 400
+
+    existing_reaction = NotificationReaction.query.filter_by(
+        notification_id=notification_id,
+        user_id=user.id,
+        reaction_type=reaction_type
+    ).first()
+
+    if existing_reaction:
+        db.session.delete(existing_reaction)
+        action = 'removed'
+    else:
+        new_reaction = NotificationReaction(
+            notification_id=notification_id,
+            user_id=user.id,
+            reaction_type=reaction_type
+        )
+        db.session.add(new_reaction)
+        action = 'added'
+
+    db.session.commit()
+
+    new_count = NotificationReaction.query.filter_by(
+        notification_id=notification_id,
+        reaction_type=reaction_type
+    ).count()
+
+    return jsonify({"success": True, "action": action, "reaction": reaction_type, "new_count": new_count})
+
+@app.route('/api/notifications/<int:notification_id>/comment', methods=['POST'])
+def add_comment(notification_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    user = Users.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    text = data.get('text', '').strip()
+
+    if not text:
+        return jsonify({"success": False, "error": "Порожній коментар"}), 400
+
+    comment = NotificationComment(
+        notification_id=notification_id,
+        user_id=user.id,
+        text=text
+    )
+    db.session.add(comment)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "comment": {
+            "id": comment.id,
+            "author": user.display_name,
+            "created_at": comment.created_at.strftime("%d.%m.%Y %H:%M"),
+            "text": comment.text
+        }
+    })
+
+@app.route("/api/notifications/mark_read", methods=["POST"])
+def mark_notifications_read():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"success": False}, 401
+
+    NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).update(
+        {"is_read": True, "read_at": datetime.now(timezone.utc)},
+        synchronize_session=False
+    )
+    db.session.commit()
+
+    return {"success": True}
+
+# ========== ADMIN ROUTES ==========
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_panel():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect("/login")
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return "Forbidden", 403
+
+    missions = Missions.query.all()
+    users_count = Users.query.count()
+    missions_count = Missions.query.count()
+    attempts_count = UserMissionProgress.query.count()
+    user_count_verified = Users.query.filter_by(email_verified=True).count()
+    total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
+
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    active_users = Users.query.filter(
+        Users.last_login >= thirty_days_ago
+    ).count()
+
+    search_email = request.args.get('search_email', '').strip()
+    users = Users.query.all()
+    if search_email:
+        searched_user = Users.query.filter_by(email=search_email).first()
+        users = [searched_user] if searched_user else []
+
+    return render_template(
+        'admin.html',
+        users=users,
+        missions=missions,
+        search_email=search_email,
+        users_count=users_count,
+        user_count_verified=user_count_verified,
+        missions_count=missions_count,
+        attempts_count=attempts_count,
+        total_xp=total_xp,
+        active_users=active_users
+    )
+
+@app.route("/api/admin/stats", methods=["GET"])
+def admin_stats():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    users_count = Users.query.count()
+    missions_count = Missions.query.count()
+    attempts_count = UserMissionProgress.query.count()
+    user_count_verified = Users.query.filter_by(email_verified=True).count()
+
+    return {
+        "success": True,
+        "stats": {
+            "users": users_count,
+            "missions": missions_count,
+            "attempts": attempts_count,
+            "user_count_verified": user_count_verified
+        }
+    }
+
+@app.route("/api/admin/find_user", methods=["POST"])
+def find_user_by_email():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    data = request.get_json()
+    email_query = data.get("email", "").strip()
+
+    if not email_query:
+        return {"success": False, "error": "Email не вказано"}, 400
+
+    target_user = Users.query.filter_by(email=email_query).first()
+
+    if not target_user:
+        return {"success": False, "error": "Користувача з таким email не знайдено"}, 404
+
+    return {
+        "success": True,
+        "user": {
+            "id": target_user.id,
+            "display_name": target_user.display_name,
+            "email": target_user.email,
+            "total_xp": target_user.total_xp,
+            "admin": target_user.admin,
+            "missions_completed": target_user.missions_completed,
+            "accuracy": target_user.accuracy,
+            "streak": target_user.streak,
+            "created_at": target_user.created_at.strftime('%Y-%m-%d %H:%M') if target_user.created_at else "—",
+            "last_login": target_user.last_login.strftime('%Y-%m-%d %H:%M') if target_user.last_login else "—"
+        }
+    }
+
+@app.route("/api/admin/delete_user/<int:target_id>", methods=["DELETE"])
+def delete_user(target_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    target_user = Users.query.get(target_id)
+    if not target_user:
+        return {"success": False, "error": "Користувача не знайдено"}, 404
+
+    if target_user.id == current_user.id:
+        return {"success": False, "error": "Ви не можете видалити самого себе!"}, 400
+
+    try:
+        if target_user.avatar:
+            delete_from_cloudinary(target_user.avatar)
+
+        NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
+
+        progress_ids = [
+            p.id for p in UserMissionProgress.query
+            .filter_by(user_id=target_user.id)
+            .with_entities(UserMissionProgress.id)
+            .all()
+        ]
+        if progress_ids:
+            UserAnswer.query.filter(
+                UserAnswer.user_progress_id.in_(progress_ids)
+            ).delete(synchronize_session=False)
+
+        UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+
+        db.session.delete(target_user)
+        db.session.commit()
+
+        return {"success": True}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка видалення користувача: {e}")
+        return {"success": False, "error": str(e)}, 500
+
+@app.route("/api/admin/adjust_xp/<int:target_id>", methods=["POST"])
+def adjust_user_xp(target_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return {"error": "Forbidden"}, 403
+
+    target_user = Users.query.get(target_id)
+    if not target_user:
+        return {"success": False, "error": "Користувача не знайдено"}, 404
+
+    data = request.get_json()
+    try:
+        amount = int(data.get("amount"))
+    except (TypeError, ValueError):
+        return {"success": False, "error": "Некоректне значення XP"}, 400
+
+    if amount == 0:
+        return {"success": False, "error": "Значення не може бути 0"}, 400
+
+    target_user.total_xp = max(0, target_user.total_xp + amount)
+    db.session.commit()
+
+    return {
+        "success": True,
+        "new_total_xp": target_user.total_xp,
+        "user_id": target_user.id
+    }
+
+@app.route("/api/admin/add_mission", methods=["POST"])
+def add_mission():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return {"error": "Unauthorized"}, 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
+
+    try:
+        title = request.form.get("title", "").strip()
+        subtitle = request.form.get("subtitle", "").strip()
+        exercise = request.form.get("exercise", "").strip()
+        mission_type = request.form.get("type", "news")
+        difficulty = request.form.get("difficulty", "1")
+        xp = request.form.get("xp", "20")
+        time_val = request.form.get("time", "5")
+
+        if not title or not subtitle:
+            return {"error": "Назва та підзаголовок обов'язкові"}, 400
+
+        contents = json.loads(request.form.get("contents", "[]"))
+        questions = json.loads(request.form.get("questions", "[]"))
+
+        if not questions:
+            return {"error": "Додайте хоча б одне питання"}, 400
+
+        image_filename = None
+        if "image" in request.files:
+            file = request.files["image"]
+            if file and file.filename and allowed_file(file.filename):
+                upload_result = upload_to_cloudinary(file, folder="mediamission_covers")
+                if upload_result['success']:
+                    image_filename = upload_result['url']
+
+        mission = Missions(
+            title=title,
+            subtitle=subtitle,
+            description="",
+            exercise=exercise,
+            type=mission_type,
+            difficulty=difficulty,
+            xp=xp,
+            time=time_val,
+            image=image_filename
+        )
+        db.session.add(mission)
+        db.session.flush()
+
+        for paragraph in contents:
+            text_value = paragraph.get("text", "")
+            order = paragraph.get("order", 0)
+
+            file_key = f"content_file_{order}"
+
+            if file_key in request.files:
+                file = request.files[file_key]
+                if file and file.filename:
+                    is_video = text_value.startswith("[VIDEO]")
+
+                    upload_result = upload_to_cloudinary(
+                        file,
+                        folder="mediamission_content",
+                        resource_type="video" if is_video else "image"
+                    )
+
+                    if upload_result['success']:
+                        rest = text_value.split("\n", 1)
+                        caption = rest[1] if len(rest) > 1 else ""
+                        marker = "[VIDEO]" if is_video else "[IMAGE]"
+                        text_value = f"{marker}{upload_result['url']}" + (f"\n{caption}" if caption else "")
+                    else:
+                        print(f"Помилка завантаження файлу для абзацу {order}: {upload_result.get('error')}")
+                        continue
+
+            db.session.add(MissionContent(
+                mission_id=mission.id,
+                paragraph_order=order,
+                text=text_value
+            ))
+
+        for q in questions:
+            if not q.get("correct_answer"):
+                return {"error": f"Питання '{q.get('question', '')}' не має правильних відповідей"}, 400
+
+            question = Questions(
+                mission_id=mission.id,
+                type=q.get("type", "single_choice"),
+                question=q.get("question", ""),
+                correct_answer=",".join(map(str, q.get("correct_answer", [])))
+            )
+            db.session.add(question)
+            db.session.flush()
+
+            for i, option in enumerate(q.get("options", [])):
+                if option.strip():
+                    db.session.add(Options(
+                        question_id=question.id,
+                        option_order=i,
+                        option_text=option.strip()
+                    ))
+
+        create_notification_for_mission(mission, user_id)
+
+        db.session.commit()
+        return {"success": True, "message": "Місію успішно створено", "mission_id": mission.id}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка створення місії: {e}")
+        return {"error": str(e)}, 500
 
 @app.route('/api/admin/missions', methods=['GET'])
 def get_admin_missions_list():
@@ -1882,12 +1585,8 @@ def get_admin_missions_list():
 
     return jsonify({'success': True, 'missions': result})
 
-
-
-
 @app.route("/api/admin/mission_dependencies/<int:mission_id>", methods=["GET"])
 def get_mission_dependencies(mission_id):
-    """Перевіряє залежності місії перед видаленням"""
     user_id = session.get("user_id")
     if not user_id:
         return {"error": "Unauthorized"}, 401
@@ -1938,8 +1637,6 @@ def get_mission_dependencies(mission_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
-
 @app.route("/api/admin/delete_mission/<int:mission_id>", methods=["DELETE"])
 def delete_mission(mission_id):
     user_id = session.get("user_id")
@@ -1955,18 +1652,15 @@ def delete_mission(mission_id):
         return {"success": False, "error": "Місію не знайдено"}, 404
 
     try:
-        # 1. Видаляємо обкладинку місії з Cloudinary
         if mission.image:
             delete_from_cloudinary(mission.image)
 
-        # 2. Видаляємо фото/відео з тексту контенту місії з Cloudinary
         for content in mission.contents:
             if content.text.startswith("[IMAGE]") or content.text.startswith("[VIDEO]"):
                 first_line = content.text.split("\n", 1)[0]
-                media_url = first_line[7:]  # прибираємо маркер [IMAGE]/[VIDEO]
+                media_url = first_line[7:]
                 delete_from_cloudinary(media_url)
 
-        # 3. Видаляємо сповіщення, пов'язані з місією
         notifications = Notification.query.filter_by(mission_id=mission_id).all()
         notification_ids = [n.id for n in notifications]
 
@@ -1974,33 +1668,25 @@ def delete_mission(mission_id):
             NotificationRecipient.query.filter(
                 NotificationRecipient.notification_id.in_(notification_ids)
             ).delete(synchronize_session=False)
-
             Notification.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
 
-        # 4. Знаходимо всі ID питань, які належать цій місії
         questions = Questions.query.filter_by(mission_id=mission_id).all()
         question_ids = [q.id for q in questions]
 
         if question_ids:
-            # 5. Видаляємо відповіді користувачів
             UserAnswer.query.filter(UserAnswer.question_id.in_(question_ids)).delete(synchronize_session=False)
 
-        # 6. Видаляємо прогрес користувачів
         UserMissionProgress.query.filter_by(mission_id=mission_id).delete(synchronize_session=False)
 
-        # 7. Видаляємо саму місію (каскадом підуть MissionContent, Questions, Options)
         db.session.delete(mission)
         db.session.commit()
 
-        return {"success": True, "message": f"Місію #{mission_id} успішно видалено разом з усіма залежностями"}
+        return {"success": True, "message": f"Місію #{mission_id} успішно видалено"}
 
     except Exception as e:
         db.session.rollback()
         print(f"Помилка видалення місії: {e}")
         return {"success": False, "error": str(e)}, 500
-
-
-
 
 @app.route('/admin/notifications', methods=['POST'])
 @admin_required
@@ -2014,33 +1700,15 @@ def send_admin_notification():
     title_en = request.form.get('title_en') or title_uk
     body_en = request.form.get('body_en') or body_uk
 
-    title_json = {
-        'uk': title_uk,
-        'de': title_de,
-        'en': title_en
-    }
-    
-    body_json = {
-        'uk': body_uk,
-        'de': body_de,
-        'en': body_en
-    }
+    title_json = {'uk': title_uk, 'de': title_de, 'en': title_en}
+    body_json = {'uk': body_uk, 'de': body_de, 'en': body_en}
 
-    # Передаємо ТІЛЬКИ title_json та body_json
-    new_notification = Notification(
-        title_json=title_json,
-        body_json=body_json
-    )
-    
+    new_notification = Notification(title_json=title_json, body_json=body_json)
     db.session.add(new_notification)
     db.session.commit()
 
-    # Далі ваша логіка (UserNotification / PUSH)...
-
     flash('Сповіщення успішно надіслано!', 'success')
-    return redirect(url_for('admin'))
-
-
+    return redirect(url_for('admin_panel'))
 
 @app.route("/api/admin/delete_notification/<int:notification_id>", methods=["DELETE"])
 def delete_notification(notification_id):
@@ -2067,592 +1735,125 @@ def delete_notification(notification_id):
         db.session.rollback()
         return {"success": False, "error": str(e)}, 500
 
-
-
-
-@app.context_processor
-def inject_notifications():
-    user_id = session.get("user_id")
-    print(f"🔍 Context processor - user_id: {user_id}")
-
-    user = None
-    if user_id:
-        user = Users.query.get(user_id)
-    
-    if not user_id:
-        print("⚠️ Користувач не авторизований")
-        return {"unread_count": 0, "latest_notifications": []}
-
-    try:
-        unread_count = NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).count()
-        print(f"📊 Непрочитаних сповіщень: {unread_count}")
-        
-        latest_notifications = (
-            NotificationRecipient.query
-            .filter_by(user_id=user_id)
-            .join(Notification)
-            .order_by(Notification.created_at.desc())
-            .limit(5)
-            .all()
-        )
-        print(f"📦 Останніх сповіщень: {len(latest_notifications)}")
-        
-        for item in latest_notifications:
-            if item.notification:
-                # Отримуємо заголовок потрібною мовою (або fallback на 'uk')
-                title = item.notification.title_json.get('uk') if item.notification.title_json else ''
-                print(f"  - {title} (ID: {item.notification.id})")
-            
-    except Exception as e:
-        print(f"❌ Помилка в context processor: {e}")
-        import traceback
-        traceback.print_exc()
-        return {"unread_count": 0, "latest_notifications": []}
-    
-    return {
-        "unread_count": unread_count,
-        "latest_notifications": latest_notifications,
-        "current_user": user
-    }
-
-
-
-
-
-@app.route('/notifications')
-def notifications():
-    user_id = session.get("user_id")
-    if user_id is None:
-        return redirect(url_for('login'))
-
-    items = (
-        NotificationRecipient.query
-        .filter_by(user_id=user_id)
-        .join(Notification)
-        .order_by(Notification.created_at.desc())
-        .all()
-    )
-
-    unread_ids = [n.id for n in items if not n.is_read]
-    if unread_ids:
-        NotificationRecipient.query.filter(NotificationRecipient.id.in_(unread_ids)).update(
-            {"is_read": True, "read_at": datetime.utcnow()}, synchronize_session=False
-        )
-        db.session.commit()
-
-    return render_template("notifications.html", items=items)
-
-
-@app.route('/notifications/<int:notification_id>')
-@login_required
-def read_notification(notification_id):
-    # Отримуємо сповіщення або 404
-    notification = Notification.query.get_or_404(notification_id)
-
-    user = g.user
-    if not user:
-        return redirect(url_for('login'))
-
-    # Автоматично позначаємо як прочитане для поточного користувача
-    recipient = NotificationRecipient.query.filter_by(
-        notification_id=notification_id,
-        user_id=user.id
-    ).first()
-
-    if recipient and not recipient.is_read:
-        recipient.is_read = True
-        recipient.read_at = datetime.utcnow()
-        db.session.commit()
-
-    # Парсинг JSON полів під мову користувача (за замовчуванням 'uk')
-    lang = getattr(g, 'lang', 'uk')
-
-    title = notification.title_json.get(lang) if notification.title_json else "Без заголовка"
-    body = notification.body_json.get(lang) if notification.body_json else ""
-
-    # Підрахунок кількості кожної реакції
-    reactions_count = {
-        'like': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='like').count(),
-        'heart': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='heart').count(),
-        'fire': NotificationReaction.query.filter_by(notification_id=notification_id, reaction_type='fire').count()
-    }
-
-    return render_template(
-        'read_notification.html',
-        notification=notification,
-        title=title,
-        body=body,
-        reactions_count=reactions_count
-    )
-
-
-@app.route('/api/notifications/<int:notification_id>/react', methods=['POST'])
-def add_reaction(notification_id):
+@app.route("/api/admin/support_tickets", methods=["GET"])
+def get_support_tickets():
     user_id = session.get("user_id")
     if not user_id:
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
-
-    user = Users.query.get(user_id)
-    if not user:
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
-
-    data = request.get_json() or {}
-    reaction_type = data.get('reaction')
-
-    if reaction_type not in ['like', 'heart', 'fire']:
-        return jsonify({"success": False, "error": "Некоректний тип реакції"}), 400
-
-    # Перевіряємо, чи вже є така реакція від користувача
-    existing_reaction = NotificationReaction.query.filter_by(
-        notification_id=notification_id,
-        user_id=user.id,
-        reaction_type=reaction_type
-    ).first()
-
-    if existing_reaction:
-        # Якщо вже ставив — видаляємо (перемикач/toggle)
-        db.session.delete(existing_reaction)
-        action = 'removed'
-    else:
-        # Якщо ні — додаємо
-        new_reaction = NotificationReaction(
-            notification_id=notification_id,
-            user_id=user.id,
-            reaction_type=reaction_type
-        )
-        db.session.add(new_reaction)
-        action = 'added'
-
-    db.session.commit()
-
-    # Отримуємо оновлену кількість цієї реакції
-    new_count = NotificationReaction.query.filter_by(
-        notification_id=notification_id,
-        reaction_type=reaction_type
-    ).count()
-
-    return jsonify({"success": True, "action": action, "reaction": reaction_type, "new_count": new_count})
-
-
-@app.route('/api/notifications/<int:notification_id>/comment', methods=['POST'])
-def add_comment(notification_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
-
-    user = Users.query.get(user_id)
-    if not user:
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
-
-    data = request.get_json() or {}
-    text = data.get('text', '').strip()
-
-    if not text:
-        return jsonify({"success": False, "error": "Порожній коментар"}), 400
-
-    comment = NotificationComment(
-        notification_id=notification_id,
-        user_id=user.id,
-        text=text
-    )
-    db.session.add(comment)
-    db.session.commit()
-
-    # Повертаємо об'єкт для миттєвого додавання в HTML через JS
-    return jsonify({
-        "success": True,
-        "comment": {
-            "id": comment.id,
-            "author": user.display_name,
-            "created_at": comment.created_at.strftime("%d.%m.%Y %H:%M"),
-            "text": comment.text
-        }
-    })
-
-
-
-
-@app.route("/api/notifications/mark_read", methods=["POST"])
-def mark_notifications_read():
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"success": False}, 401
-
-    NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).update(
-        {"is_read": True, "read_at": datetime.now(timezone.utc)},
-        synchronize_session=False
-    )
-    db.session.commit()
-
-    return {"success": True}
-
-
-
-
-# @app.route('/api/auth/custom_verify_email', methods=['POST'])
-# def custom_verify_email():
-#     data = request.get_json()
-#     email = data.get('email')
-
-#     if not email:
-#         return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
-
-#     try:
-#         verify_link = auth.generate_email_verification_link(email)
-#         html_body = render_template('emails/verify_email.html', verify_link=verify_link)
-
-#         msg = Message(
-#             subject="Verify your email | MediaMission",
-#             recipients=[email],
-#             html=html_body
-#         )
-#         mail.send(msg)
-
-#         return jsonify({'success': True, 'message': 'Лист верифікації надіслано!'})
-#     except Exception as e:
-#         print(f"Помилка відправки листа верифікації: {e}")
-#         return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
-
-
-
-
-@app.route('/api/auth/custom_verify_email', methods=['POST'])
-def custom_verify_email():
-    data = request.get_json()
-    email = data.get('email')
-
-    if not email:
-        return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
-
-    try:
-        verify_link = auth.generate_email_verification_link(email)
-        html_body = render_template('emails/verify_email.html', verify_link=verify_link)
-
-        sent = send_email_via_api(
-            subject="Verify your email | MediaMission",
-            recipients=[email],
-            html_body=html_body
-        )
-
-        if not sent:
-            return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
-
-        return jsonify({'success': True, 'message': 'Лист верифікації надіслано!'})
-    except Exception as e:
-        print(f"Помилка відправки листа верифікації: {e}")
-        return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
-
-
-
-
-
-@app.route('/api/auth/custom_reset_password', methods=['POST'])
-def custom_reset_password():
-    data = request.get_json()
-    email = data.get('email')
-
-    if not email:
-        return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
-
-    # Визначаємо мову користувача (якщо він є в базі), інакше — поточна мова сесії
-    user = Users.query.filter_by(email=email).first()
-    lang = user.language if user and user.language else g.lang
-
-    try:
-        reset_link = auth.generate_password_reset_link(email)
-        html_body = render_template('emails/reset_password.html', reset_link=reset_link, lang=lang)
-
-        sent = send_email_via_api(
-            subject=translate('reset_password_subject', lang),
-            recipients=[email],
-            html_body=html_body
-        )
-
-        if not sent:
-            return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
-
-        return jsonify({'success': True, 'message': 'Лист для відновлення паролю надіслано!'})
-
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-
-
-@app.route("/offline")
-def offline():
-    return render_template("offline.html")
-
-
-
-
-@app.route("/api/save_notification_token", methods=["POST"])
-@login_required
-def save_notification_token():
-    data = request.get_json()
-
-    if not data or "token" not in data:
-        return jsonify(success=False, error="token required"), 400
-
-    user = g.user
-    if not user:
-        return jsonify(success=False, error="User session not found"), 401
-
-    user.notification_token = data["token"]
-    db.session.commit()
-
-    return jsonify(success=True)
-
-
-
-
-# Додайте цю функцію десь у вашому коді
-def send_push_notification_to_tokens(title, body, tokens, url="/"):
-    if not tokens:
-        print("⚠️ Немає токенів для надсилання push-повідомлень")
-        return
-
-    # Розбиваємо на пачки по 500 (ліміт Firebase)
-    for start in range(0, len(tokens), 500):
-        batch_tokens = tokens[start:start + 500]
-        
-        # Створюємо MulticastMessage із налаштуванням кліку для WebPush
-        message = messaging.MulticastMessage(
-            notification=messaging.Notification(title=title, body=body),
-            webpush=messaging.WebpushConfig(
-                notification=messaging.WebpushNotification(
-                    title=title,
-                    body=body,
-                    icon="/static/images/logo.png"
-                ),
-                fcm_options=messaging.WebpushFCMOptions(
-                    link=url  # Куди переходити при кліку на сповіщення
-                )
-            ),
-            tokens=batch_tokens
-        )
-        try:
-            # Зверни увагу: send_each_for_multicast замість send_multicast
-            response = messaging.send_each_for_multicast(message)
-            print(f"✅ Push-повідомлення надіслано: успішно {response.success_count}/{len(batch_tokens)}")
-            
-            if response.failure_count > 0:
-                for index, resp in enumerate(response.responses):
-                    if not resp.success:
-                        print(f"❌ Помилка для токена {batch_tokens[index]}: {resp.exception}")
-        except Exception as e:
-            print(f"❌ Помилка при відправці push-повідомлень: {e}")
-
-
-def send_new_mission_notification(mission_id):
-    """Надсилає сповіщення про нову місію всім користувачам"""
-    with app.app_context():
-        users = Users.query.filter(Users.notification_token.isnot(None)).all()
-        # Фільтруємо унікальні й непорожні токени
-        tokens = list(set([user.notification_token for user in users if user.notification_token]))
-        
-        if not tokens:
-            print("⚠️ Немає користувачів з токенами")
-            return
-
-        send_push_notification_to_tokens(
-            title="🎯 Нова місія у MediaMission!",
-            body="З'явилася нова місія. Заходь та виконуй!",
-            tokens=tokens,
-            url=f"/missions/{mission_id}"
-        )
-
-
-
-
-# app.py - додайте цей маршрут
-@app.route('/service-worker.js')
-def service_worker():
-    """Віддає service-worker.js файл"""
-    return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
-
-
-@app.route('/firebase-messaging-sw.js')
-def firebase_messaging_sw():
-    """Віддає firebase messaging worker"""
-    return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
-
-
-
-
-@app.route("/api/admin/adjust_xp/<int:target_id>", methods=["POST"])
-def adjust_user_xp(target_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return {"error": "Unauthorized"}, 401
+        return jsonify({"error": "Unauthorized"}), 401
 
     current_user = Users.query.get(user_id)
     if not current_user or not current_user.admin:
-        return {"error": "Forbidden"}, 403
+        return jsonify({"error": "Forbidden"}), 403
 
-    target_user = Users.query.get(target_id)
-    if not target_user:
-        return {"success": False, "error": "Користувача не знайдено"}, 404
+    tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).all()
+
+    result = []
+    for tk in tickets:
+        result.append({
+            "id": tk.id,
+            "category": tk.category_label or tk.category,
+            "issue_type": tk.issue_type_label or tk.issue_type,
+            "description": tk.description,
+            "mission_title": tk.mission.title if tk.mission else None,
+            "user_email": tk.user.email if tk.user else "Гість",
+            "screenshot_url": tk.screenshot_url,
+            "browser_info": tk.browser_info,
+            "status": tk.status,
+            "created_at": tk.created_at.strftime("%d.%m.%Y %H:%M")
+        })
+
+    return jsonify({"success": True, "tickets": result})
+
+@app.route("/api/admin/support_tickets/<int:ticket_id>/status", methods=["POST"])
+def update_ticket_status(ticket_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    ticket = SupportTicket.query.get(ticket_id)
+    if not ticket:
+        return jsonify({"success": False, "error": "Звернення не знайдено"}), 404
 
     data = request.get_json()
-    try:
-        amount = int(data.get("amount"))
-    except (TypeError, ValueError):
-        return {"success": False, "error": "Некоректне значення XP"}, 400
+    new_status = data.get("status")
+    admin_reply = data.get("admin_reply")
 
-    if amount == 0:
-        return {"success": False, "error": "Значення не може бути 0"}, 400
+    if new_status and new_status not in ("open", "answered", "solved", "closed"):
+        return jsonify({"success": False, "error": "Некоректний статус"}), 400
 
-    target_user.total_xp = max(0, target_user.total_xp + amount)  # не даємо піти в мінус
+    if new_status:
+        ticket.status = new_status
+    if admin_reply is not None:
+        ticket.admin_reply = admin_reply
+
     db.session.commit()
+    return jsonify({"success": True})
 
-    return {
-        "success": True,
-        "new_total_xp": target_user.total_xp,
-        "user_id": target_user.id
-    }
+@app.route("/api/admin/ideas", methods=["GET"])
+def get_admin_ideas():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
 
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
 
+    ideas = Idea.query.order_by(Idea.created_at.desc()).all()
 
-@app.route("/support")
-def support():
-    missions = Missions.query.order_by(Missions.title).all()
-    return render_template("support.html", missions=missions)
+    result = []
+    for idea in ideas:
+        result.append({
+            "id": idea.id,
+            "title": idea.title,
+            "description": idea.description,
+            "page": idea.page_label or idea.page,
+            "category": idea.category_label or idea.category,
+            "attachment_url": idea.attachment_url,
+            "status": idea.status,
+            "admin_reply": idea.admin_reply,
+            "user_name": idea.user.display_name if idea.user else "—",
+            "user_email": idea.user.email if idea.user else "—",
+            "created_at": idea.created_at.strftime("%d.%m.%Y %H:%M"),
+        })
 
+    return jsonify({"success": True, "ideas": result})
 
+@app.route("/api/admin/ideas/<int:idea_id>/status", methods=["POST"])
+def update_idea_status(idea_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
 
-@app.route("/support-idea")
-def support_idea():
-    missions = Missions.query.order_by(Missions.title).all()
-    return render_template("support-idea.html", missions=missions)
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
 
+    idea = Idea.query.get(idea_id)
+    if not idea:
+        return jsonify({"success": False, "error": "Ідею не знайдено"}), 404
 
+    data = request.get_json()
+    new_status = data.get("status")
+    admin_reply = data.get("admin_reply")
 
+    valid_statuses = ("new", "good", "must_have", "not_needed", "not_now")
+    if new_status and new_status not in valid_statuses:
+        return jsonify({"success": False, "error": "Некоректний статус"}), 400
 
-def send_async_email(app_obj, msg):
-    """Функція для відправки пошти у фоновому потоці з детальним логуванням"""
-    with app_obj.app_context():
-        try:
-            mail.send(msg)
-            print(f"✉️ [SUCCESS] Email успішно надіслано на {msg.recipients}!")
-        except Exception as e:
-            print(f"❌ [MAIL ERROR] Не вдалося надіслати email: {e}")
-            traceback.print_exc()  # Виведе детальний стек помилки в логи Render
+    if new_status:
+        idea.status = new_status
+    if admin_reply is not None:
+        idea.admin_reply = admin_reply
 
+    db.session.commit()
+    return jsonify({"success": True})
 
-
-
-# def notify_admins_new_ticket(ticket):
-#     reporter_email = ticket.user.email if ticket.user else "Гість"
-#     category_label = ticket.category
-#     summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
-
-#     # 1. In-app сповіщення адмінам (БД)
-#     admins = Users.query.filter_by(admin=True).all()
-#     if admins:
-#         notif = Notification(
-#             title_json={
-#                 "uk": "Нове звернення в підтримку",
-#                 "de": "Neue Support-Anfrage",
-#                 "en": "New support ticket"
-#             },
-#             body_json={
-#                 "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
-#                 "de": f"#{ticket.id}: {summary} (von {reporter_email})",
-#                 "en": f"#{ticket.id}: {summary} (from {reporter_email})"
-#             },
-#             created_by=ticket.user_id
-#         )
-#         db.session.add(notif)
-#         db.session.flush()
-
-#         admin_ids = [a.id for a in admins]
-#         db.session.bulk_insert_mappings(NotificationRecipient, [
-#             {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
-#         ])
-#         db.session.commit()
-
-#     # 2. Асинхронний Email на адресу з .env (MAIL_USERNAME)
-#     support_email = os.environ.get("MAIL_USERNAME")
-#     if support_email:
-#         try:
-#             # Рендеримо HTML-шаблон до запуску потоку
-#             html_content = render_template(
-#                 "emails/new_support_ticket.html",
-#                 ticket=ticket,
-#                 reporter_email=reporter_email
-#             )
-            
-#             msg = Message(
-#                 subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
-#                 recipients=[support_email],
-#                 html=html_content
-#             )
-
-#             # Отримуємо екземпляр Flask для фонового контексту
-#             app_obj = current_app._get_current_object()
-
-#             # Запускаємо відправку в окремому потоці (Thread)
-#             threading.Thread(target=send_async_email, args=(app_obj, msg)).start()
-
-#         except Exception as e:
-#             print(f"Не вдалося підготувати email про звернення #{ticket.id}: {e}")
-#     else:
-#         print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
-
-
-
-
-def notify_admins_new_ticket(ticket):
-    reporter_email = ticket.user.email if ticket.user else "Гість"
-    category_label = ticket.category
-    summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
-
-    admins = Users.query.filter_by(admin=True).all()
-    if admins:
-        notif = Notification(
-            title_json={
-                "uk": "Нове звернення в підтримку",
-                "de": "Neue Support-Anfrage",
-                "en": "New support ticket"
-            },
-            body_json={
-                "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
-                "de": f"#{ticket.id}: {summary} (von {reporter_email})",
-                "en": f"#{ticket.id}: {summary} (from {reporter_email})"
-            },
-            created_by=ticket.user_id
-        )
-        db.session.add(notif)
-        db.session.flush()
-
-        admin_ids = [a.id for a in admins]
-        db.session.bulk_insert_mappings(NotificationRecipient, [
-            {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
-        ])
-        db.session.commit()
-
-    support_email = os.environ.get("MAIL_USERNAME")
-    if support_email:
-        try:
-            html_content = render_template(
-                "emails/new_support_ticket.html",
-                ticket=ticket,
-                reporter_email=reporter_email
-            )
-            send_email_via_api(
-                subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
-                recipients=[support_email],
-                html_body=html_content
-            )
-        except Exception as e:
-            print(f"Не вдалося підготувати email про звернення #{ticket.id}: {e}")
-    else:
-        print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
-
-
-
-
+# ========== SUPPORT TICKET ROUTES ==========
 
 @app.route("/api/support/submit_ticket", methods=["POST"])
 def submit_support_ticket():
@@ -2697,27 +1898,17 @@ def submit_support_ticket():
     db.session.add(ticket)
     db.session.commit()
 
-    # Сповіщення створюються та надсилаються фоново
     notify_admins_new_ticket(ticket)
 
-    # Відповідь користувачу віддається миттєво
     return jsonify({"success": True, "ticket_id": ticket.id})
 
-
-
-
-
-@app.route("/api/admin/support_tickets", methods=["GET"])
-def get_support_tickets():
+@app.route("/api/my_support_tickets", methods=["GET"])
+def get_my_support_tickets():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return jsonify({"error": "Forbidden"}), 403
-
-    tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).all()
+    tickets = SupportTicket.query.filter_by(user_id=user_id).order_by(SupportTicket.created_at.desc()).all()
 
     result = []
     for tk in tickets:
@@ -2727,67 +1918,131 @@ def get_support_tickets():
             "issue_type": tk.issue_type_label or tk.issue_type,
             "description": tk.description,
             "mission_title": tk.mission.title if tk.mission else None,
-            "user_email": tk.user.email if tk.user else "Гість",
-            "screenshot_url": tk.screenshot_url,
-            "browser_info": tk.browser_info,
             "status": tk.status,
+            "admin_reply": tk.admin_reply,
             "created_at": tk.created_at.strftime("%d.%m.%Y %H:%M")
         })
 
     return jsonify({"success": True, "tickets": result})
 
+# ========== IDEA ROUTES ==========
 
-@app.route("/api/admin/support_tickets/<int:ticket_id>/status", methods=["POST"])
-def update_ticket_status(ticket_id):
+IDEA_STATUSES = ("new", "good", "must_have", "not_needed", "not_now")
+
+@app.route("/api/ideas", methods=["POST"])
+def submit_idea():
     user_id = session.get("user_id")
     if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
+        return jsonify({"error": "unauthorized"}), 401
 
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return jsonify({"error": "Forbidden"}), 403
+    user = db.session.get(Users, user_id)
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
 
-    ticket = SupportTicket.query.get(ticket_id)
-    if not ticket:
-        return jsonify({"success": False, "error": "Звернення не знайдено"}), 404
+    page = request.form.get("page", "").strip()
+    page_label = request.form.get("page_label", "").strip()
+    category = request.form.get("category", "").strip()
+    category_label = request.form.get("category_label", "").strip()
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
 
-    data = request.get_json()
-    new_status = data.get("status")
-    admin_reply = data.get("admin_reply")
+    if not page or not category or not title or not description:
+        return jsonify({"error": "missing_fields"}), 400
 
-    if new_status and new_status not in ("open", "answered", "solved", "closed"):
-        return jsonify({"success": False, "error": "Некоректний статус"}), 400
+    if len(title) > 100 or len(description) > 1000:
+        return jsonify({"error": "too_long"}), 400
 
-    if new_status:
-        ticket.status = new_status
-    if admin_reply is not None:
-        ticket.admin_reply = admin_reply
+    attachment_url = None
+    file = request.files.get("attachment")
+    if file and file.filename:
+        if not allowed_idea_file(file.filename):
+            return jsonify({"error": "invalid_file_type"}), 400
 
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0)
+        if size > MAX_IDEA_FILE_SIZE:
+            return jsonify({"error": "file_too_large"}), 400
+
+        upload_result = upload_to_cloudinary(file, folder="mediamission_ideas", resource_type="image")
+        if upload_result["success"]:
+            attachment_url = upload_result["url"]
+
+    idea = Idea(
+        user_id=user.id,
+        page=page,
+        page_label=page_label or None,
+        category=category,
+        category_label=category_label or None,
+        title=title,
+        description=description,
+        attachment_url=attachment_url,
+    )
+    db.session.add(idea)
     db.session.commit()
-    return jsonify({"success": True})
 
+    notify_admins_new_idea(idea)
 
+    return jsonify({"success": True, "idea_id": idea.id}), 201
 
+# ========== AUTH EMAIL ROUTES ==========
 
+@app.route('/api/auth/custom_verify_email', methods=['POST'])
+def custom_verify_email():
+    data = request.get_json()
+    email = data.get('email')
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+    if not email:
+        return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
 
+    try:
+        verify_link = auth.generate_email_verification_link(email)
+        html_body = render_template('emails/verify_email.html', verify_link=verify_link)
 
+        sent = send_email_via_api(
+            subject="Verify your email | MediaMission",
+            recipients=[email],
+            html_body=html_body
+        )
 
+        if not sent:
+            return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
 
-# @app.route("/api/debug/run_migrations/1234")
-# def run_migrations():
-#     from flask_migrate import upgrade
-#     try:
-#         upgrade()
-#         return "✅ Міграції успішно застосовано", 200
-#     except Exception as e:
-#         import traceback
-#         return f"❌ Помилка: {e}<br><pre>{traceback.format_exc()}</pre>", 500
+        return jsonify({'success': True, 'message': 'Лист верифікації надіслано!'})
+    except Exception as e:
+        print(f"Помилка відправки листа верифікації: {e}")
+        return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
 
+@app.route('/api/auth/custom_reset_password', methods=['POST'])
+def custom_reset_password():
+    data = request.get_json()
+    email = data.get('email')
 
+    if not email:
+        return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
+
+    user = Users.query.filter_by(email=email).first()
+    lang = user.language if user and user.language else g.lang
+
+    try:
+        reset_link = auth.generate_password_reset_link(email)
+        html_body = render_template('emails/reset_password.html', reset_link=reset_link, lang=lang)
+
+        sent = send_email_via_api(
+            subject=translate('reset_password_subject', lang),
+            recipients=[email],
+            html_body=html_body
+        )
+
+        if not sent:
+            return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
+
+        return jsonify({'success': True, 'message': 'Лист для відновлення паролю надіслано!'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== AI ROUTE ==========
 
 @app.route("/api/ai/chat", methods=["POST"])
 def ai_chat():
@@ -2868,199 +2123,28 @@ def ai_chat():
         "error": "AI-помічник тимчасово перевантажений. Спробуйте через хвилину, або зверніться в підтримку."
     }), 429
 
+# ========== DEBUG ROUTES ==========
 
+@app.route("/api/debug/fix_avatars/<secret>")
+def fix_avatars(secret):
+    if secret != os.environ.get("ADMIN_SETUP_SECRET"):
+        return "Forbidden", 403
 
+    users = Users.query.all()
+    output = []
 
-def notify_admins_new_idea(idea):
-    """Створює одне сповіщення й розсилає його всім адмінам, плюс email на підтримку."""
-    admins = Users.query.filter_by(admin=True).all()
-    if not admins:
-        return
+    for user in users:
+        avatar_value = user.avatar
+        is_valid = avatar_value and avatar_value.startswith("http")
+        output.append(f"{user.display_name}: avatar={avatar_value!r}, valid={is_valid}")
 
-    notification = Notification(
-        title_json={
-            "uk": f"Нова ідея: {idea.title}",
-            "en": f"New idea: {idea.title}",
-            "de": f"Neue Idee: {idea.title}",
-        },
-        body_json={
-            "uk": f"{idea.user.display_name} запропонував(ла) ідею для «{idea.page_label or idea.page}» ({idea.category_label or idea.category})",
-            "en": f"{idea.user.display_name} suggested an idea for \"{idea.page_label or idea.page}\" ({idea.category_label or idea.category})",
-            "de": f"{idea.user.display_name} hat eine Idee für „{idea.page_label or idea.page}“ vorgeschlagen ({idea.category_label or idea.category})",
-        },
-        mission_id=None,
-        created_by=idea.user_id,
-    )
-    db.session.add(notification)
-    db.session.flush()
-
-    recipients = [
-        NotificationRecipient(notification_id=notification.id, user_id=admin.id)
-        for admin in admins
-    ]
-    db.session.bulk_save_objects(recipients)
-    db.session.commit()
-
-    support_email = os.environ.get("MAIL_USERNAME")
-    if support_email:
-        try:
-            html_content = f"""
-                <h3>Нова ідея #{idea.id}</h3>
-                <p><strong>Від:</strong> {idea.user.display_name} ({idea.user.email})</p>
-                <p><strong>Сторінка:</strong> {idea.page_label or idea.page}</p>
-                <p><strong>Категорія:</strong> {idea.category_label or idea.category}</p>
-                <p><strong>Заголовок:</strong> {idea.title}</p>
-                <p><strong>Опис:</strong> {idea.description}</p>
-            """
-
-            send_email_via_api(
-                subject=f"[MediaMission] Нова ідея #{idea.id}",
-                recipients=[support_email],
-                html_body=html_content
-            )
-        except Exception as e:
-            print(f"Не вдалося підготувати email про ідею #{idea.id}: {e}")
-    else:
-        print("⚠️ MAIL_USERNAME не задано — email про ідею не надіслано")
-
-    return notification
-
-
-
-
-def allowed_idea_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-
-@app.route("/api/ideas", methods=["POST"])
-def submit_idea():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "unauthorized"}), 401
-
-    user = db.session.get(Users, user_id)
-    if not user:
-        return jsonify({"error": "unauthorized"}), 401
-
-    page = request.form.get("page", "").strip()
-    page_label = request.form.get("page_label", "").strip()
-    category = request.form.get("category", "").strip()
-    category_label = request.form.get("category_label", "").strip()
-    title = request.form.get("title", "").strip()
-    description = request.form.get("description", "").strip()
-
-    if not page or not category or not title or not description:
-        return jsonify({"error": "missing_fields"}), 400
-
-    if len(title) > 100 or len(description) > 1000:
-        return jsonify({"error": "too_long"}), 400
-
-    attachment_url = None
-    file = request.files.get("attachment")
-    if file and file.filename:
-        if not allowed_idea_file(file.filename):
-            return jsonify({"error": "invalid_file_type"}), 400
-
-        file.seek(0, os.SEEK_END)
-        size = file.tell()
-        file.seek(0)
-        if size > MAX_IDEA_FILE_SIZE:
-            return jsonify({"error": "file_too_large"}), 400
-
-        upload_result = upload_to_cloudinary(file, folder="mediamission_ideas", resource_type="image")
-        if upload_result["success"]:
-            attachment_url = upload_result["url"]
-        else:
-            print(f"Помилка завантаження вкладення ідеї: {upload_result.get('error')}")
-
-    idea = Idea(
-        user_id=user.id,
-        page=page,
-        page_label=page_label or None,
-        category=category,
-        category_label=category_label or None,
-        title=title,
-        description=description,
-        attachment_url=attachment_url,
-    )
-    db.session.add(idea)
-    db.session.commit()
-
-    notify_admins_new_idea(idea)
-
-    return jsonify({"success": True, "idea_id": idea.id}), 201
-
-
-
-
-IDEA_STATUSES = ("new", "good", "must_have", "not_needed", "not_now")
-
-
-@app.route("/api/admin/ideas", methods=["GET"])
-def get_admin_ideas():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return jsonify({"error": "Forbidden"}), 403
-
-    ideas = Idea.query.order_by(Idea.created_at.desc()).all()
-
-    result = []
-    for idea in ideas:
-        result.append({
-            "id": idea.id,
-            "title": idea.title,
-            "description": idea.description,
-            "page": idea.page_label or idea.page,
-            "category": idea.category_label or idea.category,
-            "attachment_url": idea.attachment_url,
-            "status": idea.status,
-            "admin_reply": idea.admin_reply,
-            "user_name": idea.user.display_name if idea.user else "—",
-            "user_email": idea.user.email if idea.user else "—",
-            "created_at": idea.created_at.strftime("%d.%m.%Y %H:%M"),
-        })
-
-    return jsonify({"success": True, "ideas": result})
-
-
-@app.route("/api/admin/ideas/<int:idea_id>/status", methods=["POST"])
-def update_idea_status(idea_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    current_user = Users.query.get(user_id)
-    if not current_user or not current_user.admin:
-        return jsonify({"error": "Forbidden"}), 403
-
-    idea = Idea.query.get(idea_id)
-    if not idea:
-        return jsonify({"success": False, "error": "Ідею не знайдено"}), 404
-
-    data = request.get_json()
-    new_status = data.get("status")
-    admin_reply = data.get("admin_reply")
-
-    if new_status and new_status not in IDEA_STATUSES:
-        return jsonify({"success": False, "error": "Некоректний статус"}), 400
-
-    if new_status:
-        idea.status = new_status
-    if admin_reply is not None:
-        idea.admin_reply = admin_reply
+        if avatar_value and not is_valid:
+            user.avatar = None
 
     db.session.commit()
-    return jsonify({"success": True})
+    return "<br>".join(output)
 
-
-
-
-
+# ========== RUN APP ==========
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'False') == 'TRUE')

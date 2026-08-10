@@ -84,6 +84,12 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = ('MediaMission', os.getenv('MAIL_USERNAME'))
 app.config['MAIL_TIMEOUT'] = 15
 
+configuration = sib_api_v3_sdk.Configuration()
+configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
+
+# 2. Якщо потрібно зберегти ключі/налаштування у Flask app.config (за бажанням):
+app.config['BREVO_API_KEY'] = os.environ.get("BREVO_API_KEY")
+
 mail = Mail(app)
 
 cloudinary.config(

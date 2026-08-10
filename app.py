@@ -27,6 +27,8 @@ from firebase_admin import messaging
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted, GoogleAPIError, NotFound
 from groq import Groq
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 
 load_dotenv()
 
@@ -464,6 +466,30 @@ def asset_version(filename):
         return 0
 
 app.jinja_env.globals['asset_version'] = asset_version
+
+
+
+def send_email_via_api(subject, recipients, html_body):
+    """Відправка email через Brevo HTTP API (обходить заблоковані SMTP-порти на Render)"""
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
+
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=[{"email": r} for r in recipients],
+        sender={"name": "MediaMission", "email": os.environ.get("MAIL_USERNAME")},
+        subject=subject,
+        html_content=html_body
+    )
+
+    try:
+        api_instance.send_transac_email(send_smtp_email)
+        return True
+    except ApiException as e:
+        print(f"❌ Помилка відправки через Brevo API: {e}")
+        return False
+
 
 
 @app.before_request
@@ -2257,6 +2283,33 @@ def mark_notifications_read():
 
 
 
+# @app.route('/api/auth/custom_verify_email', methods=['POST'])
+# def custom_verify_email():
+#     data = request.get_json()
+#     email = data.get('email')
+
+#     if not email:
+#         return jsonify({'success': False, 'error': 'Email обов\'язковий'}), 400
+
+#     try:
+#         verify_link = auth.generate_email_verification_link(email)
+#         html_body = render_template('emails/verify_email.html', verify_link=verify_link)
+
+#         msg = Message(
+#             subject="Verify your email | MediaMission",
+#             recipients=[email],
+#             html=html_body
+#         )
+#         mail.send(msg)
+
+#         return jsonify({'success': True, 'message': 'Лист верифікації надіслано!'})
+#     except Exception as e:
+#         print(f"Помилка відправки листа верифікації: {e}")
+#         return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
+
+
+
+
 @app.route('/api/auth/custom_verify_email', methods=['POST'])
 def custom_verify_email():
     data = request.get_json()
@@ -2269,12 +2322,14 @@ def custom_verify_email():
         verify_link = auth.generate_email_verification_link(email)
         html_body = render_template('emails/verify_email.html', verify_link=verify_link)
 
-        msg = Message(
+        sent = send_email_via_api(
             subject="Verify your email | MediaMission",
             recipients=[email],
-            html=html_body
+            html_body=html_body
         )
-        mail.send(msg)
+
+        if not sent:
+            return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
 
         return jsonify({'success': True, 'message': 'Лист верифікації надіслано!'})
     except Exception as e:
@@ -2301,20 +2356,19 @@ def custom_reset_password():
         reset_link = auth.generate_password_reset_link(email)
         html_body = render_template('emails/reset_password.html', reset_link=reset_link, lang=lang)
 
-        msg = Message(
+        sent = send_email_via_api(
             subject=translate('reset_password_subject', lang),
             recipients=[email],
-            html=html_body
+            html_body=html_body
         )
-        mail.send(msg)
+
+        if not sent:
+            return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
 
         return jsonify({'success': True, 'message': 'Лист для відновлення паролю надіслано!'})
-    except firebase_auth.UserNotFoundError:
-        # Із міркувань безпеки не підтверджуємо/спростовуємо існування email
-        return jsonify({'success': True, 'message': 'Якщо email існує, лист надіслано.'})
+
     except Exception as e:
-        print(f"Помилка відправки листа скидання паролю: {e}")
-        return jsonify({'success': False, 'error': 'Не вдалося надіслати лист.'}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 
@@ -2482,12 +2536,72 @@ def send_async_email(app_obj, msg):
 
 
 
+# def notify_admins_new_ticket(ticket):
+#     reporter_email = ticket.user.email if ticket.user else "Гість"
+#     category_label = ticket.category
+#     summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
+
+#     # 1. In-app сповіщення адмінам (БД)
+#     admins = Users.query.filter_by(admin=True).all()
+#     if admins:
+#         notif = Notification(
+#             title_json={
+#                 "uk": "Нове звернення в підтримку",
+#                 "de": "Neue Support-Anfrage",
+#                 "en": "New support ticket"
+#             },
+#             body_json={
+#                 "uk": f"#{ticket.id}: {summary} (від {reporter_email})",
+#                 "de": f"#{ticket.id}: {summary} (von {reporter_email})",
+#                 "en": f"#{ticket.id}: {summary} (from {reporter_email})"
+#             },
+#             created_by=ticket.user_id
+#         )
+#         db.session.add(notif)
+#         db.session.flush()
+
+#         admin_ids = [a.id for a in admins]
+#         db.session.bulk_insert_mappings(NotificationRecipient, [
+#             {"notification_id": notif.id, "user_id": aid} for aid in admin_ids
+#         ])
+#         db.session.commit()
+
+#     # 2. Асинхронний Email на адресу з .env (MAIL_USERNAME)
+#     support_email = os.environ.get("MAIL_USERNAME")
+#     if support_email:
+#         try:
+#             # Рендеримо HTML-шаблон до запуску потоку
+#             html_content = render_template(
+#                 "emails/new_support_ticket.html",
+#                 ticket=ticket,
+#                 reporter_email=reporter_email
+#             )
+            
+#             msg = Message(
+#                 subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
+#                 recipients=[support_email],
+#                 html=html_content
+#             )
+
+#             # Отримуємо екземпляр Flask для фонового контексту
+#             app_obj = current_app._get_current_object()
+
+#             # Запускаємо відправку в окремому потоці (Thread)
+#             threading.Thread(target=send_async_email, args=(app_obj, msg)).start()
+
+#         except Exception as e:
+#             print(f"Не вдалося підготувати email про звернення #{ticket.id}: {e}")
+#     else:
+#         print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
+
+
+
+
 def notify_admins_new_ticket(ticket):
     reporter_email = ticket.user.email if ticket.user else "Гість"
     category_label = ticket.category
     summary = f"{category_label} — {ticket.issue_type or ''}".strip(" —")
 
-    # 1. In-app сповіщення адмінам (БД)
     admins = Users.query.filter_by(admin=True).all()
     if admins:
         notif = Notification(
@@ -2512,33 +2626,24 @@ def notify_admins_new_ticket(ticket):
         ])
         db.session.commit()
 
-    # 2. Асинхронний Email на адресу з .env (MAIL_USERNAME)
     support_email = os.environ.get("MAIL_USERNAME")
     if support_email:
         try:
-            # Рендеримо HTML-шаблон до запуску потоку
             html_content = render_template(
                 "emails/new_support_ticket.html",
                 ticket=ticket,
                 reporter_email=reporter_email
             )
-            
-            msg = Message(
+            send_email_via_api(
                 subject=f"[MediaMission Support] Нове звернення #{ticket.id}",
                 recipients=[support_email],
-                html=html_content
+                html_body=html_content
             )
-
-            # Отримуємо екземпляр Flask для фонового контексту
-            app_obj = current_app._get_current_object()
-
-            # Запускаємо відправку в окремому потоці (Thread)
-            threading.Thread(target=send_async_email, args=(app_obj, msg)).start()
-
         except Exception as e:
             print(f"Не вдалося підготувати email про звернення #{ticket.id}: {e}")
     else:
         print("⚠️ MAIL_USERNAME не задано — email про звернення не надіслано")
+
 
 
 
@@ -2781,7 +2886,7 @@ def notify_admins_new_idea(idea):
         created_by=idea.user_id,
     )
     db.session.add(notification)
-    db.session.flush()  # щоб отримати notification.id до commit
+    db.session.flush()
 
     recipients = [
         NotificationRecipient(notification_id=notification.id, user_id=admin.id)
@@ -2790,7 +2895,6 @@ def notify_admins_new_idea(idea):
     db.session.bulk_save_objects(recipients)
     db.session.commit()
 
-    # === Асинхронний email на адресу підтримки ===
     support_email = os.environ.get("MAIL_USERNAME")
     if support_email:
         try:
@@ -2803,15 +2907,11 @@ def notify_admins_new_idea(idea):
                 <p><strong>Опис:</strong> {idea.description}</p>
             """
 
-            msg = Message(
+            send_email_via_api(
                 subject=f"[MediaMission] Нова ідея #{idea.id}",
                 recipients=[support_email],
-                html=html_content
+                html_body=html_content
             )
-
-            app_obj = current_app._get_current_object()
-            threading.Thread(target=send_async_email, args=(app_obj, msg)).start()
-
         except Exception as e:
             print(f"Не вдалося підготувати email про ідею #{idea.id}: {e}")
     else:
@@ -2950,6 +3050,7 @@ def update_idea_status(idea_id):
 
     db.session.commit()
     return jsonify({"success": True})
+
 
 
 

@@ -8,14 +8,14 @@ function toggleTheme() {
     updateThemeIcon(newTheme);
 }
 
-function updateThemeIcon(theme) {
-    const icon = document.getElementById('themeIcon');
-    if (!icon) return;
-    if (theme === 'dark') {
-        icon.className = 'bi bi-sun-fill';
-    } else {
-        icon.className = 'bi bi-moon-fill';
-    }
+function updateThemeIcons(theme) {
+  const iconClass = theme === "dark" ? "bi-sun-fill" : "bi-moon-fill";
+
+  const iconDesktop = document.getElementById("themeIcon");
+  if (iconDesktop) iconDesktop.className = `bi ${iconClass}`;
+
+  const iconMobile = document.getElementById("themeIconMobile");
+  if (iconMobile) iconMobile.className = `bi ${iconClass}`;
 }
 
 function loadTheme() {

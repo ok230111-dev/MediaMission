@@ -346,6 +346,9 @@
     data-t-issue-ai-not-responding="{{ t('issue_ai_not_responding') }}"
     data-t-issue-ai-rate-limited="{{ t('issue_ai_rate_limited') }}"
     data-t-issue-ai-gives-test-answers="{{ t('issue_ai_gives_test_answers') }}"
+    data-t-theme-toggle="{{ t('theme_toggle_label') }}"
+    data-t-lang="{% if g.lang == 'de' %}DE{% elif g.lang == 'uk' %}UK{% else %}EN{% endif %}"
+    data-t-notifications="{{t('notifications')}}"
     class="d-flex flex-column min-vh-100"
   >
     <!-- ==========================================================
@@ -360,46 +363,43 @@
         <div
           class="d-flex align-items-center gap-2 ms-lg-4 me-lg-auto order-lg-2"
         >
-          <!-- Перемикач мови -->
-          <div class="dropdown language-dropdown">
+          <!-- Зовнішній перемикач мови -->
+          <div class="dropdown language-dropdown lang-switcher-outer">
             <button
               class="btn language-dropdown-toggle"
               type="button"
-              id="languageDropdownBtn"
+              id="languageDropdownBtnOuter"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
               <i class="bi bi-globe2"></i>
-              <span class="language-current">{{ g.lang|upper }}</span>
+              <span class="language-current">{{ g.lang }}</span>
             </button>
 
             <ul
               class="dropdown-menu dropdown-menu-end language-dropdown-menu"
-              aria-labelledby="languageDropdownBtn"
+              aria-labelledby="languageDropdownBtnOuter"
             >
               <li>
                 <a
                   class="dropdown-item {% if g.lang=='uk' %}active{% endif %}"
                   href="/set_language/uk"
+                  >Українська</a
                 >
-                  Українська
-                </a>
               </li>
               <li>
                 <a
                   class="dropdown-item {% if g.lang=='de' %}active{% endif %}"
                   href="/set_language/de"
+                  >Deutsch</a
                 >
-                  Deutsch
-                </a>
               </li>
               <li>
                 <a
                   class="dropdown-item {% if g.lang=='en' %}active{% endif %}"
                   href="/set_language/en"
+                  >English</a
                 >
-                  English
-                </a>
               </li>
             </ul>
           </div>
@@ -501,7 +501,7 @@
 
           <!-- Перемикач теми -->
           <button
-            class="btn btn-theme-toggle p-1"
+            class="btn btn-theme-toggle p-1 theme-toggle-header"
             id="themeToggle"
             onclick="toggleTheme()"
           >
@@ -551,6 +551,104 @@
                 <i class="bi bi-info-circle me-1"></i>
                 <span>{{ t('nav_about') }}</span>
               </a>
+            </li>
+            <li>
+              <div class="dropdown position-relative notification-bell-wrapper">
+                <a
+                  class="nav-link position-relative"
+                  href="#"
+                  id="notificationBell"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  style="padding: 0 !important"
+                >
+                  <i class="bi bi-bell-fill fs-5"></i>
+                  {% if unread_count and unread_count > 0 %}
+                  <span
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
+                    id="notificationBadge"
+                  >
+                    {{ unread_count if unread_count < 10 else '9+' }}
+                    <span class="visually-hidden"
+                      >{{ t('nav_unread_notifications') }}</span
+                    >
+                  </span>
+                  {% endif %}
+                </a>
+
+                <!-- Випадаюче меню сповіщень -->
+                <div
+                  class="dropdown-menu dropdown-menu-end notification-dropdown p-0 shadow border-0"
+                  aria-labelledby="notificationBell"
+                  style="min-width: 320px"
+                >
+                  <div
+                    class="notification-header px-3 py-2 d-flex justify-content-between align-items-center"
+                  >
+                    <span class="fw-bold"
+                      >{{ t('nav_notifications_title') }}</span
+                    >
+                    {% if unread_count and unread_count > 0 %}
+                    <span class="badge bg-primary-subtle text-primary"
+                      >{{ unread_count }} {{ t('nav_new_notifications') }}</span
+                    >
+                    {% endif %}
+                  </div>
+                  <hr class="m-0" />
+
+                  <div
+                    class="notification-list"
+                    style="max-height: 360px; overflow-y: auto"
+                  >
+                    {% if latest_notifications %} {% for record in
+                    latest_notifications %}
+                    <a
+                      href="/notifications"
+                      class="dropdown-item notification-item py-2 px-3 {% if not record.is_read %}unread{% endif %}"
+                    >
+                      <div class="d-flex align-items-start gap-2">
+                        {% if not record.is_read %}
+                        <span class="unread-dot mt-1"></span>
+                        {% endif %}
+                        <div class="flex-grow-1 min-width-0">
+                          <div class="fw-semibold line-clamp-2">
+                            {{ (record.notification.title_json or
+                            {}).get(g.lang) or (record.notification.title_json
+                            or {}).get('uk') or '' }}
+                          </div>
+                          <div class="text-muted small line-clamp-2">
+                            {{ (record.notification.body_json or {}).get(g.lang)
+                            or (record.notification.body_json or {}).get('uk')
+                            or '' }}
+                          </div>
+                          <div
+                            class="text-muted extra-small mt-1"
+                            style="font-size: 0.75rem"
+                          >
+                            {{ record.notification.created_at.strftime("%d.%m.%Y
+                            %H:%M") }}
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                    {% endfor %} {% else %}
+                    <div class="text-center text-muted py-4 small">
+                      <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+                      {{ t('nav_no_notifications') }}
+                    </div>
+                    {% endif %}
+                  </div>
+
+                  <hr class="m-0" />
+                  <a
+                    href="/notifications"
+                    class="dropdown-item text-center text-primary fw-semibold py-2 small"
+                  >
+                    {{ t('nav_view_all_notifications') }}
+                  </a>
+                </div>
+              </div>
             </li>
           </ul>
         </div>

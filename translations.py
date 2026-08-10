@@ -1,5 +1,6 @@
 TRANSLATIONS = {
     "uk": {
+        "theme_toggle_label": "Тема",
         "no_connection_internet": "Немає підключення до Інтернету",
         "no_internet_try_again": "Схоже, що зараз немає мережі. Спробуй ще раз трохи пізніше.",
         "notifications": "Сповіщення",
@@ -388,6 +389,7 @@ TRANSLATIONS = {
         "support_btn": "Повідомити про проблему"
     },
     "de": {
+        "theme_toggle_label": "Design",
         "find": "Finden.",
         "verify": "Prüfen.",
         "protect": "Schützen.",
@@ -776,6 +778,7 @@ TRANSLATIONS = {
         "support_btn": "Problem melden",
     },
     "en": {
+        "theme_toggle_label": "Theme", 
         "find": "Find.",
         "verify": "Verify.",
         "protect": "Protect.",

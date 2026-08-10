@@ -1010,3 +1010,28 @@
     display: none;
   }
 }
+
+/* За замовчуванням перемикач усередині бургера прихований */
+.lang-switcher-inner {
+  display: none !important;
+}
+
+/* Перемикаємо видимість при ширині екрана 361px і менше */
+@media (max-width: 365px) {
+  /* Ховаємо зовнішню кнопку біля сповіщень */
+  .lang-switcher-outer {
+    display: none !important;
+  }
+
+  /* Показуємо пункт усередині бургера */
+  .lang-switcher-inner {
+    display: block !important;
+  }
+}
+
+@media (max-width: 393px){
+  .notification-bell-wrapper{
+    display: none !important;
+  }
+
+}

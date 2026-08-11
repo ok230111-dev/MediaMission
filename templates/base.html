@@ -349,6 +349,7 @@
     data-t-theme-toggle="{{ t('theme_toggle_label') }}"
     data-t-lang="{% if g.lang == 'de' %}DE{% elif g.lang == 'uk' %}UK{% else %}EN{% endif %}"
     data-t-notifications="{{t('notifications')}}"
+    data-unread-total="{{ (unread_count or 0) + (unread_messages_count or 0) }}"
     class="d-flex flex-column min-vh-100"
   >
     <!-- ==========================================================
@@ -416,12 +417,13 @@
               style="padding: 0 !important"
             >
               <i class="bi bi-bell-fill fs-5"></i>
-              {% if unread_count and unread_count > 0 %}
+              {% set total_unread = (unread_count or 0) + (unread_messages_count
+              or 0) %} {% if total_unread > 0 %}
               <span
                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
                 id="notificationBadge"
               >
-                {{ unread_count if unread_count < 10 else '9+' }}
+                {{ total_unread if total_unread < 10 else '9+' }}
                 <span class="visually-hidden"
                   >{{ t('nav_unread_notifications') }}</span
                 >
@@ -553,7 +555,9 @@
               </a>
             </li>
             <li>
-              <div class="dropdown position-relative notification-bell-wrapper">
+              <div
+                class="dropdown position-relative notification-bell-wrapper burger-menu-bell"
+              >
                 <a
                   class="nav-link position-relative"
                   href="#"
@@ -564,12 +568,13 @@
                   style="padding: 0 !important"
                 >
                   <i class="bi bi-bell-fill fs-5"></i>
-                  {% if unread_count and unread_count > 0 %}
+                  {% set total_unread = (unread_count or 0) +
+                  (unread_messages_count or 0) %} {% if total_unread > 0 %}
                   <span
                     class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
                     id="notificationBadge"
                   >
-                    {{ unread_count if unread_count < 10 else '9+' }}
+                    {{ total_unread if total_unread < 10 else '9+' }}
                     <span class="visually-hidden"
                       >{{ t('nav_unread_notifications') }}</span
                     >
@@ -693,6 +698,7 @@
             <ul class="list-unstyled footer-links">
               <li><a href="/about">{{ t('nav_about') }}</a></li>
               <li><a href="/faq">{{ t('nav_faq') }}</a></li>
+              <li><a href="/reviews">{{ t('reviews') }}</a></li>
               <li>
                 <a href="#" id="footerAiChatTrigger"
                   >{{ t('nav_ai_assistant') }}</a
@@ -956,11 +962,10 @@
       if (bellEl) {
         bellEl.addEventListener("shown.bs.dropdown", async () => {
           const badge = document.getElementById("notificationBadge");
-          if (!badge) return;
 
           try {
             await fetch("/api/notifications/mark_read", { method: "POST" });
-            badge.remove();
+
             document
               .querySelectorAll(".notification-item.unread")
               .forEach((item) => {
@@ -968,6 +973,16 @@
                 const dot = item.querySelector(".unread-dot");
                 if (dot) dot.remove();
               });
+
+            // Сповіщення прочитані — бейдж має показувати лише непрочитані повідомлення, якщо є
+            const messagesLeft = {{ unread_messages_count or 0 }};
+            if (badge) {
+              if (messagesLeft > 0) {
+                badge.textContent = messagesLeft < 10 ? messagesLeft : '9+';
+              } else {
+                badge.remove();
+              }
+            }
           } catch (err) {
             console.error("Не вдалось позначити сповіщення прочитаними:", err);
           }

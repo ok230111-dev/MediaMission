@@ -1,0 +1,101 @@
+{% extends "base.html" %} {% block title %}{{ other_user.display_name }} |
+MediaMission{% endblock %} {% block content %}
+<section class="container py-4" style="max-width: 700px">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/notifications" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div
+      class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold"
+      style="width: 44px; height: 44px"
+    >
+      {% if other_user.avatar %}
+      <img
+        src="{{ other_user.avatar }}"
+        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover"
+      />
+      {% else %} {{ other_user.display_name[0]|upper }} {% endif %}
+    </div>
+    <h4 class="fw-bold mb-0">{{ other_user.display_name }}</h4>
+  </div>
+
+  <div class="chat-window mb-3" id="chatWindow">
+    {% for msg in conversation.messages %}
+    <div
+      class="chat-bubble-row {% if msg.sender_id == current_user_id %}mine{% else %}theirs{% endif %}"
+    >
+      <div class="chat-bubble">
+        {{ msg.text }}
+        <div class="chat-time">{{ msg.created_at.strftime("%H:%M") }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <form method="POST" class="d-flex gap-2">
+    <input
+      type="text"
+      name="text"
+      class="form-control"
+      placeholder="{{ t('chat_input_placeholder') }}"
+      required
+      autocomplete="off"
+    />
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-send-fill"></i>
+    </button>
+  </form>
+</section>
+
+<style>
+  .chat-window {
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+    border-radius: 16px;
+  }
+  .chat-bubble-row {
+    display: flex;
+  }
+  .chat-bubble-row.mine {
+    justify-content: flex-end;
+  }
+  .chat-bubble-row.theirs {
+    justify-content: flex-start;
+  }
+  .chat-bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    background: var(--bs-body-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .chat-bubble-row.mine .chat-bubble {
+    background: var(--bs-primary);
+    color: white;
+  }
+  .chat-time {
+    font-size: 0.7rem;
+    opacity: 0.6;
+    margin-top: 4px;
+    text-align: right;
+  }
+
+  [data-theme="dark"] .chat-window {
+    background: #12161f;
+  }
+  [data-theme="dark"] .chat-bubble {
+    background: #1a1f2b;
+    color: rgba(255, 255, 255, 0.9);
+  }
+</style>
+
+<script>
+  const chatWindow = document.getElementById("chatWindow");
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+</script>
+{% endblock %}

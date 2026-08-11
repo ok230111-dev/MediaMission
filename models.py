@@ -295,7 +295,58 @@ class Idea(db.Model):
 
     user = db.relationship("Users")
 
+
+class Conversation(db.Model):
+    __tablename__ = "conversations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_a_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_b_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    last_message_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user_a = db.relationship("Users", foreign_keys=[user_a_id])
+    user_b = db.relationship("Users", foreign_keys=[user_b_id])
+    messages = db.relationship(
+        "ChatMessage",
+        backref="conversation",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.created_at"
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint('user_a_id', 'user_b_id', name='unique_conversation_pair'),
+    )
+
+
+class ChatMessage(db.Model):
+    __tablename__ = "chat_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey("conversations.id"), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    sender = db.relationship("Users")
 class IdeaAdminView(SecureModelView):
     column_list = ['id', 'title', 'category_label', 'page_label', 'status', 'created_at']
     column_searchable_list = ['title', 'description']
     column_filters = ['status', 'category', 'page']
+
+
+class Review(db.Model):
+    __tablename__ = "reviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    display_name = db.Column(db.String(100), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # 1-5
+    text = db.Column(db.Text, nullable=False)
+    is_approved = db.Column(db.Boolean, default=False)  # адмін вмикає показ на головній
+    is_featured = db.Column(db.Boolean, default=False)  # опційно: "вибрані" відгуки
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship("Users")

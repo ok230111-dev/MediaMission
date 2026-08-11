@@ -27,7 +27,7 @@ from models import (
     Missions, MissionContent, Questions, Options, Users, 
     UserMissionProgress, UserAnswer, Notification, NotificationRecipient,
     NotificationComment, NotificationReaction, Achievement, UserAchievement,
-    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView
+    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView, Conversation, ChatMessage, Review
 )
 from translations import translate
 from utils import date_uk
@@ -626,7 +626,61 @@ def index():
     missions_count = Missions.query.count()
     total_xp = db.session.query(db.func.sum(Users.total_xp)).scalar() or 0
 
-    return render_template('index.html', users_count=users_count, missions_count=missions_count, total_xp=total_xp)
+    featured_reviews = (
+            Review.query
+            .filter_by(is_approved=True)
+            .order_by(Review.created_at.desc())
+            .limit(6)
+            .all()
+        )
+    
+    return render_template('index.html', users_count=users_count, missions_count=missions_count, total_xp=total_xp, featured_reviews=featured_reviews)
+
+
+@app.route("/reviews", methods=["GET", "POST"])
+def reviews():
+    user_id = session.get("user_id")
+    user = Users.query.get(user_id) if user_id else None
+
+    if request.method == "POST":
+        rating = request.form.get("rating", "").strip()
+        text = request.form.get("text", "").strip()
+        display_name = request.form.get("display_name", "").strip()
+
+        if not text or not rating:
+            flash(translate("reviews_fill_all_fields", g.lang), "danger")
+            return redirect(url_for("reviews"))
+
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except ValueError:
+            flash(translate("reviews_invalid_rating", g.lang), "danger")
+            return redirect(url_for("reviews"))
+
+        if not display_name:
+            display_name = user.display_name if user else "Anonymous"
+
+        if len(text) > 1000:
+            flash(translate("reviews_too_long", g.lang), "danger")
+            return redirect(url_for("reviews"))
+
+        review = Review(
+            user_id=user.id if user else None,
+            display_name=display_name,
+            rating=rating,
+            text=text,
+            is_approved=False
+        )
+        db.session.add(review)
+        db.session.commit()
+
+        flash(translate("reviews_success_flash", g.lang), "success")
+        return redirect(url_for("reviews"))
+
+    return render_template("reviews.html", response_title=translate("reviews_title", g.lang), user=user)
+
 
 @app.route("/missions-overview")
 def missions_overview():
@@ -1109,6 +1163,7 @@ def save_notification_token():
 
     return jsonify(success=True)
 
+
 @app.route('/notifications')
 def notifications():
     user_id = session.get("user_id")
@@ -1126,11 +1181,164 @@ def notifications():
     unread_ids = [n.id for n in items if not n.is_read]
     if unread_ids:
         NotificationRecipient.query.filter(NotificationRecipient.id.in_(unread_ids)).update(
-            {"is_read": True, "read_at": datetime.utcnow()}, synchronize_session=False
+            {"is_read": True, "read_at": datetime.now(timezone.utc)}, synchronize_session=False
         )
         db.session.commit()
 
-    return render_template("notifications.html", items=items)
+    conversations = Conversation.query.filter(
+        db.or_(
+            Conversation.user_a_id == user_id,
+            Conversation.user_b_id == user_id
+        )
+    ).order_by(Conversation.last_message_at.desc()).all()
+
+    conv_data = []
+    for conv in conversations:
+        other_user = conv.user_b if conv.user_a_id == user_id else conv.user_a
+        last_message = conv.messages[-1] if conv.messages else None
+        unread_count = ChatMessage.query.filter_by(
+            conversation_id=conv.id, is_read=False
+        ).filter(ChatMessage.sender_id != user_id).count()
+
+        conv_data.append({
+            "conversation": conv,
+            "other_user": other_user,
+            "last_message": last_message,
+            "unread_count": unread_count
+        })
+
+    return render_template("notifications.html", items=items, conversations=conv_data)
+
+
+# Старий /messages просто редіректить на нову об'єднану сторінку
+@app.route('/messages')
+def messages_list():
+    return redirect(url_for('notifications'))
+
+
+@app.route("/api/users/search", methods=["GET"])
+def search_users():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    query = request.args.get("q", "").strip()
+    if len(query) < 2:
+        return {"users": []}
+
+    results = Users.query.filter(
+        db.or_(
+            Users.display_name.ilike(f"%{query}%"),
+            Users.email.ilike(f"%{query}%")
+        ),
+        Users.id != user_id,
+        Users.allowed_to_show == True
+    ).limit(10).all()
+
+    return {
+        "users": [
+            {
+                "id": u.id,
+                "display_name": u.display_name,
+                "email": u.email,
+                "avatar": u.avatar
+            } for u in results
+        ]
+    }
+
+
+def get_or_create_conversation(user1_id, user2_id):
+    a, b = sorted([user1_id, user2_id])
+
+    conv = Conversation.query.filter_by(user_a_id=a, user_b_id=b).first()
+    if conv is None:
+        conv = Conversation(user_a_id=a, user_b_id=b)
+        db.session.add(conv)
+        db.session.commit()
+
+    return conv
+
+
+@app.route("/api/conversations/start", methods=["POST"])
+def start_conversation():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    data = request.get_json()
+    other_user_id = data.get("user_id")
+
+    other_user = db.session.get(Users, other_user_id)
+    if not other_user:
+        return {"error": "Користувача не знайдено"}, 404
+
+    conv = get_or_create_conversation(user_id, other_user_id)
+    return {"success": True, "conversation_id": conv.id}
+
+
+@app.route("/messages/<int:conversation_id>", methods=["GET", "POST"])
+def conversation_detail(conversation_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    conv = db.session.get(Conversation, conversation_id)
+    if not conv or user_id not in (conv.user_a_id, conv.user_b_id):
+        return "Forbidden", 403
+
+    if request.method == "POST":
+        text = request.form.get("text", "").strip()
+        if text:
+            msg = ChatMessage(conversation_id=conv.id, sender_id=user_id, text=text)
+            db.session.add(msg)
+            conv.last_message_at = datetime.now(timezone.utc)
+            db.session.commit()
+        return redirect(url_for("conversation_detail", conversation_id=conv.id))
+
+    ChatMessage.query.filter_by(conversation_id=conv.id, is_read=False).filter(
+        ChatMessage.sender_id != user_id
+    ).update({"is_read": True}, synchronize_session=False)
+    db.session.commit()
+
+    other_user = conv.user_b if conv.user_a_id == user_id else conv.user_a
+
+    return render_template(
+        "conversation.html",
+        conversation=conv,
+        other_user=other_user,
+        current_user_id=user_id
+    )
+
+
+@app.context_processor
+def inject_notifications():
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"unread_count": 0, "latest_notifications": [], "unread_messages_count": 0}
+
+    unread_count = NotificationRecipient.query.filter_by(user_id=user_id, is_read=False).count()
+
+    latest_notifications = (
+        NotificationRecipient.query
+        .filter_by(user_id=user_id)
+        .join(Notification)
+        .order_by(Notification.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    unread_messages_count = ChatMessage.query.join(Conversation).filter(
+        db.or_(Conversation.user_a_id == user_id, Conversation.user_b_id == user_id),
+        ChatMessage.sender_id != user_id,
+        ChatMessage.is_read == False
+    ).count()
+
+    return {
+        "unread_count": unread_count,
+        "latest_notifications": latest_notifications,
+        "unread_messages_count": unread_messages_count
+    }
+
 
 @app.route('/notifications/<int:notification_id>')
 @login_required
@@ -1303,6 +1511,93 @@ def admin_panel():
         total_xp=total_xp,
         active_users=active_users
     )
+
+
+@app.route("/api/admin/reviews", methods=["GET"])
+def get_admin_reviews():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    reviews = Review.query.order_by(Review.created_at.desc()).all()
+
+    result = []
+    for r in reviews:
+        result.append({
+            "id": r.id,
+            "display_name": r.display_name,
+            "rating": r.rating,
+            "text": r.text,
+            "is_approved": r.is_approved,
+            "user_email": r.user.email if r.user else None,
+            "created_at": r.created_at.strftime("%d.%m.%Y %H:%M")
+        })
+
+    return jsonify({"success": True, "reviews": result})
+
+
+@app.route("/api/admin/reviews/<int:review_id>/approve", methods=["POST"])
+def approve_review(review_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    review = Review.query.get(review_id)
+    if not review:
+        return jsonify({"success": False, "error": "Відгук не знайдено"}), 404
+
+    review.is_approved = True
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/reviews/<int:review_id>/unapprove", methods=["POST"])
+def unapprove_review(review_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    review = Review.query.get(review_id)
+    if not review:
+        return jsonify({"success": False, "error": "Відгук не знайдено"}), 404
+
+    review.is_approved = False
+    db.session.commit()
+
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/reviews/<int:review_id>", methods=["DELETE"])
+def delete_review(review_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = Users.query.get(user_id)
+    if not current_user or not current_user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    review = Review.query.get(review_id)
+    if not review:
+        return jsonify({"success": False, "error": "Відгук не знайдено"}), 404
+
+    db.session.delete(review)
+    db.session.commit()
+
+    return jsonify({"success": True})
 
 @app.route("/api/admin/stats", methods=["GET"])
 def admin_stats():
@@ -1703,8 +1998,20 @@ def send_admin_notification():
     title_json = {'uk': title_uk, 'de': title_de, 'en': title_en}
     body_json = {'uk': body_uk, 'de': body_de, 'en': body_en}
 
-    new_notification = Notification(title_json=title_json, body_json=body_json)
+    new_notification = Notification(
+        title_json=title_json,
+        body_json=body_json,
+        created_by=session.get("user_id")
+    )
     db.session.add(new_notification)
+    db.session.flush()  # отримуємо id, ще без коміту
+
+    user_ids = [u.id for u in Users.query.with_entities(Users.id).all()]
+    if user_ids:
+        db.session.bulk_insert_mappings(NotificationRecipient, [
+            {"notification_id": new_notification.id, "user_id": uid} for uid in user_ids
+        ])
+
     db.session.commit()
 
     flash('Сповіщення успішно надіслано!', 'success')
@@ -2143,6 +2450,9 @@ def fix_avatars(secret):
 
     db.session.commit()
     return "<br>".join(output)
+
+
+
 
 # ========== RUN APP ==========
 

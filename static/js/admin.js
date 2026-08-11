@@ -80,6 +80,36 @@ document.addEventListener("DOMContentLoaded", function() {
       select.dispatchEvent(event);
     }
   }
+
+  // Завантаження звернень підтримки та фільтр
+  loadSupportTickets();
+  const filterEl = document.getElementById("ticketStatusFilter");
+  if (filterEl) {
+    filterEl.addEventListener("change", renderTickets);
+  }
+
+  // Фільтр ідей
+  document.getElementById("ideaStatusFilter")?.addEventListener("change", renderIdeas);
+  document
+    .getElementById("support_idea-tab")
+    ?.addEventListener("shown.bs.tab", loadIdeas);
+
+  // Відгуки: фільтри + завантаження при відкритті вкладки
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentReviewFilter = btn.dataset.filter;
+      renderReviews();
+    });
+  });
+
+  document
+    .getElementById("reviews-tab")
+    ?.addEventListener("shown.bs.tab", loadReviews);
+
+  // Якщо кнопки табів мають інші id/атрибути — підвантажуємо відгуки одразу як запасний варіант
+  loadReviews();
 });
 
 // --- РОБОТА З АБЗАЦАМИ ---
@@ -603,19 +633,6 @@ async function loadAdminMissions() {
   }
 }
 
-// --- ДОПОМІЖНА ФУНКЦІЯ ДЛЯ ЗАХИСТУ ВІД XSS ---
-function escapeHtml(text) {
-  if (!text) return '';
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
 // --- ДОДАТКОВА ФУНКЦІЯ ДЛЯ ОНОВЛЕННЯ СПИСКУ ---
 function refreshMissions() {
   loadAdminMissions();
@@ -766,15 +783,6 @@ async function saveTicketUpdate(ticketId) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadSupportTickets();
-
-  const filterEl = document.getElementById("ticketStatusFilter");
-  if (filterEl) {
-    filterEl.addEventListener("change", renderTickets);
-  }
-});
-
 const IDEA_STATUS_LABELS = {
   new: { label: "На розгляді", badge: "badge-idea-new", icon: "🆕" },
   good: { label: "Добре", badge: "badge-idea-good", icon: "✅" },
@@ -787,6 +795,8 @@ let allIdeas = [];
 
 async function loadIdeas() {
   const container = document.getElementById("ideasContainer");
+  if (!container) return;
+
   container.innerHTML = `<div class="text-center text-muted py-4">Завантаження...</div>`;
 
   try {
@@ -807,7 +817,7 @@ async function loadIdeas() {
 
 function renderIdeas() {
   const container = document.getElementById("ideasContainer");
-  const filter = document.getElementById("ideaStatusFilter").value;
+  const filter = document.getElementById("ideaStatusFilter")?.value || "all";
 
   const filtered =
     filter === "all" ? allIdeas : allIdeas.filter((i) => i.status === filter);
@@ -890,14 +900,116 @@ async function setIdeaStatus(ideaId, status) {
   }
 }
 
+// --- ВІДГУКИ ---
+let allReviews = [];
+let currentReviewFilter = "all";
+
+async function loadReviews() {
+  const container = document.getElementById("reviewsList");
+  if (!container) return;
+
+  try {
+    const res = await fetch("/api/admin/reviews");
+    const data = await res.json();
+    if (data.success) {
+      allReviews = data.reviews;
+      renderReviews();
+      updatePendingBadge();
+    }
+  } catch (err) {
+    console.error("Помилка завантаження відгуків:", err);
+  }
+}
+
+function updatePendingBadge() {
+  const badge = document.getElementById("reviewsPendingBadge");
+  if (!badge) return;
+
+  const pendingCount = allReviews.filter(r => !r.is_approved).length;
+  if (pendingCount > 0) {
+    badge.textContent = pendingCount;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function renderReviews() {
+  const container = document.getElementById("reviewsList");
+  if (!container) return;
+
+  let filtered = allReviews;
+
+  if (currentReviewFilter === "pending") {
+    filtered = allReviews.filter(r => !r.is_approved);
+  } else if (currentReviewFilter === "approved") {
+    filtered = allReviews.filter(r => r.is_approved);
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<p class="text-muted text-center py-4">Немає відгуків у цій категорії</p>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => `
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <h6 class="fw-bold mb-0">${escapeHtml(r.display_name)}</h6>
+            <span class="text-muted small">${escapeHtml(r.user_email || "Гість")} · ${r.created_at}</span>
+          </div>
+          <span class="badge ${r.is_approved ? "bg-success" : "bg-warning text-dark"}">
+            ${r.is_approved ? "Схвалено" : "На модерації"}
+          </span>
+        </div>
+        <div class="mb-2">
+          ${Array.from({length: 5}, (_, i) =>
+            `<i class="bi ${i < r.rating ? "bi-star-fill text-warning" : "bi-star text-muted"}"></i>`
+          ).join("")}
+        </div>
+        <p class="mb-3">${escapeHtml(r.text)}</p>
+        <div class="d-flex gap-2">
+          ${r.is_approved
+            ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleReviewApproval(${r.id}, false)">Прибрати з головної</button>`
+            : `<button class="btn btn-sm btn-success" onclick="toggleReviewApproval(${r.id}, true)">Схвалити</button>`
+          }
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteReviewItem(${r.id})">Видалити</button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function toggleReviewApproval(id, approve) {
+  const endpoint = approve
+    ? `/api/admin/reviews/${id}/approve`
+    : `/api/admin/reviews/${id}/unapprove`;
+
+  const res = await fetch(endpoint, { method: "POST" });
+  const data = await res.json();
+  if (data.success) {
+    await loadReviews();
+  } else {
+    alert(data.error || "Помилка");
+  }
+}
+
+async function deleteReviewItem(id) {
+  if (!confirm("Видалити цей відгук назавжди?")) return;
+
+  const res = await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (data.success) {
+    await loadReviews();
+  } else {
+    alert(data.error || "Помилка");
+  }
+}
+
+// --- ДОПОМІЖНА ФУНКЦІЯ ДЛЯ ЗАХИСТУ ВІД XSS (єдине визначення) ---
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str || "";
   return div.innerHTML;
 }
-
-document.getElementById("ideaStatusFilter")?.addEventListener("change", renderIdeas);
-
-document
-  .getElementById("support_idea-tab")
-  ?.addEventListener("shown.bs.tab", loadIdeas);

@@ -78,6 +78,11 @@ onAuthStateChanged(auth, async (user) => {
     </li>
   `;
 
+  const unreadTotal = parseInt(document.body.dataset.unreadTotal || "0", 10);
+  const notificationBadgeHTML = unreadTotal > 0
+    ? `<span class="badge bg-danger rounded-pill ms-1">${unreadTotal < 10 ? unreadTotal : '9+'}</span>`
+    : '';
+
   // Шаблон теми для вирівнювання з іншими пунктами
   const themeToggleHTML = `
     <li class="nav-item">
@@ -118,13 +123,6 @@ onAuthStateChanged(auth, async (user) => {
         </li>
 
         <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="/">
-            <i class="bi bi-house-door"></i>
-            ${t.home}
-          </a>
-        </li>
-
-        <li class="nav-item">
           <a class="nav-link d-flex align-items-center gap-2" href="/missions-overview">
             <i class="bi bi-journal-check"></i>
             ${t.missions}
@@ -138,9 +136,10 @@ onAuthStateChanged(auth, async (user) => {
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="/notifications">
+          <a class="nav-link d-flex align-items-center gap-2 burger-menu-bell" href="/notifications">
             <i class="bi bi-bell-fill fs-5"></i>
             ${t.notifications}
+            ${notificationBadgeHTML}
           </a>
         </li>
         <li class="nav-item">
@@ -190,13 +189,7 @@ onAuthStateChanged(auth, async (user) => {
             ${t.about}
           </a>
         </li>
-
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="/notifications">
-            <i class="bi bi-bell-fill fs-5"></i>
-            ${t.notifications}
-          </a>
-        </li>
+        
         <li class="nav-item">
           <a class="nav-link d-flex align-items-center gap-2" href="/register">
             <i class="bi bi-person-plus"></i>

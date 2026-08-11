@@ -1033,5 +1033,10 @@
   .notification-bell-wrapper{
     display: none !important;
   }
+}
 
+@media (min-width: 393px) {
+  .burger-menu-bell {
+    display: none !important;
+  }
 }

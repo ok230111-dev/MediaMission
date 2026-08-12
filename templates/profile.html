@@ -682,9 +682,14 @@ MediaMission{% endblock %} {% block style %}
     {% if newly_unlocked %}
     <div class="alert alert-success alert-dismissible fade show" role="alert">
       <i class="bi bi-trophy-fill me-2"></i>
-      <strong>🎉 Вітаємо!</strong> Ви отримали нові досягнення: {% for ach in
-      newly_unlocked %}
-      <span class="badge bg-warning text-dark">{{ ach.title_en }}</span>
+      <strong>🎉 {{ t('achievements_new_unlocked') }}:</strong>
+      {% for ach in newly_unlocked %}
+      <span class="badge bg-warning text-dark">
+        {{ ach['title_' ~ g.lang] if ach['title_' ~ g.lang] else ach.title_en }}
+      </span>
+      <span class="badge bg-light text-dark border" style="font-size: 0.6rem">
+        {{ achievement.category }}
+      </span>
       {% endfor %}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -695,18 +700,24 @@ MediaMission{% endblock %} {% block style %}
       <div class="col-md-4 col-lg-3">
         <div
           class="d-flex align-items-center p-3 border rounded-3 achievement-card {% if achievement.unlocked %}unlocked{% else %}locked{% endif %}"
-          data-bs-toggle="tooltip"
-          title="{% if achievement.unlocked %}Розблоковано: {{ achievement.unlocked_at.strftime('%d.%m.%Y') if achievement.unlocked_at else 'Нещодавно' }}{% else %}Ще не розблоковано{% endif %}"
+          role="button"
+          tabindex="0"
+          data-achievement-title="{{ achievement.title }}"
+          data-achievement-desc="{{ achievement.description }}"
+          data-achievement-icon="{{ achievement.icon }}"
+          data-achievement-unlocked="{{ 'true' if achievement.unlocked else 'false' }}"
+          data-achievement-unlocked-at="{{ achievement.unlocked_at.strftime('%d.%m.%Y') if achievement.unlocked_at else '' }}"
+          data-achievement-xp="{{ achievement.xp_reward }}"
+          data-achievement-category="{{ achievement.category }}"
+          onclick="showAchievementDetail(this)"
+          onkeydown="if (event.key === 'Enter') showAchievementDetail(this);"
         >
-          <!-- Іконка досягнення -->
           <div
             class="{% if achievement.unlocked %}bg-success{% else %}bg-secondary{% endif %} text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center flex-shrink-0"
             style="width: 50px; height: 50px; transition: all 0.3s ease"
           >
             <i class="{{ achievement.icon }} fs-4"></i>
           </div>
-
-          <!-- Інформація -->
           <div class="min-width-0">
             <h6
               class="fw-bold mb-1 d-flex align-items-center gap-1 {% if not achievement.unlocked %}text-muted{% endif %}"
@@ -957,8 +968,8 @@ MediaMission{% endblock %} {% block style %}
       <div class="modal-content" style="border-radius: 20px; border: none">
         <div class="modal-header border-0 pb-0">
           <h5 class="modal-title fw-bold">
-            <i class="bi bi-controller text-primary me-2"></i>Система Рівнів,
-            Ліг та Рангів
+            <i class="bi bi-controller text-primary me-2"></i>{{
+            t('gamification_modal_title') }}
           </h5>
           <button
             type="button"
@@ -984,7 +995,7 @@ MediaMission{% endblock %} {% block style %}
                 type="button"
                 role="tab"
               >
-                🏆 Ліги
+                🏆 {{ t('gamification_tab_leagues') }}
               </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -996,7 +1007,7 @@ MediaMission{% endblock %} {% block style %}
                 type="button"
                 role="tab"
               >
-                🎖️ Ранги
+                🎖️ {{ t('gamification_tab_ranks') }}
               </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -1008,7 +1019,7 @@ MediaMission{% endblock %} {% block style %}
                 type="button"
                 role="tab"
               >
-                ⚡ Нарахування XP
+                ⚡ {{ t('gamification_tab_xp') }}
               </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -1020,7 +1031,7 @@ MediaMission{% endblock %} {% block style %}
                 type="button"
                 role="tab"
               >
-                ⭐ Ачівки
+                ⭐ {{ t('gamification_tab_achievements') }}
               </button>
             </li>
           </ul>
@@ -1034,9 +1045,9 @@ MediaMission{% endblock %} {% block style %}
               role="tabpanel"
             >
               <p class="text-muted mb-3 small">
-                Ліга змінюється автоматично при досягненні відповідного рівня
-                або накопиченні XP:
+                {{ t('gamification_leagues_desc') }}
               </p>
+
               <div class="row g-2">
                 <div class="col-6 col-md-4">
                   <div class="system-card p-2 text-center">
@@ -1108,17 +1119,17 @@ MediaMission{% endblock %} {% block style %}
               role="tabpanel"
             >
               <p class="text-muted mb-3 small">
-                Ранг залежить від комплексу 3 параметрів: кількості місій, рівня
-                та точності відповідей.
+                {{ t('gamification_ranks_desc') }}
               </p>
+
               <div class="table-responsive">
                 <table class="table table-sm align-middle">
                   <thead>
                     <tr class="text-muted small">
-                      <th>Ранг</th>
-                      <th>Місії</th>
-                      <th>Рівень</th>
-                      <th>Точність</th>
+                      <th>{{ t('gamification_rank_col') }}</th>
+                      <th>{{ t('gamification_missions_col') }}</th>
+                      <th>{{ t('gamification_level_col') }}</th>
+                      <th>{{ t('gamification_accuracy_col') }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1171,12 +1182,15 @@ MediaMission{% endblock %} {% block style %}
             >
               <div class="row g-3">
                 <div class="col-md-6">
-                  <h6 class="fw-bold text-primary">🎯 Складність місій</h6>
+                  <h6 class="fw-bold text-primary">
+                    🎯 {{ t('gamification_difficulty_title') }}
+                  </h6>
                   <ul class="list-group list-group-flush small">
                     <li
                       class="list-group-content d-flex justify-content-between py-1"
                     >
-                      <span>Дуже легко (1):</span><strong>+10 XP</strong>
+                      <span>{{ t('gamification_diff_very_easy') }}:</span
+                      ><strong>+10 XP</strong>
                     </li>
                     <li
                       class="list-group-content d-flex justify-content-between py-1"
@@ -1201,12 +1215,15 @@ MediaMission{% endblock %} {% block style %}
                   </ul>
                 </div>
                 <div class="col-md-6">
-                  <h6 class="fw-bold text-danger">🔥 Серія днів та бонуси</h6>
+                  <h6 class="fw-bold text-danger">
+                    🔥 {{ t('gamification_streak_title') }}
+                  </h6>
                   <ul class="list-group list-group-flush small">
                     <li
                       class="list-group-content d-flex justify-content-between py-1"
                     >
-                      <span>Перша місія за день:</span><strong>+10 XP</strong>
+                      <span>{{ t('gamification_first_mission_day') }}:</span
+                      ><strong>+10 XP</strong>
                     </li>
                     <li
                       class="list-group-content d-flex justify-content-between py-1"
@@ -1280,7 +1297,86 @@ MediaMission{% endblock %} {% block style %}
             class="btn btn-secondary rounded-pill"
             data-bs-dismiss="modal"
           >
-            Зрозуміло!
+            {{ t('gamification_understood') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Модальне вікно: деталі досягнення -->
+  <div
+    class="modal fade"
+    id="achievementDetailModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 20px; border: none">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">
+            <i class="bi bi-award-fill text-primary me-2"></i>{{
+            t('achievement_details_title') }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body text-center">
+          <div
+            id="achDetailIconWrap"
+            class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+            style="width: 80px; height: 80px"
+          >
+            <i id="achDetailIcon" class="fs-1"></i>
+          </div>
+
+          <h4 id="achDetailTitle" class="fw-bold mb-2"></h4>
+          <p id="achDetailDesc" class="text-muted mb-3"></p>
+
+          <span
+            id="achDetailStatusBadge"
+            class="badge rounded-pill mb-3"
+          ></span>
+
+          <div class="row g-2 text-start mt-3">
+            <div class="col-6">
+              <div class="border rounded-3 p-2">
+                <small class="text-muted d-block"
+                  >{{ t('achievement_category') }}</small
+                >
+                <strong id="achDetailCategory"></strong>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="border rounded-3 p-2">
+                <small class="text-muted d-block"
+                  >{{ t('achievement_xp_reward') }}</small
+                >
+                <strong id="achDetailXp"></strong>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="achDetailUnlockedAtWrap"
+            class="border rounded-3 p-2 mt-2 text-start d-none"
+          >
+            <small class="text-muted d-block"
+              >{{ t('achievement_unlocked_on') }}</small
+            >
+            <strong id="achDetailUnlockedAt"></strong>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button
+            type="button"
+            class="btn btn-secondary rounded-pill"
+            data-bs-dismiss="modal"
+          >
+            {{ t('close') }}
           </button>
         </div>
       </div>

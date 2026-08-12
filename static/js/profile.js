@@ -326,4 +326,52 @@ async function loadMyTickets() {
   }
 }
 
+function showAchievementDetail(cardEl) {
+  const title = cardEl.dataset.achievementTitle;
+  const desc = cardEl.dataset.achievementDesc;
+  const icon = cardEl.dataset.achievementIcon;
+  const unlocked = cardEl.dataset.achievementUnlocked === "true";
+  const unlockedAt = cardEl.dataset.achievementUnlockedAt;
+  const xp = cardEl.dataset.achievementXp;
+  const category = cardEl.dataset.achievementCategory;
+
+  document.getElementById("achDetailTitle").textContent = title;
+  document.getElementById("achDetailDesc").textContent = desc;
+  document.getElementById("achDetailIcon").className = `${icon} fs-1`;
+  document.getElementById("achDetailXp").textContent = `+${xp} XP`;
+  document.getElementById("achDetailCategory").textContent = category;
+
+  const iconWrap = document.getElementById("achDetailIconWrap");
+  const statusBadge = document.getElementById("achDetailStatusBadge");
+  const unlockedAtWrap = document.getElementById("achDetailUnlockedAtWrap");
+  const unlockedAtEl = document.getElementById("achDetailUnlockedAt");
+
+  const unlockedLabel = body.dataset.tAchievementUnlocked || "Unlocked";
+  const lockedLabel = body.dataset.tAchievementLocked || "Not unlocked yet";
+
+  if (unlocked) {
+    iconWrap.className = "rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 bg-success text-white";
+    statusBadge.className = "badge rounded-pill mb-3 bg-success";
+    statusBadge.textContent = unlockedLabel;
+
+    if (unlockedAt) {
+      unlockedAtWrap.classList.remove("d-none");
+      unlockedAtEl.textContent = unlockedAt;
+    } else {
+      unlockedAtWrap.classList.add("d-none");
+    }
+  } else {
+    iconWrap.className = "rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 bg-secondary text-white";
+    statusBadge.className = "badge rounded-pill mb-3 bg-secondary";
+    statusBadge.textContent = lockedLabel;
+    unlockedAtWrap.classList.add("d-none");
+  }
+
+  const modal = new bootstrap.Modal(document.getElementById("achievementDetailModal"));
+  modal.show();
+}
+
+window.showAchievementDetail = showAchievementDetail;
+window.toggleStatsSmooth = toggleStatsSmooth;
+
 document.addEventListener("DOMContentLoaded", loadMyTickets);

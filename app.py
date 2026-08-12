@@ -31,6 +31,7 @@ from models import (
 )
 from translations import translate
 from utils import date_uk
+from gamification import init_achievements, check_and_unlock_achievements
 
 load_dotenv()
 
@@ -246,99 +247,6 @@ def admin_required(f):
 
         return f(*args, **kwargs)
     return decorated
-
-def init_achievements():
-    achievements = [
-        {
-            'key': 'first_steps',
-            'title_uk': 'Перші кроки',
-            'title_de': 'Erste Schritte',
-            'title_en': 'First Steps',
-            'description_uk': 'Зареєструватися та завершити 1-шу місію',
-            'description_de': 'Registrieren und die 1. Mission abschließen',
-            'description_en': 'Register and complete your 1st mission',
-            'icon': 'bi-flag-fill',
-            'category': 'missions',
-            'xp_reward': 10
-        },
-        {
-            'key': 'fake_detective',
-            'title_uk': 'Детектив фейків',
-            'title_de': 'Fälschungsdetektiv',
-            'title_en': 'Fake Detective',
-            'description_uk': 'Розпізнати 5 маніпуляцій у новинах',
-            'description_de': '5 Manipulationen in Nachrichten erkennen',
-            'description_en': 'Spot 5 manipulations in news',
-            'icon': 'bi-search',
-            'category': 'missions',
-            'xp_reward': 20
-        },
-        {
-            'key': 'unbreakable_logic',
-            'title_uk': 'Непробивна логіка',
-            'title_de': 'Unerschütterliche Logik',
-            'title_en': 'Unbreakable Logic',
-            'description_uk': 'Отримати 1000 XP на платформі',
-            'description_de': '1000 XP auf der Plattform erhalten',
-            'description_en': 'Earn 1000 XP on the platform',
-            'icon': 'bi-shield-check',
-            'category': 'xp',
-            'xp_reward': 50
-        },
-        # Додайте інші досягнення аналогічно...
-    ]
-    
-    for ach_data in achievements:
-        existing = Achievement.query.filter_by(key=ach_data['key']).first()
-        if not existing:
-            achievement = Achievement(**ach_data)
-            db.session.add(achievement)
-    
-    db.session.commit()
-
-def check_and_unlock_achievements(user_id):
-    user = Users.query.get(user_id)
-    if not user:
-        return []
-    
-    unlocked_achievements = set(
-        ua.achievement_id for ua in UserAchievement.query.filter_by(user_id=user_id).all()
-    )
-    
-    all_achievements = Achievement.query.all()
-    newly_unlocked = []
-    
-    for achievement in all_achievements:
-        if achievement.id in unlocked_achievements:
-            continue
-        
-        is_unlocked = False
-        
-        if achievement.key == 'first_steps':
-            is_unlocked = user.missions_completed >= 1
-        elif achievement.key == 'fake_detective':
-            is_unlocked = user.missions_completed >= 5
-        elif achievement.key == 'unbreakable_logic':
-            is_unlocked = user.total_xp >= 1000
-        # Додайте інші умови...
-        
-        if is_unlocked:
-            user_achievement = UserAchievement(
-                user_id=user_id,
-                achievement_id=achievement.id,
-                unlocked_at=datetime.now(timezone.utc),
-                is_new=True
-            )
-            db.session.add(user_achievement)
-            newly_unlocked.append(achievement)
-            
-            if achievement.xp_reward > 0:
-                user.total_xp += achievement.xp_reward
-    
-    if newly_unlocked:
-        db.session.commit()
-    
-    return newly_unlocked
 
 def create_notification_for_mission(mission, admin_id):
     notif = Notification(
@@ -2452,6 +2360,8 @@ def fix_avatars(secret):
     return "<br>".join(output)
 
 
+with app.app_context():
+    init_achievements()
 
 
 # ========== RUN APP ==========

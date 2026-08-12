@@ -350,6 +350,8 @@
     data-t-lang="{% if g.lang == 'de' %}DE{% elif g.lang == 'uk' %}UK{% else %}EN{% endif %}"
     data-t-notifications="{{t('notifications')}}"
     data-unread-total="{{ (unread_count or 0) + (unread_messages_count or 0) }}"
+    data-t-achievement-unlocked="{{ t('achievement_status_unlocked') }}"
+    data-t-achievement-locked="{{ t('achievement_status_locked') }}"
     class="d-flex flex-column min-vh-100"
   >
     <!-- ==========================================================

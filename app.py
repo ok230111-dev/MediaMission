@@ -1592,18 +1592,22 @@ def delete_user(target_id):
 
         NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
 
-        progress_ids = [
-            p.id for p in UserMissionProgress.query
-            .filter_by(user_id=target_user.id)
-            .with_entities(UserMissionProgress.id)
-            .all()
-        ]
+# 1. Видаляємо прогрес місій (і пов'язані відповіді, якщо каскад не налаштований)
+        progress_ids = [p.id for p in UserMissionProgress.query.filter_by(user_id=target_user.id).all()]
         if progress_ids:
-            UserAnswer.query.filter(
-                UserAnswer.user_progress_id.in_(progress_ids)
-            ).delete(synchronize_session=False)
-
+            UserAnswer.query.filter(UserAnswer.user_progress_id.in_(progress_ids)).delete(synchronize_session=False)
         UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+
+        conversations = Conversation.query.filter(
+            db.or_(
+                Conversation.user_a_id == target_user.id,
+                Conversation.user_b_id == target_user.id
+            )
+        ).all()
+
+        for conv in conversations:
+            Message.query.filter_by(conversation_id=conv.id).delete()
+            db.session.delete(conv)
 
         db.session.delete(target_user)
         db.session.commit()

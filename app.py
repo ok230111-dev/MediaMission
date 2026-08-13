@@ -732,6 +732,11 @@ def login():
 def register():
     return render_template('register.html')
 
+@app.route("/faq", methods=["GET", "POST"])
+def faq():
+    return render_template('faq.html')
+
+
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()

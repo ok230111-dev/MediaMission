@@ -1,114 +1,287 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FAQ — MediaMission</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-</head>
-<body class="bg-light">
+{% extends "base.html" %} {% block title %}{{ t('faq_title') }} | MediaMission{%
+endblock %} {% block content %}
+<section class="container py-5" style="max-width: 850px">
+  <div class="text-center mb-5">
+    <span class="section-badge">{{ t('faq_badge') }}</span>
+    <h1 class="fw-bold mt-3">{{ t('faq_title') }}</h1>
+    <p class="text-muted">{{ t('faq_subtitle') }}</p>
+  </div>
 
-  <div class="container py-5">
-    <div class="text-center mb-5">
-      <h1 class="fw-bold">Часті запитання (FAQ)</h1>
-      <p class="text-muted">Знайдіть відповіді на найпоширеніші запитання про роботу з MediaMission.</p>
+  <div
+    class="accordion accordion-flush shadow-sm rounded-4 main-container p-3"
+    id="faqAccordion"
+  >
+    <!-- CATEGORY 1: Про MediaMission -->
+    <h4 class="faq-category-title mb-3 mt-2">
+      <i class="bi bi-info-circle me-2 text-primary"></i>{{ t('faq_cat_about')
+      }}
+    </h4>
+
+    {% for i in range(1, 6) %}
+    <div class="accordion-item mb-2 rounded-3 overflow-hidden">
+      <h2 class="accordion-header" id="heading{{ i }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse{{ i }}"
+          aria-expanded="false"
+          aria-controls="collapse{{ i }}"
+        >
+          {{ t('faq_q' ~ i) }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ i }}"
+        class="accordion-collapse collapse"
+        aria-labelledby="heading{{ i }}"
+        data-bs-parent="#faqAccordion"
+      >
+        <div class="accordion-body">{{ t('faq_a' ~ i) }}</div>
+      </div>
     </div>
+    {% endfor %}
 
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <div class="accordion accordion-flush shadow-sm rounded bg-white p-3" id="faqAccordion">
-          
-          <!-- FAQ Item 1 -->
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="headingOne">
-              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                Що таке MediaMission?
-              </button>
-            </h2>
-            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
-              <div class="accordion-body">
-                MediaMission — це платформа для управління медіаконтентом, завантаження зображень та взаємодії з ШІ-сервісами для автоматизації ваших медіапроєктів.
-              </div>
-            </div>
-          </div>
+    <hr class="my-4 faq-divider" />
 
-          <!-- FAQ Item 2 -->
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="headingTwo">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-Ось готовий шаблон з базовою HTML-структурою на **Bootstrap 5**, адаптований під проєкт **MediaMission**.
+    <!-- CATEGORY 2: Місії -->
+    <h4 class="faq-category-title mb-3">
+      <i class="bi bi-controller me-2 text-primary"></i>{{ t('faq_cat_missions')
+      }}
+    </h4>
 
-Ви можете використати цей загальний каркас, підставивши відповідний контент для кожної сторінки (FAQ, Impressum, Privacy Policy, Terms).
-
----
-
-### Базовий шаблон (Базова структура)
-
-```html
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediaMission</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css)" rel="stylesheet">
-</head>
-<body class="d-flex flex-column min-vh-100 bg-light">
-
-    <!-- Навігація -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">MediaMission</a>
-        </div>
-    </nav>
-
-    <!-- Основний контент -->
-    <main class="container my-4 flex-grow-1">
-<main class="container my-4 flex-grow-1">
-    <h1 class="mb-4">Часті запитання (FAQ)</h1>
-    <div class="accordion" id="faqAccordion">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingOne">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
-                    Що таке MediaMission?
-                </button>
-            </h2>
-            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    MediaMission — це платформа для управління медіаконтентом та завантаження ресурсів.
-                </div>
-            </div>
-        </div>
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="headingTwo">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
-                    Як створити обліковий запис?
-                </button>
-            </h2>
-            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    Для реєстрації перейдіть на сторінку реєстрації, вкажіть вашу електронну пошту та придумайте пароль.
-                </div>
-            </div>
-        </div>
+    {% for i in range(6, 11) %}
+    <div class="accordion-item mb-2 rounded-3 overflow-hidden">
+      <h2 class="accordion-header" id="heading{{ i }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse{{ i }}"
+          aria-expanded="false"
+          aria-controls="collapse{{ i }}"
+        >
+          {{ t('faq_q' ~ i) }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ i }}"
+        class="accordion-collapse collapse"
+        aria-labelledby="heading{{ i }}"
+        data-bs-parent="#faqAccordion"
+      >
+        <div class="accordion-body">{{ t('faq_a' ~ i) }}</div>
+      </div>
     </div>
-</main>    </main>
+    {% endfor %}
 
-    <!-- Футер -->
-    <footer class="bg-dark text-white text-center py-3 mt-auto">
-        <div class="container">
-            <p class="mb-1">&copy; 2026 MediaMission. Всі права захищено.</p>
-            <div class="small">
-                <a href="faq.html" class="text-white me-2">FAQ</a> |
-                <a href="impressum.html" class="text-white mx-2">Impressum</a> |
-                <a href="privacy.html" class="text-white mx-2">Privacy Policy</a> |
-                <a href="terms.html" class="text-white ms-2">Terms of Service</a>
-            </div>
-        </div>
-    </footer>
+    <hr class="my-4 faq-divider" />
 
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js)"></script>
-</body>
-</html>
+    <!-- CATEGORY 3: XP та досягнення -->
+    <h4 class="faq-category-title mb-3">
+      <i class="bi bi-trophy me-2 text-primary"></i>{{ t('faq_cat_xp') }}
+    </h4>
+
+    {% for i in range(12, 16) %}
+    <div class="accordion-item mb-2 rounded-3 overflow-hidden">
+      <h2 class="accordion-header" id="heading{{ i }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse{{ i }}"
+          aria-expanded="false"
+          aria-controls="collapse{{ i }}"
+        >
+          {{ t('faq_q' ~ i) }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ i }}"
+        class="accordion-collapse collapse"
+        aria-labelledby="heading{{ i }}"
+        data-bs-parent="#faqAccordion"
+      >
+        <div class="accordion-body">{{ t('faq_a' ~ i) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <hr class="my-4 faq-divider" />
+
+    <!-- CATEGORY 4: mmsAI -->
+    <h4 class="faq-category-title mb-3">
+      <i class="bi bi-robot me-2 text-primary"></i>{{ t('faq_cat_mmsai') }}
+    </h4>
+
+    {% for i in range(16, 20) %}
+    <div class="accordion-item mb-2 rounded-3 overflow-hidden">
+      <h2 class="accordion-header" id="heading{{ i }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse{{ i }}"
+          aria-expanded="false"
+          aria-controls="collapse{{ i }}"
+        >
+          {{ t('faq_q' ~ i) }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ i }}"
+        class="accordion-collapse collapse"
+        aria-labelledby="heading{{ i }}"
+        data-bs-parent="#faqAccordion"
+      >
+        <div class="accordion-body">{{ t('faq_a' ~ i) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <hr class="my-4 faq-divider" />
+
+    <!-- CATEGORY 5: Акаунт і технічні питання -->
+    <h4 class="faq-category-title mb-3">
+      <i class="bi bi-gear me-2 text-primary"></i>{{ t('faq_cat_account') }}
+    </h4>
+
+    {% for i in range(20, 24) %}
+    <div class="accordion-item mb-2 rounded-3 overflow-hidden">
+      <h2 class="accordion-header" id="heading{{ i }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse{{ i }}"
+          aria-expanded="false"
+          aria-controls="collapse{{ i }}"
+        >
+          {{ t('faq_q' ~ i) }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ i }}"
+        class="accordion-collapse collapse"
+        aria-labelledby="heading{{ i }}"
+        data-bs-parent="#faqAccordion"
+      >
+        <div class="accordion-body">{{ t('faq_a' ~ i) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <hr class="my-4 faq-divider" />
+
+    <!-- CATEGORY 6: Допомога -->
+    <h4 class="faq-category-title mb-3">
+      <i class="bi bi-life-preserver me-2 text-primary"></i>{{ t('faq_cat_help')
+      }}
+    </h4>
+
+    {% for i in range(24, 27) %}
+    <div class="accordion-item mb-2 rounded-3 overflow-hidden">
+      <h2 class="accordion-header" id="heading{{ i }}">
+        <button
+          class="accordion-button collapsed"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse{{ i }}"
+          aria-expanded="false"
+          aria-controls="collapse{{ i }}"
+        >
+          {{ t('faq_q' ~ i) }}
+        </button>
+      </h2>
+      <div
+        id="collapse{{ i }}"
+        class="accordion-collapse collapse"
+        aria-labelledby="heading{{ i }}"
+        data-bs-parent="#faqAccordion"
+      >
+        <div class="accordion-body">{{ t('faq_a' ~ i) }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="text-center mt-5">
+    <p class="text-muted mb-2">{{ t('faq_still_need_help') }}</p>
+    <a href="/support" class="btn btn-primary rounded-pill px-4">
+      <i class="bi bi-headset me-2"></i>{{ t('nav_support') }}
+    </a>
+  </div>
+</section>
+
+<style>
+  .main-container {
+    padding: 1.5rem !important;
+  }
+
+  .faq-category-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  .faq-divider {
+    opacity: 0.15;
+  }
+
+  /* Базові стилі для батона аккордеона */
+  #faqAccordion .accordion-button {
+    font-weight: 600;
+  }
+
+  #faqAccordion .accordion-button:not(.collapsed) {
+    background-color: var(--bs-primary-bg-subtle, #e7f1ff);
+    color: var(--bs-primary);
+    box-shadow: none;
+  }
+
+  #faqAccordion .accordion-button:focus {
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  /* -------------------------------------------------- */
+  /* ТЕМНА ТЕМА [data-theme="dark"]                     */
+  /* -------------------------------------------------- */
+
+  /* 1. Прибираємо білу рамку навколо контейнера аккордеона */
+  [data-theme="dark"] #faqAccordion.accordion {
+    --bs-accordion-border-color: rgba(255, 255, 255, 0.1);
+    --bs-accordion-bg: transparent;
+    border: none;
+  }
+
+  /* 2. Налаштування окремих елементів (карток) */
+  [data-theme="dark"] #faqAccordion .accordion-item {
+    background-color: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+  }
+
+  /* 3. Кнопка у закритому стані */
+  [data-theme="dark"] #faqAccordion .accordion-button.collapsed {
+    background-color: #1e293b;
+    color: #f8fafc;
+  }
+
+  /* 4. Кнопка у відкритому/активному стані */
+  [data-theme="dark"] #faqAccordion .accordion-button:not(.collapsed) {
+    background-color: rgba(13, 110, 253, 0.15);
+    color: #6ea8fe;
+  }
+
+  /* 5. Біла стрілка в темній темі */
+  [data-theme="dark"] #faqAccordion .accordion-button::after {
+    filter: brightness(0) invert(1);
+  }
+
+  /* 6. Тіло аккордеона */
+  [data-theme="dark"] #faqAccordion .accordion-body {
+    background-color: #1e293b;
+    color: #cbd5e1;
+  }
+</style>
+{% endblock %}

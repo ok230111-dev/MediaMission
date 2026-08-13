@@ -1569,6 +1569,7 @@ def find_user_by_email():
         }
     }
 
+
 @app.route("/api/admin/delete_user/<int:target_id>", methods=["DELETE"])
 def delete_user(target_id):
     user_id = session.get("user_id")
@@ -1590,24 +1591,46 @@ def delete_user(target_id):
         if target_user.avatar:
             delete_from_cloudinary(target_user.avatar)
 
+        # Видаляємо сповіщення, ЯКІ ОТРИМАВ користувач
         NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
 
-# 1. Видаляємо прогрес місій (і пов'язані відповіді, якщо каскад не налаштований)
-        progress_ids = [p.id for p in UserMissionProgress.query.filter_by(user_id=target_user.id).all()]
+        # НОВЕ: обнуляємо created_by у сповіщеннях, які СТВОРИВ цей користувач
+        # (замість видалення самих сповіщень, щоб не втратити їх для інших отримувачів)
+        Notification.query.filter_by(created_by=target_user.id).update(
+            {"created_by": None}, synchronize_session=False
+        )
+
+        # НОВЕ: видаляємо коментарі та реакції користувача до сповіщень
+        NotificationComment.query.filter_by(user_id=target_user.id).delete()
+        NotificationReaction.query.filter_by(user_id=target_user.id).delete()
+
+        # Видаляємо відповіді користувача (повʼязані через прогрес місій)
+        progress_ids = [
+            p.id for p in UserMissionProgress.query
+            .filter_by(user_id=target_user.id)
+            .with_entities(UserMissionProgress.id)
+            .all()
+        ]
         if progress_ids:
-            UserAnswer.query.filter(UserAnswer.user_progress_id.in_(progress_ids)).delete(synchronize_session=False)
+            UserAnswer.query.filter(
+                UserAnswer.user_progress_id.in_(progress_ids)
+            ).delete(synchronize_session=False)
+
+        # Видаляємо прогрес місій
         UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
 
-        conversations = Conversation.query.filter(
-            db.or_(
-                Conversation.user_a_id == target_user.id,
-                Conversation.user_b_id == target_user.id
-            )
-        ).all()
+        # НОВЕ: видаляємо звернення підтримки та ідеї користувача
+        SupportTicket.query.filter_by(user_id=target_user.id).delete()
+        Idea.query.filter_by(user_id=target_user.id).delete()
 
-        for conv in conversations:
-            Message.query.filter_by(conversation_id=conv.id).delete()
-            db.session.delete(conv)
+        # НОВЕ: видаляємо повідомлення чату та розмови користувача
+        conversations = Conversation.query.filter(
+            db.or_(Conversation.user_a_id == target_user.id, Conversation.user_b_id == target_user.id)
+        ).all()
+        conversation_ids = [c.id for c in conversations]
+        if conversation_ids:
+            ChatMessage.query.filter(ChatMessage.conversation_id.in_(conversation_ids)).delete(synchronize_session=False)
+            Conversation.query.filter(Conversation.id.in_(conversation_ids)).delete(synchronize_session=False)
 
         db.session.delete(target_user)
         db.session.commit()
@@ -1618,6 +1641,67 @@ def delete_user(target_id):
         db.session.rollback()
         print(f"Помилка видалення користувача: {e}")
         return {"success": False, "error": str(e)}, 500
+
+
+# @app.route("/api/admin/delete_user/<int:target_id>", methods=["DELETE"])
+# def delete_user(target_id):
+#     user_id = session.get("user_id")
+#     if not user_id:
+#         return {"error": "Unauthorized"}, 401
+
+#     current_user = Users.query.get(user_id)
+#     if not current_user or not current_user.admin:
+#         return {"error": "Forbidden"}, 403
+
+#     target_user = Users.query.get(target_id)
+#     if not target_user:
+#         return {"success": False, "error": "Користувача не знайдено"}, 404
+
+#     if target_user.id == current_user.id:
+#         return {"success": False, "error": "Ви не можете видалити самого себе!"}, 400
+
+#     try:
+#         if target_user.avatar:
+#             delete_from_cloudinary(target_user.avatar)
+
+#         NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
+
+# # 1. Видаляємо прогрес місій (і пов'язані відповіді, якщо каскад не налаштований)
+#         progress_ids = [p.id for p in UserMissionProgress.query.filter_by(user_id=target_user.id).all()]
+#         if progress_ids:
+#             UserAnswer.query.filter(UserAnswer.user_progress_id.in_(progress_ids)).delete(synchronize_session=False)
+#         UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+
+#         conversations = Conversation.query.filter(
+#             db.or_(
+#                 Conversation.user_a_id == target_user.id,
+#                 Conversation.user_b_id == target_user.id
+#             )
+#         ).all()
+
+#         # НОВЕ: обнуляємо created_by у сповіщеннях, які СТВОРИВ цей користувач
+#         # (замість видалення самих сповіщень, щоб не втратити їх для інших отримувачів)
+#         Notification.query.filter_by(created_by=target_user.id).update(
+#             {"created_by": None}, synchronize_session=False
+#         )
+
+#         # НОВЕ: видаляємо коментарі та реакції користувача до сповіщень
+#         NotificationComment.query.filter_by(user_id=target_user.id).delete()
+#         NotificationReaction.query.filter_by(user_id=target_user.id).delete()
+
+#         for conv in conversations:
+#             ChatMessage.query.filter_by(conversation_id=conv.id).delete()
+#             db.session.delete(conv)
+
+#         db.session.delete(target_user)
+#         db.session.commit()
+
+#         return {"success": True}
+
+#     except Exception as e:
+#         db.session.rollback()
+#         print(f"Помилка видалення користувача: {e}")
+#         return {"success": False, "error": str(e)}, 500
 
 @app.route("/api/admin/adjust_xp/<int:target_id>", methods=["POST"])
 def adjust_user_xp(target_id):

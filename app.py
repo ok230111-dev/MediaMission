@@ -2572,6 +2572,7 @@ def init_daily_tasks():
     db.session.commit()
 
 with app.app_context():
+    db.create_all()  # Створює відсутні таблиці в PostgreSQL (зокрема daily_task_templates)
     init_daily_tasks()
 
 

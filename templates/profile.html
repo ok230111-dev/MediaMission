@@ -663,6 +663,158 @@ MediaMission{% endblock %} {% block style %}
     </div>
   </div>
 
+  <!-- Щоденні завдання у профілі (1 завдання + кнопка перехода) -->
+  <div class="card border-0 shadow-sm p-4 mb-4 main-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0 fw-bold">
+        <i class="bi bi-calendar-check text-primary me-2"></i>{{
+        t('daily_tasks_title') or 'Щоденні завдання' }}
+      </h4>
+      {% set tasks_list = tasks or daily_tasks %} {% if tasks_list %}
+      <span
+        class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-semibold"
+      >
+        {{ tasks_list | selectattr('is_completed') | list | length }}/{{
+        tasks_list | length }} {{ t('completed') or 'виконано' }}
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="daily-tasks-list">
+      {% set tasks_list = tasks or daily_tasks %} {% if tasks_list %} {% set
+      lang = g.lang %}
+
+      <!-- Знаходимо перше невиконане завдання, або беремо перше зі списку -->
+      {% set active_task = (tasks_list | rejectattr('xp_claimed') | first) or
+      tasks_list[0] %} {% set percent = (active_task.progress /
+      active_task.template.target_value * 100)|int if
+      active_task.template.target_value > 0 else 0 %} {% set percent = [percent,
+      100]|min %}
+
+      <div
+        class="p-3 rounded-3 border task-item d-flex align-items-center justify-content-between flex-wrap gap-3 {% if active_task.is_completed %}task-completed{% endif %}"
+      >
+        <div class="d-flex align-items-center gap-3 flex-grow-1">
+          <div
+            class="task-icon rounded-3 d-flex align-items-center justify-content-center fs-4 flex-shrink-0"
+            style="
+              width: 48px;
+              height: 48px;
+              background: var(--bs-light-bg-subtle, rgba(0, 0, 0, 0.03));
+            "
+          >
+            {{ active_task.template.icon or '🎯' }}
+          </div>
+
+          <div class="flex-grow-1">
+            <div class="fw-semibold task-title">
+              {% if lang == 'de' %} {{ active_task.template.title_de or
+              active_task.template.title_uk }} {% elif lang == 'en' %} {{
+              active_task.template.title_en or active_task.template.title_uk }}
+              {% else %} {{ active_task.template.title_uk }} {% endif %}
+            </div>
+
+            <div class="progress mt-2" style="height: 6px; max-width: 200px">
+              <div
+                class="progress-bar bg-primary"
+                style="width: {{ percent }}%;"
+              ></div>
+            </div>
+
+            <div class="text-muted small mt-1">
+              {{ active_task.progress }} / {{ active_task.template.target_value
+              }} •
+              <span class="text-warning-emphasis fw-bold"
+                >+{{ active_task.template.xp_reward }} XP</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
+          {% if active_task.is_completed and not active_task.xp_claimed %}
+          <button
+            class="btn btn-success btn-sm claim-btn rounded-pill px-3 fw-bold"
+            data-task-id="{{ active_task.id }}"
+          >
+            <i class="bi bi-gift me-1"></i>Забрати
+          </button>
+          {% elif active_task.xp_claimed %}
+          <span
+            class="badge bg-success-subtle text-success rounded-pill px-3 py-2 fw-semibold"
+          >
+            <i class="bi bi-check-lg me-1"></i>Отримано
+          </span>
+          {% else %}
+          <span
+            class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2"
+          >
+            {{ percent }}%
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Кнопка переходу на основну сторінку завдань -->
+      <div class="mt-3 text-center">
+        <a
+          href="/daily-tasks"
+          class="btn btn-outline-primary btn-sm rounded-pill w-100 fw-semibold"
+        >
+          {{t('to_daily-tasks')}} <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+
+      {% else %}
+      <div class="text-center text-muted py-3">
+        <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+        На сьогодні завдання відсутні.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <style>
+    .task-item {
+      background-color: var(--bs-body-bg);
+      transition: all 0.2s ease-in-out;
+    }
+    .task-completed {
+      border-left: 4px solid #10b981 !important;
+    }
+    [data-theme="dark"] .task-item {
+      background-color: #1e293b;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+  </style>
+
+  <script>
+    document.querySelectorAll(".claim-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const taskId = btn.dataset.taskId;
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(`/api/daily_tasks/claim/${taskId}`, {
+            method: "POST",
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            alert(`+${data.xp_earned} XP отримано!`);
+            window.location.reload();
+          } else {
+            alert(data.error || "Помилка");
+            btn.disabled = false;
+          }
+        } catch (err) {
+          console.error(err);
+          btn.disabled = false;
+        }
+      });
+    });
+  </script>
+
   <!-- Блок Досягнень -->
   <div
     class="card border-0 shadow-sm p-4 mb-4"
@@ -940,9 +1092,6 @@ MediaMission{% endblock %} {% block style %}
           <p class="text-muted mt-2">{{ t('privacy_description') }}</p>
         </div>
         <div class="modal-footer border-0">
-          <a href="/notifications" class="btn btn-secondary"
-            >{{ t('notifications') }}</a
-          >
           <button
             type="button"
             class="btn btn-secondary"

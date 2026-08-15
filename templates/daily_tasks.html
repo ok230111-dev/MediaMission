@@ -1,0 +1,126 @@
+{% extends "base.html" %} {% block title %}{{ t('daily_tasks_title') or 'Щоденні
+завдання' }} | MediaMission{% endblock %} {% block content %}
+<section class="container py-5" style="max-width: 700px">
+  <h1 class="fw-bold mb-2">
+    <i class="bi bi-calendar-check text-primary me-2"></i>{{
+    t('daily_tasks_title') or 'Щоденні завдання' }}
+  </h1>
+  <p class="text-muted mb-4">
+    {{ t('daily_tasks_subtitle') or 'Виконуй завдання щодня та отримуй бонусний
+    XP!' }}
+  </p>
+
+  <div class="d-flex flex-column gap-3">
+    {% set lang = g.lang %} {% for task in tasks %} {% set percent =
+    (task.progress / task.template.target_value * 100)|int if
+    task.template.target_value > 0 else 0 %} {% set percent = [percent, 100]|min
+    %}
+
+    <div
+      class="card border-0 shadow-sm daily-task-card {% if task.is_completed %}completed{% endif %}"
+    >
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="task-icon">{{ task.template.icon or '🎯' }}</div>
+
+        <div class="flex-grow-1">
+          <div class="fw-semibold">
+            {% if lang == 'de' %} {{ task.template.title_de or
+            task.template.title_uk }} {% elif lang == 'en' %} {{
+            task.template.title_en or task.template.title_uk }} {% else %} {{
+            task.template.title_uk }} {% endif %}
+          </div>
+
+          <div class="progress mt-2" style="height: 8px">
+            <div
+              class="progress-bar bg-primary"
+              role="progressbar"
+              style="width: {{ percent }}%;"
+              aria-valuenow="{{ task.progress }}"
+              aria-valuemin="0"
+              aria-valuemax="{{ task.template.target_value }}"
+            ></div>
+          </div>
+
+          <div class="text-muted small mt-1">
+            {{ task.progress }} / {{ task.template.target_value }} • +{{
+            task.template.xp_reward }} XP
+          </div>
+        </div>
+
+        {% if task.is_completed and not task.xp_claimed %}
+        <button
+          class="btn btn-success btn-sm claim-btn"
+          data-task-id="{{ task.id }}"
+        >
+          {{ t('claim') or 'Забрати' }}
+        </button>
+        {% elif task.xp_claimed %}
+        <span
+          class="badge bg-success rounded-pill"
+          title="{{ t('claimed') or 'Отримано' }}"
+        >
+          <i class="bi bi-check-lg"></i>
+        </span>
+        {% else %}
+        <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+          {{ percent }}%
+        </span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-4">
+      <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+      {{ t('no_daily_tasks') or 'На сьогодні завдання відсутні.' }}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+  .daily-task-card {
+    border-radius: 16px;
+    transition: 0.2s;
+  }
+  .daily-task-card.completed {
+    border-left: 3px solid var(--bs-success, #10b981) !important;
+  }
+  .task-icon {
+    font-size: 1.8rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bs-light-bg-subtle, rgba(0, 0, 0, 0.03));
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+</style>
+
+<script>
+  document.querySelectorAll(".claim-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const taskId = btn.dataset.taskId;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/daily_tasks/claim/${taskId}`, {
+          method: "POST",
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.error || "Error");
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+      }
+    });
+  });
+</script>
+{% endblock %}

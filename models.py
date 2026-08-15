@@ -350,3 +350,40 @@ class Review(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship("Users")
+
+
+class DailyTaskTemplate(db.Model):
+    __tablename__ = "daily_task_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)  # напр. "complete_1_mission"
+    title_uk = db.Column(db.String(200), nullable=False)
+    title_de = db.Column(db.String(200), nullable=False)
+    title_en = db.Column(db.String(200), nullable=False)
+    icon = db.Column(db.String(10), default="🎯")
+    task_type = db.Column(db.String(30), nullable=False)
+    # можливі значення: "complete_mission", "perfect_mission", "earn_xp",
+    # "mission_type", "send_message", "visit_leaderboard"
+    target_value = db.Column(db.Integer, default=1)  # скільки треба зробити (1 місія, 50 XP тощо)
+    extra_param = db.Column(db.String(50), nullable=True)  # напр. тип місії "news"/"video"
+    xp_reward = db.Column(db.Integer, default=10)
+    is_active = db.Column(db.Boolean, default=True)
+
+
+class UserDailyTask(db.Model):
+    __tablename__ = "user_daily_tasks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    template_id = db.Column(db.Integer, db.ForeignKey("daily_task_templates.id"), nullable=False)
+    date = db.Column(db.Date, nullable=False)  # на який день це завдання
+    progress = db.Column(db.Integer, default=0)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    xp_claimed = db.Column(db.Boolean, default=False)
+
+    template = db.relationship("DailyTaskTemplate")
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'template_id', 'date', name='unique_user_task_per_day'),
+    )

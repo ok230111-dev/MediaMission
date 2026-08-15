@@ -1,4 +1,5 @@
 import re
+import random
 import threading
 from flask import Flask, Response, current_app, render_template, request, redirect, url_for, session, g, abort, jsonify, flash, send_from_directory
 from flask_mail import Message
@@ -12,7 +13,7 @@ import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
 from firebase_admin import auth
 from dotenv import load_dotenv
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 import cloudinary
 import cloudinary.uploader
 from functools import wraps
@@ -27,7 +28,7 @@ from models import (
     Missions, MissionContent, Questions, Options, Users, 
     UserMissionProgress, UserAnswer, Notification, NotificationRecipient,
     NotificationComment, NotificationReaction, Achievement, UserAchievement,
-    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView, Conversation, ChatMessage, Review
+    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView, Conversation, ChatMessage, Review, DailyTaskTemplate, UserDailyTask
 )
 from translations import translate
 from utils import date_uk
@@ -589,11 +590,41 @@ def reviews():
 
     return render_template("reviews.html", response_title=translate("reviews_title", g.lang), user=user)
 
+@app.route("/daily-tasks")
+def daily_tasks():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    tasks = get_or_assign_daily_tasks(user_id)
+    return render_template("daily_tasks.html", tasks=tasks)
 
 @app.route("/missions-overview")
 def missions_overview():
     missions = Missions.query.all()
     return render_template('missions.html', missions=missions)
+
+def get_or_assign_daily_tasks(user_id):
+    today = date.today()
+
+    existing_tasks = UserDailyTask.query.filter_by(user_id=user_id, date=today).all()
+    if existing_tasks:
+        return existing_tasks
+
+    all_templates = DailyTaskTemplate.query.filter_by(is_active=True).all()
+    if len(all_templates) <= 3:
+        chosen = all_templates
+    else:
+        chosen = random.sample(all_templates, 3)
+
+    new_tasks = []
+    for template in chosen:
+        task = UserDailyTask(user_id=user_id, template_id=template.id, date=today, progress=0)
+        db.session.add(task)
+        new_tasks.append(task)
+
+    db.session.commit()
+    return new_tasks
 
 @app.route("/mission/<int:id>", methods=['GET', 'POST'])
 def mission_detail(id):
@@ -705,12 +736,37 @@ def mission_detail(id):
             total_all_questions = sum(p.total_questions for p in all_progress)
             user.accuracy = round(total_correct / total_all_questions * 100, 1) if total_all_questions > 0 else 0.0
 
+            def update_daily_tasks_on_mission(user_id, mission, score, total, xp_earned):
+                today = date.today()
+                tasks = UserDailyTask.query.filter_by(user_id=user_id, date=today, is_completed=False).all()
+
+                for task in tasks:
+                    template = task.template
+
+                    if template.task_type == "complete_mission":
+                        task.progress += 1
+                    elif template.task_type == "perfect_mission" and score == total:
+                        task.progress += 1
+                    elif template.task_type == "earn_xp":
+                        task.progress += xp_earned
+                    elif template.task_type == "mission_type" and mission.type == template.extra_param:
+                        task.progress += 1
+
+                    if task.progress >= template.target_value and not task.is_completed:
+                        task.is_completed = True
+                        task.completed_at = datetime.now(timezone.utc)
+
+                db.session.commit()
+
             if score == total and not was_already_completed:
                 user.total_xp += mission.xp
                 user.missions_completed += 1
 
             db.session.commit()
             user = Users.query.get(session["user_id"])
+
+            if user_id:
+                update_daily_tasks_on_mission(user_id, mission, score, total, mission.xp if score == total else 0)
 
         return render_template("result.html", mission=mission, score=score, total=total, progress=progress, user=user, answer_lookup=answer_lookup)
     
@@ -797,6 +853,8 @@ def profile():
     total_attempts = UserMissionProgress.query.filter_by(user_id=user_id).count()
     successful_attempts = UserMissionProgress.query.filter_by(user_id=user_id, completed=True).count()
     success_rate = round(successful_attempts / total_attempts * 100) if total_attempts > 0 else 0
+
+    tasks = get_or_assign_daily_tasks(user_id)
     
     return render_template(
         'profile.html',
@@ -806,7 +864,8 @@ def profile():
         total_attempts=total_attempts,
         successful_attempts=successful_attempts,
         success_rate=success_rate,
-        newly_unlocked=newly_unlocked
+        newly_unlocked=newly_unlocked,
+        tasks=tasks
     )
 
 @app.route("/leaderboard", methods=["GET", "POST"])
@@ -883,6 +942,30 @@ def firebase_messaging_sw():
     return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
 
 # ========== API ROUTES ==========
+
+@app.route("/api/daily_tasks/claim/<int:task_id>", methods=["POST"])
+def claim_daily_task(task_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    task = UserDailyTask.query.filter_by(id=task_id, user_id=user_id).first()
+    if not task:
+        return {"error": "Завдання не знайдено"}, 404
+
+    if not task.is_completed:
+        return {"error": "Завдання ще не виконано"}, 400
+
+    if task.xp_claimed:
+        return {"error": "Нагороду вже отримано"}, 400
+
+    user = db.session.get(Users, user_id)
+    user.total_xp += task.template.xp_reward
+    task.xp_claimed = True
+
+    db.session.commit()
+
+    return {"success": True, "xp_earned": task.template.xp_reward}
 
 @app.route("/api/set_language", methods=["POST"])
 def set_language_api():
@@ -2452,9 +2535,44 @@ def fix_avatars(secret):
     db.session.commit()
     return "<br>".join(output)
 
+def init_daily_tasks():
+    tasks = [
+        {
+            "key": "complete_1_mission",
+            "title_uk": "Пройди 1 місію", "title_de": "Absolviere 1 Mission", "title_en": "Complete 1 mission",
+            "icon": "🎯", "task_type": "complete_mission", "target_value": 1, "xp_reward": 10
+        },
+        {
+            "key": "perfect_mission",
+            "title_uk": "Пройди місію на 100%", "title_de": "Schließe eine Mission zu 100% ab", "title_en": "Complete a mission with 100%",
+            "icon": "💯", "task_type": "perfect_mission", "target_value": 1, "xp_reward": 20
+        },
+        {
+            "key": "earn_50_xp",
+            "title_uk": "Заробіть 50 XP сьогодні", "title_de": "Verdiene heute 50 XP", "title_en": "Earn 50 XP today",
+            "icon": "⚡", "task_type": "earn_xp", "target_value": 50, "xp_reward": 15
+        },
+        {
+            "key": "mission_news",
+            "title_uk": "Пройди місію-новину", "title_de": "Absolviere eine Nachrichten-Mission", "title_en": "Complete a news mission",
+            "icon": "📰", "task_type": "mission_type", "target_value": 1, "extra_param": "news", "xp_reward": 10
+        },
+        {
+            "key": "send_message",
+            "title_uk": "Напиши повідомлення другу", "title_de": "Schreibe einem Freund eine Nachricht", "title_en": "Send a message to a friend",
+            "icon": "💬", "task_type": "send_message", "target_value": 1, "xp_reward": 5
+        },
+    ]
+
+    for data in tasks:
+        existing = DailyTaskTemplate.query.filter_by(key=data["key"]).first()
+        if not existing:
+            db.session.add(DailyTaskTemplate(**data))
+
+    db.session.commit()
 
 with app.app_context():
-    init_achievements()
+    init_daily_tasks()
 
 
 # ========== RUN APP ==========

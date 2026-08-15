@@ -2535,45 +2535,45 @@ def fix_avatars(secret):
     db.session.commit()
     return "<br>".join(output)
 
-def init_daily_tasks():
-    tasks = [
-        {
-            "key": "complete_1_mission",
-            "title_uk": "Пройди 1 місію", "title_de": "Absolviere 1 Mission", "title_en": "Complete 1 mission",
-            "icon": "🎯", "task_type": "complete_mission", "target_value": 1, "xp_reward": 10
-        },
-        {
-            "key": "perfect_mission",
-            "title_uk": "Пройди місію на 100%", "title_de": "Schließe eine Mission zu 100% ab", "title_en": "Complete a mission with 100%",
-            "icon": "💯", "task_type": "perfect_mission", "target_value": 1, "xp_reward": 20
-        },
-        {
-            "key": "earn_50_xp",
-            "title_uk": "Заробіть 50 XP сьогодні", "title_de": "Verdiene heute 50 XP", "title_en": "Earn 50 XP today",
-            "icon": "⚡", "task_type": "earn_xp", "target_value": 50, "xp_reward": 15
-        },
-        {
-            "key": "mission_news",
-            "title_uk": "Пройди місію-новину", "title_de": "Absolviere eine Nachrichten-Mission", "title_en": "Complete a news mission",
-            "icon": "📰", "task_type": "mission_type", "target_value": 1, "extra_param": "news", "xp_reward": 10
-        },
-        {
-            "key": "send_message",
-            "title_uk": "Напиши повідомлення другу", "title_de": "Schreibe einem Freund eine Nachricht", "title_en": "Send a message to a friend",
-            "icon": "💬", "task_type": "send_message", "target_value": 1, "xp_reward": 5
-        },
-    ]
+# def init_daily_tasks():
+#     tasks = [
+#         {
+#             "key": "complete_1_mission",
+#             "title_uk": "Пройди 1 місію", "title_de": "Absolviere 1 Mission", "title_en": "Complete 1 mission",
+#             "icon": "🎯", "task_type": "complete_mission", "target_value": 1, "xp_reward": 10
+#         },
+#         {
+#             "key": "perfect_mission",
+#             "title_uk": "Пройди місію на 100%", "title_de": "Schließe eine Mission zu 100% ab", "title_en": "Complete a mission with 100%",
+#             "icon": "💯", "task_type": "perfect_mission", "target_value": 1, "xp_reward": 20
+#         },
+#         {
+#             "key": "earn_50_xp",
+#             "title_uk": "Заробіть 50 XP сьогодні", "title_de": "Verdiene heute 50 XP", "title_en": "Earn 50 XP today",
+#             "icon": "⚡", "task_type": "earn_xp", "target_value": 50, "xp_reward": 15
+#         },
+#         {
+#             "key": "mission_news",
+#             "title_uk": "Пройди місію-новину", "title_de": "Absolviere eine Nachrichten-Mission", "title_en": "Complete a news mission",
+#             "icon": "📰", "task_type": "mission_type", "target_value": 1, "extra_param": "news", "xp_reward": 10
+#         },
+#         {
+#             "key": "send_message",
+#             "title_uk": "Напиши повідомлення другу", "title_de": "Schreibe einem Freund eine Nachricht", "title_en": "Send a message to a friend",
+#             "icon": "💬", "task_type": "send_message", "target_value": 1, "xp_reward": 5
+#         },
+#     ]
 
-    for data in tasks:
-        existing = DailyTaskTemplate.query.filter_by(key=data["key"]).first()
-        if not existing:
-            db.session.add(DailyTaskTemplate(**data))
+#     for data in tasks:
+#         existing = DailyTaskTemplate.query.filter_by(key=data["key"]).first()
+#         if not existing:
+#             db.session.add(DailyTaskTemplate(**data))
 
-    db.session.commit()
+#     db.session.commit()
 
-with app.app_context():
-    db.create_all()  # Створює відсутні таблиці в PostgreSQL (зокрема daily_task_templates)
-    init_daily_tasks()
+# with app.app_context():
+#     db.create_all()  # Створює відсутні таблиці в PostgreSQL (зокрема daily_task_templates)
+#     init_daily_tasks()
 
 
 # ========== RUN APP ==========

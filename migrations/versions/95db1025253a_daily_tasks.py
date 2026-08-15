@@ -39,20 +39,23 @@ def upgrade():
             sa.PrimaryKeyConstraint('id'),
             sa.UniqueConstraint('key')
         )
-    op.create_table('user_daily_tasks',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('template_id', sa.Integer(), nullable=False),
-    sa.Column('date', sa.Date(), nullable=False),
-    sa.Column('progress', sa.Integer(), nullable=True),
-    sa.Column('is_completed', sa.Boolean(), nullable=True),
-    sa.Column('completed_at', sa.DateTime(), nullable=True),
-    sa.Column('xp_claimed', sa.Boolean(), nullable=True),
-    sa.ForeignKeyConstraint(['template_id'], ['daily_task_templates.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('user_id', 'template_id', 'date', name='unique_user_task_per_day')
-    )
+    # 2. Створюємо user_daily_tasks, якщо її ще немає (саме тут падає деплой)
+    if 'user_daily_tasks' not in tables:
+        op.create_table(
+            'user_daily_tasks',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('template_id', sa.Integer(), nullable=False),
+            sa.Column('date', sa.Date(), nullable=False),
+            sa.Column('progress', sa.Integer(), nullable=True),
+            sa.Column('is_completed', sa.Boolean(), nullable=True),
+            sa.Column('completed_at', sa.DateTime(), nullable=True),
+            sa.Column('xp_claimed', sa.Boolean(), nullable=True),
+            sa.ForeignKeyConstraint(['template_id'], ['daily_task_templates.id']),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id']),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('user_id', 'template_id', 'date', name='unique_user_task_per_day')
+        )
     # ### end Alembic commands ###
 
 

@@ -1,0 +1,574 @@
+{% extends "base.html" %} {% block title %}{{ t('resources') }} | MediaMission{%
+endblock %} {% block content %}
+
+<section class="container py-5">
+  <!-- ВЕРХНІ ВКЛАДКИ -->
+  <div class="theory-top-tabs mb-4">
+    <a href="/theory" class="theory-tab">
+      <i class="bi bi-book-half me-1"></i> {{ t('tab_theory') }}
+    </a>
+    <a href="/theory/resources" class="theory-tab active"
+      ><i class="bi bi-collection me-1"></i> {{ t('tab_resources') }}
+    </a>
+    <a href="/games" class="theory-tab">
+      <i class="bi bi-controller me-1"></i> {{ t('tab_games') }}
+    </a>
+    <a href="/tournaments" class="theory-tab">
+      <i class="bi bi-trophy me-1"></i> {{ t('tab_tournaments') }}
+    </a>
+    <a href="/dictionary" class="theory-tab">
+      <i class="bi-journal-text me-1"></i> {{ t('tab_dictionary') }}</a
+    >
+  </div>
+  <!-- HEADER -->
+  <div class="text-center mb-5">
+    <h1 class="fw-bold display-5 mb-3">
+      <i class="bi bi-collection text-primary me-2"></i>
+      {{ t('resources_title_main') }}
+      <span class="step-primary">{{ t('resources_title_highlight') }}</span>
+    </h1>
+
+    <div class="container text-center py-3">
+      <h6 class="display-6 fw-bold">
+        <span class="step-neutral">{{ t('find') }}</span>
+        <span class="step-primary">{{ t('verify') }}</span>
+        <span class="step-success">{{ t('protect') }}</span>
+      </h6>
+    </div>
+
+    <p class="text-muted mx-auto resources-intro">
+      {{ t('resources_hero_desc') }}
+    </p>
+  </div>
+
+  <!-- INFO BLOCK -->
+  <div class="resource-info mb-5">
+    <div class="resource-info-icon">
+      <i class="bi bi-lightbulb-fill"></i>
+    </div>
+
+    <div>
+      <h5 class="fw-bold mb-1">{{ t('resources_info_title') }}</h5>
+
+      <p class="text-muted mb-0">{{ t('resources_info_desc') }}</p>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="resource-filters mb-4">
+    <button class="resource-filter active" data-filter="all">
+      <i class="bi bi-grid"></i>
+      {{ t('filter_all') }}
+    </button>
+
+    <button class="resource-filter" data-filter="video">
+      <i class="bi bi-play-circle"></i>
+      {{ t('filter_video') }}
+    </button>
+
+    <button class="resource-filter" data-filter="book">
+      <i class="bi bi-book"></i>
+      {{ t('filter_book') }}
+    </button>
+
+    <button class="resource-filter" data-filter="article">
+      <i class="bi bi-newspaper"></i>
+      {{ t('filter_article') }}
+    </button>
+
+    <button class="resource-filter" data-filter="website">
+      <i class="bi bi-globe2"></i>
+      {{ t('filter_website') }}
+    </button>
+
+    <button class="resource-filter" data-filter="pdf">
+      <i class="bi bi-file-earmark-pdf"></i>
+      {{ t('filter_pdf') }}
+    </button>
+
+    <button class="resource-filter" data-filter="tool">
+      <i class="bi bi-tools"></i>
+      {{ t('filter_tool') }}
+    </button>
+  </div>
+
+  <!-- RESOURCES -->
+  <div class="row g-4" id="resourcesGrid">
+    {% for resource in resources %}
+
+    <div
+      class="col-md-6 col-lg-4 resource-item"
+      data-type="{{ resource.resource_type }}"
+    >
+      <div class="resource-card h-100">
+        {% if resource.image_url %}
+
+        <div class="resource-image">
+          <img
+            src="{{ resource.image_url }}"
+            alt="{{ resource.title }}"
+            loading="lazy"
+          />
+
+          <div class="resource-type-badge">
+            {% if resource.resource_type == "video" %}
+            <i class="bi bi-play-circle-fill"></i> {{ t('resource_type_video')
+            }} {% elif resource.resource_type == "book" %}
+            <i class="bi bi-book-fill"></i> {{ t('resource_type_book') }} {%
+            elif resource.resource_type == "article" %}
+            <i class="bi bi-newspaper"></i> {{ t('resource_type_article') }} {%
+            elif resource.resource_type == "website" %}
+            <i class="bi bi-globe2"></i> {{ t('resource_type_website') }} {%
+            elif resource.resource_type == "pdf" %}
+            <i class="bi bi-file-earmark-pdf-fill"></i> {{
+            t('resource_type_pdf') }} {% elif resource.resource_type == "tool"
+            %} <i class="bi bi-tools"></i> {{ t('resource_type_tool') }} {%
+            endif %}
+          </div>
+        </div>
+
+        {% else %}
+
+        <div class="resource-placeholder">
+          {% if resource.resource_type == "video" %}
+          <i class="bi bi-play-circle"></i>
+          {% elif resource.resource_type == "book" %}
+          <i class="bi bi-book"></i>
+          {% elif resource.resource_type == "article" %}
+          <i class="bi bi-newspaper"></i>
+          {% elif resource.resource_type == "website" %}
+          <i class="bi bi-globe2"></i>
+          {% elif resource.resource_type == "pdf" %}
+          <i class="bi bi-file-earmark-pdf"></i>
+          {% elif resource.resource_type == "tool" %}
+          <i class="bi bi-tools"></i>
+          {% else %}
+          <i class="bi bi-link-45deg"></i>
+          {% endif %}
+        </div>
+
+        {% endif %}
+
+        <div class="card-body p-4 d-flex flex-column">
+          <h5 class="fw-bold mb-2">{{ resource.title }}</h5>
+
+          {% if resource.description %}
+          <p class="text-muted small mb-3">{{ resource.description }}</p>
+          {% endif %} {% if resource.author %}
+          <div class="resource-meta">
+            <i class="bi bi-person"></i>
+            {{ resource.author }}
+          </div>
+          {% endif %} {% if resource.language %}
+          <div class="resource-meta">
+            <i class="bi bi-translate"></i>
+            {{ resource.language|upper }}
+          </div>
+          {% endif %} {% if resource.category %}
+          <div class="resource-category">{{ resource.category }}</div>
+          {% endif %} {% if resource.url %}
+
+          <a
+            href="{{ resource.url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="resource-button mt-auto"
+          >
+            {{ t('resource_open_btn') }}
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+
+    <div class="col-12">
+      <div class="text-center py-5">
+        <div class="empty-icon">
+          <i class="bi bi-collection"></i>
+        </div>
+
+        <h4 class="fw-bold">{{ t('resources_empty_title') }}</h4>
+
+        <p class="text-muted">{{ t('resources_empty_desc') }}</p>
+      </div>
+    </div>
+
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+  /* =========================
+   INTRO
+========================= */
+
+  .resources-intro {
+    max-width: 650px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  /* =========================
+   INFO BLOCK
+========================= */
+
+  .resource-info {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 22px 25px;
+
+    background: var(--bs-primary-bg-subtle);
+    border-radius: 18px;
+  }
+
+  .resource-info-icon {
+    width: 52px;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: var(--bs-primary);
+    color: white;
+
+    font-size: 1.4rem;
+  }
+
+  /* =========================
+   FILTERS
+========================= */
+
+  .resource-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .resource-filter {
+    border: 1px solid #e5e7eb;
+    background: white;
+
+    padding: 9px 16px;
+
+    border-radius: 50px;
+
+    color: #6b7280;
+
+    font-size: 0.9rem;
+
+    transition: 0.2s;
+  }
+
+  .resource-filter:hover {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+  }
+
+  .resource-filter.active {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+  }
+
+  /* =========================
+   CARD
+========================= */
+
+  .resource-card {
+    background: white;
+
+    border: none;
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .resource-card:hover {
+    transform: translateY(-6px);
+
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  /* =========================
+   IMAGE
+========================= */
+
+  .resource-image {
+    height: 190px;
+    position: relative;
+
+    overflow: hidden;
+  }
+
+  .resource-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transition: transform 0.4s ease;
+  }
+
+  .resource-card:hover .resource-image img {
+    transform: scale(1.05);
+  }
+
+  /* =========================
+   PLACEHOLDER
+========================= */
+
+  .resource-placeholder {
+    height: 190px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(135deg, #eef2ff, #f8fafc);
+
+    color: var(--bs-primary);
+
+    font-size: 4rem;
+  }
+
+  /* =========================
+   TYPE BADGE
+========================= */
+
+  .resource-type-badge {
+    position: absolute;
+
+    left: 15px;
+    bottom: 15px;
+
+    padding: 7px 11px;
+
+    border-radius: 50px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    backdrop-filter: blur(6px);
+
+    font-size: 0.78rem;
+
+    font-weight: 600;
+
+    color: #374151;
+  }
+
+  /* =========================
+   META
+========================= */
+
+  .resource-meta {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    color: #6b7280;
+
+    font-size: 0.8rem;
+
+    margin-bottom: 5px;
+  }
+
+  .resource-meta i {
+    color: var(--bs-primary);
+  }
+
+  .resource-category {
+    display: inline-block;
+
+    width: fit-content;
+
+    margin-top: 10px;
+    margin-bottom: 15px;
+
+    padding: 5px 10px;
+
+    border-radius: 50px;
+
+    background: #f3f4f6;
+
+    color: #6b7280;
+
+    font-size: 0.75rem;
+  }
+
+  /* =========================
+   BUTTON
+========================= */
+
+  .resource-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 10px 15px;
+
+    border-radius: 10px;
+
+    background: var(--bs-primary);
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    transition: 0.2s;
+  }
+
+  .resource-button:hover {
+    color: white;
+
+    transform: translateY(-1px);
+
+    opacity: 0.9;
+  }
+
+  /* =========================
+   EMPTY
+========================= */
+
+  .empty-icon {
+    font-size: 4rem;
+    color: #d1d5db;
+
+    margin-bottom: 15px;
+  }
+
+  /* =========================
+   MOBILE
+========================= */
+
+  @media (max-width: 576px) {
+    .resources-intro {
+      font-size: 0.95rem;
+    }
+
+    .resource-info {
+      align-items: flex-start;
+      padding: 18px;
+    }
+
+    .resource-image,
+    .resource-placeholder {
+      height: 170px;
+    }
+  }
+
+  /* =========================
+   ТЕМНА ТЕМА
+========================= */
+
+  html[data-theme="dark"] .resource-info {
+    background: rgba(79, 124, 255, 0.12);
+  }
+
+  html[data-theme="dark"] .resource-filter {
+    background: var(--mm-surface-2, #1f2330);
+    border-color: var(--mm-border, #2a2f3d);
+    color: var(--mm-text-muted, #9aa1b1);
+  }
+
+  html[data-theme="dark"] .resource-filter:hover {
+    border-color: #7aa2ff;
+    color: #9fbcff;
+  }
+
+  html[data-theme="dark"] .resource-filter.active {
+    background: #4f7cff;
+    border-color: #4f7cff;
+    color: #fff;
+  }
+
+  html[data-theme="dark"] .resource-card {
+    background: var(--mm-surface, #171a21);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+  }
+
+  html[data-theme="dark"] .resource-card:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  html[data-theme="dark"] .resource-placeholder {
+    background: linear-gradient(
+      135deg,
+      rgba(79, 124, 255, 0.14),
+      rgba(79, 124, 255, 0.03)
+    );
+    color: #7aa2ff;
+  }
+
+  html[data-theme="dark"] .resource-type-badge {
+    background: rgba(15, 17, 21, 0.85);
+    color: var(--mm-text, #eceef2);
+  }
+
+  html[data-theme="dark"] .resource-meta {
+    color: var(--mm-text-muted, #9aa1b1);
+  }
+
+  html[data-theme="dark"] .resource-meta i {
+    color: #7aa2ff;
+  }
+
+  html[data-theme="dark"] .resource-category {
+    background: var(--mm-surface-2, #1f2330);
+    color: var(--mm-text-muted, #9aa1b1);
+  }
+
+  html[data-theme="dark"] .empty-icon {
+    color: var(--mm-border, #2a2f3d);
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const filters = document.querySelectorAll(".resource-filter");
+    const resources = document.querySelectorAll(".resource-item");
+
+    filters.forEach((filter) => {
+      filter.addEventListener("click", () => {
+        const selected = filter.dataset.filter;
+
+        filters.forEach((f) => f.classList.remove("active"));
+        filter.classList.add("active");
+
+        resources.forEach((resource) => {
+          const type = resource.dataset.type;
+
+          if (selected === "all" || type === selected) {
+            resource.style.display = "";
+          } else {
+            resource.style.display = "none";
+          }
+        });
+      });
+    });
+  });
+</script>
+
+{% endblock %}

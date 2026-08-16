@@ -545,6 +545,102 @@ TRANSLATIONS = {
         "xp_received": "+{xp} XP отримано!",
         "error_occurred": "Сталася помилка",
         "to_daily-tasks":"Усі завдання",
+        "nav_theory": " Бібліотека Теорії",
+        "theory": "Теорія",
+        "tab_theory": "Теорія",
+        "tab_resources": "Ресурси",
+        "tab_games": "Ігри",
+        "tab_tournaments": "Турніри",
+        "tab_dictionary": "Словник",
+
+        # --- theory.html: hero ---
+        "theory_badge": "MMS THEORY",
+        "theory_title": "Бібліотека теорії",
+        "theory_hero_desc": "Розберися, як працюють новини, соціальні мережі, фотографії, відео, сайти та штучний інтелект — а потім перевір свої знання на практиці.",
+
+        # --- theory.html: "Як це працює" ---
+        "theory_how_label": "Як це працює",
+        "theory_how_title": "Вивчи → перевір → застосуй",
+        "theory_how_desc": "Обери тему, прочитай короткий матеріал та перевір, наскільки добре ти її зрозумів. Після цього переходь до місій MediaMission і застосовуй знання на реальних прикладах.",
+        "theory_step1_title": "Обери тему",
+        "theory_step1_desc": "Теорія без зайвої води",
+        "theory_step2_title": "Розберися",
+        "theory_step2_desc": "Приклади, відео та пояснення",
+        "theory_step3_title": "Виконай місію",
+        "theory_step3_desc": "Перевір знання на практиці",
+
+        # --- theory.html: блок допомоги ---
+        "help_title": "Потрібна допомога?",
+        "help_desc": "MediaMission розвивається разом із користувачами. Якщо щось не працює, маєш ідею або просто не знаєш, як розібратися — ми поруч.",
+        "help_problem_title": "ЄПроблема",
+        "help_problem_desc": "Знайшов помилку, щось не працює або сторінка поводиться дивно? Розкажи нам — допоможи зробити MediaMission кращим.",
+        "help_problem_link": "Повідомити про проблему",
+        "help_idea_title": "ЄІдея",
+        "help_idea_desc": "Хочеш додати нову тему, місію, функцію або змінити щось на сайті? Запропонуй свою ідею — найкращі можуть стати частиною MMS.",
+        "help_idea_link": "Запропонувати ідею",
+        "help_ai_title": "Не зрозуміло?",
+        "help_ai_desc": "Якщо якесь поняття, тема або завдання залишилися незрозумілими — запитай mmsAI. Він допоможе розібратися простими словами.",
+        "help_ai_link": "Запитати mmsAI",
+
+        # --- theory.html: прогрес ---
+        "theory_progress_title": "Твій прогрес",
+        "theory_progress_desc": "Продовжуй вивчати медіа та інфопростір",
+
+        # --- theory.html: категорії у сайдбарі ---
+        "theory_sidebar_title": "Розділи",
+        "category_all": "Усі теми",
+        "category_website": "Вебсайти",
+        "category_text": "Тексти",
+        "category_video": "Відео",
+        "category_photo": "Фотографії",
+        "category_ai": "ШІ",
+
+        # --- theory.html: секція матеріалів ---
+        "theory_materials_label": "Матеріали",
+        "theory_materials_title": "Обери, що хочеш вивчити",
+        "theory_materials_desc": "Кожна тема допоможе краще орієнтуватися в інформаційному просторі.",
+        "theory_no_topics": "У цьому розділі поки немає тем.",
+
+        # --- theory.html: нижній CTA ---
+        "theory_cta_title": "Готовий перевірити себе?",
+        "theory_cta_desc": "Теорія — це тільки початок. Переходь до місій, знаходь підозрілу інформацію, перевіряй джерела та тренуй свої навички на практиці.",
+        "theory_cta_btn": "До місій",
+
+        # --- resources.html: hero ---
+        "resources_title_main": "Бібліотека",
+        "resources_title_highlight": "ресурсів MMS",
+        "resources_hero_desc": "Корисні книги, відео, статті, сайти та інструменти, які допоможуть краще розуміти інформацію навколо нас.",
+        "resources_info_title": "Навчайся більше, ніж у місіях",
+        "resources_info_desc": "Тут зібрані додаткові матеріали для тих, хто хоче глибше розібратися в медіа-, інфо- та цифровій грамотності.",
+
+        # --- resources.html: фільтри ---
+        "filter_all": "Усі",
+        "filter_video": "Відео",
+        "filter_book": "Книги",
+        "filter_article": "Статті",
+        "filter_website": "Сайти",
+        "filter_pdf": "PDF",
+        "filter_tool": "Інструменти",
+
+        # --- resources.html: бейджі типу (однина) ---
+        "resource_type_video": "Відео",
+        "resource_type_book": "Книга",
+        "resource_type_article": "Стаття",
+        "resource_type_website": "Сайт",
+        "resource_type_pdf": "PDF",
+        "resource_type_tool": "Інструмент",
+
+        # --- resources.html: пустий стан / кнопка ---
+        "resources_empty_title": "Ресурсів поки немає",
+        "resources_empty_desc": "Ми вже працюємо над новими матеріалами.",
+        "resource_open_btn": "Відкрити ресурс",
+
+        # --- сторінка теми (topic detail) ---
+        "topic_reading_time_suffix": "хв читання",
+        "topic_practice_title": "Тепер спробуй на практиці",
+        "topic_completed_badge": "Тему вивчено",
+        "topic_mark_done_btn": "Позначити як вивчено",
+        "topic_back_link": "До всіх тем",
     },
     "de": {
         "theme_toggle_label": "Design",
@@ -1091,6 +1187,103 @@ TRANSLATIONS = {
         "xp_received": "+{xp} XP erhalten!",
         "error_occurred": "Ein Fehler ist aufgetreten",
         "to_daily-tasks":"Alle Aufgaben",
+        "nav_theory": "Theorie Bibliothek",
+        "theory": "Theorie",
+        # --- Верхні вкладки ---
+        "tab_theory": "Theorie",
+        "tab_resources": "Ressourcen",
+        "tab_games": "Spiele",
+        "tab_tournaments": "Turniere",
+        "tab_dictionary": "Wörterbuch",
+
+        # --- theory.html: hero ---
+        "theory_badge": "MMS THEORIE",
+        "theory_title": "Theorie-Bibliothek",
+        "theory_hero_desc": "Erfahre, wie Nachrichten, soziale Netzwerke, Fotos, Videos, Websites und künstliche Intelligenz funktionieren – und teste anschließend dein Wissen in der Praxis.",
+
+        # --- theory.html: "So funktioniert's" ---
+        "theory_how_label": "So funktioniert's",
+        "theory_how_title": "Lernen → Prüfen → Anwenden",
+        "theory_how_desc": "Wähle ein Thema, lies eine kurze Übersicht und prüfe, wie gut du es verstanden hast. Danach geht es weiter zu den MediaMission-Missionen, wo du dein Wissen an echten Beispielen anwendest.",
+        "theory_step1_title": "Thema wählen",
+        "theory_step1_desc": "Theorie ohne Ballast",
+        "theory_step2_title": "Verstehen",
+        "theory_step2_desc": "Beispiele, Videos und Erklärungen",
+        "theory_step3_title": "Mission absolvieren",
+        "theory_step3_desc": "Wissen in der Praxis testen",
+
+        # --- theory.html: Hilfe-Bereich ---
+        "help_title": "Brauchst du Hilfe?",
+        "help_desc": "MediaMission wächst gemeinsam mit seinen Nutzer:innen. Wenn etwas nicht funktioniert, du eine Idee hast oder einfach nicht weiterweißt – wir sind für dich da.",
+        "help_problem_title": "Problem melden",
+        "help_problem_desc": "Einen Fehler gefunden, etwas funktioniert nicht oder eine Seite verhält sich seltsam? Sag uns Bescheid – hilf mit, MediaMission besser zu machen.",
+        "help_problem_link": "Problem melden",
+        "help_idea_title": "Idee einreichen",
+        "help_idea_desc": "Möchtest du ein neues Thema, eine neue Mission, eine Funktion oder eine Änderung an der Seite vorschlagen? Teile deine Idee – die besten könnten Teil von MMS werden.",
+        "help_idea_link": "Idee vorschlagen",
+        "help_ai_title": "Nicht sicher?",
+        "help_ai_desc": "Wenn ein Begriff, ein Thema oder eine Aufgabe unklar bleibt – frag mmsAI. Es hilft dir, alles einfach zu verstehen.",
+        "help_ai_link": "mmsAI fragen",
+
+        # --- theory.html: Fortschritt ---
+        "theory_progress_title": "Dein Fortschritt",
+        "theory_progress_desc": "Lerne weiter über Medien und den Informationsraum",
+
+        # --- theory.html: Kategorien ---
+        "theory_sidebar_title": "Bereiche",
+        "category_all": "Alle Themen",
+        "category_website": "Websites",
+        "category_text": "Texte",
+        "category_video": "Videos",
+        "category_photo": "Fotos",
+        "category_ai": "KI",
+
+        # --- theory.html: Materialien ---
+        "theory_materials_label": "Materialien",
+        "theory_materials_title": "Wähle, was du lernen möchtest",
+        "theory_materials_desc": "Jedes Thema hilft dir, dich im Informationsraum besser zurechtzufinden.",
+        "theory_no_topics": "In diesem Bereich gibt es noch keine Themen.",
+
+        # --- theory.html: Bottom CTA ---
+        "theory_cta_title": "Bereit, dich selbst zu testen?",
+        "theory_cta_desc": "Theorie ist nur der Anfang. Gehe zu den Missionen, erkenne verdächtige Informationen, überprüfe Quellen und trainiere deine Fähigkeiten in der Praxis.",
+        "theory_cta_btn": "Zu den Missionen",
+
+        # --- resources.html: hero ---
+        "resources_title_main": "Bibliothek",
+        "resources_title_highlight": "der MMS-Ressourcen",
+        "resources_hero_desc": "Nützliche Bücher, Videos, Artikel, Websites und Tools, die dir helfen, die Informationen um dich herum besser zu verstehen.",
+        "resources_info_title": "Lerne mehr als nur in den Missionen",
+        "resources_info_desc": "Hier findest du zusätzliche Materialien für alle, die tiefer in Medien-, Informations- und digitale Kompetenz eintauchen möchten.",
+
+        # --- resources.html: Filter ---
+        "filter_all": "Alle",
+        "filter_video": "Videos",
+        "filter_book": "Bücher",
+        "filter_article": "Artikel",
+        "filter_website": "Websites",
+        "filter_pdf": "PDF",
+        "filter_tool": "Tools",
+
+        # --- resources.html: Typ-Badges (Singular) ---
+        "resource_type_video": "Video",
+        "resource_type_book": "Buch",
+        "resource_type_article": "Artikel",
+        "resource_type_website": "Website",
+        "resource_type_pdf": "PDF",
+        "resource_type_tool": "Tool",
+
+        # --- resources.html: Leerzustand / Button ---
+        "resources_empty_title": "Noch keine Ressourcen",
+        "resources_empty_desc": "Wir arbeiten bereits an neuen Materialien.",
+        "resource_open_btn": "Ressource öffnen",
+
+        # --- topic detail page ---
+        "topic_reading_time_suffix": "Min. Lesezeit",
+        "topic_practice_title": "Jetzt in der Praxis ausprobieren",
+        "topic_completed_badge": "Thema abgeschlossen",
+        "topic_mark_done_btn": "Als abgeschlossen markieren",
+        "topic_back_link": "Zurück zu allen Themen",
     },
     "en": {
         "theme_toggle_label": "Theme", 
@@ -1637,6 +1830,102 @@ TRANSLATIONS = {
         "xp_received": "+{xp} XP received!",
         "error_occurred": "An error occurred",
         "to_daily-tasks":"All tasks",
+        "nav_theory": "Theory library",
+        "theory": "Theory",
+        "tab_theory": "Theory",
+        "tab_resources": "Resources",
+        "tab_games": "Games",
+        "tab_tournaments": "Tournaments",
+        "tab_dictionary": "Dictionary",
+
+        # --- theory.html: hero ---
+        "theory_badge": "MMS THEORY",
+        "theory_title": "Theory Library",
+        "theory_hero_desc": "Learn how news, social media, photos, videos, websites, and artificial intelligence work — then put your knowledge to the test.",
+
+        # --- theory.html: "How it works" ---
+        "theory_how_label": "How it works",
+        "theory_how_title": "Learn → Check → Apply",
+        "theory_how_desc": "Choose a topic, read a short overview, and test how well you understood it. Then move on to MediaMission missions and apply your knowledge to real examples.",
+        "theory_step1_title": "Choose a topic",
+        "theory_step1_desc": "Theory without the filler",
+        "theory_step2_title": "Understand it",
+        "theory_step2_desc": "Examples, videos, and explanations",
+        "theory_step3_title": "Complete a mission",
+        "theory_step3_desc": "Put your knowledge to the test",
+
+        # --- theory.html: Help section ---
+        "help_title": "Need help?",
+        "help_desc": "MediaMission grows together with its users. If something isn't working, you have an idea, or you're just not sure how to figure something out — we're here for you.",
+        "help_problem_title": "Report a Problem",
+        "help_problem_desc": "Found a bug, something isn't working, or a page is behaving strangely? Let us know — help make MediaMission better.",
+        "help_problem_link": "Report a problem",
+        "help_idea_title": "Share an Idea",
+        "help_idea_desc": "Want to suggest a new topic, mission, feature, or change to the site? Share your idea — the best ones might become part of MMS.",
+        "help_idea_link": "Suggest an idea",
+        "help_ai_title": "Not sure?",
+        "help_ai_desc": "If a concept, topic, or task is still unclear — ask mmsAI. It will help explain it in simple terms.",
+        "help_ai_link": "Ask mmsAI",
+
+        # --- theory.html: Progress ---
+        "theory_progress_title": "Your progress",
+        "theory_progress_desc": "Keep learning about media and the information space",
+
+        # --- theory.html: Sidebar categories ---
+        "theory_sidebar_title": "Sections",
+        "category_all": "All topics",
+        "category_website": "Websites",
+        "category_text": "Texts",
+        "category_video": "Videos",
+        "category_photo": "Photos",
+        "category_ai": "AI",
+
+        # --- theory.html: Materials section ---
+        "theory_materials_label": "Materials",
+        "theory_materials_title": "Choose what to learn",
+        "theory_materials_desc": "Each topic will help you better navigate the information space.",
+        "theory_no_topics": "There are no topics in this section yet.",
+
+        # --- theory.html: Bottom CTA ---
+        "theory_cta_title": "Ready to test yourself?",
+        "theory_cta_desc": "Theory is just the beginning. Move on to missions, spot suspicious information, verify sources, and train your skills in practice.",
+        "theory_cta_btn": "Go to missions",
+
+        # --- resources.html: hero ---
+        "resources_title_main": "Library",
+        "resources_title_highlight": "of MMS Resources",
+        "resources_hero_desc": "Useful books, videos, articles, websites, and tools to help you better understand the information around you.",
+        "resources_info_title": "Learn beyond the missions",
+        "resources_info_desc": "Here you'll find extra materials for anyone who wants to dive deeper into media, information, and digital literacy.",
+
+        # --- resources.html: filters ---
+        "filter_all": "All",
+        "filter_video": "Videos",
+        "filter_book": "Books",
+        "filter_article": "Articles",
+        "filter_website": "Websites",
+        "filter_pdf": "PDF",
+        "filter_tool": "Tools",
+
+        # --- resources.html: type badges (singular) ---
+        "resource_type_video": "Video",
+        "resource_type_book": "Book",
+        "resource_type_article": "Article",
+        "resource_type_website": "Website",
+        "resource_type_pdf": "PDF",
+        "resource_type_tool": "Tool",
+
+        # --- resources.html: empty state / button ---
+        "resources_empty_title": "No resources yet",
+        "resources_empty_desc": "We're already working on new materials.",
+        "resource_open_btn": "Open resource",
+
+        # --- topic detail page ---
+        "topic_reading_time_suffix": "min read",
+        "topic_practice_title": "Now try it in practice",
+        "topic_completed_badge": "Topic completed",
+        "topic_mark_done_btn": "Mark as completed",
+        "topic_back_link": "Back to all topics",
     },
 }
 

@@ -1040,3 +1040,695 @@
     display: none !important;
   }
 }
+
+/*THEORY*/
+.theory-top-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .theory-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--text-light);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    transition: 0.2s;
+  }
+
+  .theory-tab:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  .theory-tab.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+  }
+
+  /* HERO */
+
+  .theory-hero {
+    max-width: 850px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .theory-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 15px;
+    border-radius: 50px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .theory-motto {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-color);
+  }
+
+  .theory-motto span {
+    margin: 0 5px;
+  }
+
+  .theory-description {
+    max-width: 650px;
+    margin: auto;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  /* INTRO */
+
+  .theory-intro {
+    border-radius: 24px;
+    background: linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.08),
+      rgba(37, 99, 235, 0.02)
+    );
+  }
+
+  .theory-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .theory-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 700;
+  }
+
+  .theory-step strong {
+    display: block;
+    color: var(--text-color);
+  }
+
+  .theory-step small {
+    color: var(--text-light);
+  }
+
+  /* PROGRESS */
+
+  .theory-progress {
+    border-radius: 18px;
+  }
+
+  .theory-progress-bar {
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--border-color);
+  }
+
+  .theory-progress-bar .progress-bar {
+    border-radius: 10px;
+  }
+
+  /* SIDEBAR */
+
+  .theory-sidebar {
+    position: sticky;
+    top: 90px;
+  }
+
+  .theory-sidebar-title {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  .theory-category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .theory-category-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .theory-category-item i {
+    font-size: 1rem;
+    width: 20px;
+    color: var(--text-light);
+  }
+
+  .theory-category-item:hover {
+    background: var(--background-color);
+  }
+
+  .theory-category-item.active {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+  }
+
+  .theory-category-item.active i {
+    color: var(--primary-color);
+  }
+
+  /* Мобільна версія бічного меню */
+  @media (max-width: 991.98px) {
+    .theory-sidebar {
+      position: static;
+    }
+
+    .theory-category-list {
+      flex-direction: row;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .theory-category-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    .theory-category-item {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+  }
+
+  /* CARDS */
+
+  .theory-card {
+    border: 0;
+    border-radius: 20px;
+    background: var(--surface-color);
+    box-shadow: var(--shadow-small, 0 5px 18px rgba(0, 0, 0, 0.06));
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .theory-card:hover {
+    transform: translateY(-7px);
+    box-shadow: var(--shadow-large, 0 14px 35px rgba(0, 0, 0, 0.15));
+  }
+
+  .theory-card h5 {
+    color: var(--text-color);
+  }
+
+  .theory-card .border-top {
+    border-color: var(--border-color) !important;
+  }
+
+  .theory-icon {
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(37, 99, 235, 0.1);
+    font-size: 2rem;
+  }
+
+  .theory-card-done {
+    border-left: 4px solid var(--success-color, #10b981);
+  }
+
+  .theory-completed {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--success-color, #10b981);
+    color: white;
+    font-size: 0.9rem;
+  }
+
+  .theory-category {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--background-color);
+    color: var(--text-light);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .theory-xp {
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  /* CTA */
+
+  .theory-cta {
+    padding: 30px;
+    border-radius: 22px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+  }
+
+  .theory-cta h4,
+  .theory-cta p {
+    color: var(--text-color);
+  }
+
+  .cta-icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 1.4rem;
+  }
+
+  /* ==========================================================
+   SUPPORT CARDS (Тепер підтримують обидві теми)
+=========================================================== */
+
+  .support-card {
+    background: var(--surface-color);
+    border-radius: 20px;
+    padding: 28px;
+    height: 100%;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-small, 0 4px 14px rgba(0, 0, 0, 0.05));
+    transition: all 0.25s ease;
+  }
+
+  .support-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-medium, 0 12px 30px rgba(0, 0, 0, 0.12));
+  }
+
+  .support-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    margin-bottom: 20px;
+  }
+
+  /* Підкладки для іконок: Світла тема */
+  .problem-icon {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+  }
+
+  .idea-icon {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+  }
+
+  .ai-icon {
+    background: rgba(115, 87, 230, 0.12);
+    color: #7357e6;
+  }
+
+  .support-card h4 {
+    margin-bottom: 10px;
+    color: var(--text-color);
+  }
+
+  .support-card p {
+    line-height: 1.6;
+    font-size: 0.95rem;
+    color: var(--text-light);
+  }
+
+  .support-link {
+    margin-top: 20px;
+    font-weight: 600;
+    color: var(--primary-color, #0d6efd);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .support-link i {
+    margin-left: 5px;
+    transition: margin-left 0.2s ease;
+  }
+
+  .support-card:hover .support-link i {
+    margin-left: 10px;
+  }
+
+  /* MOBILE */
+
+  @media (max-width: 576px) {
+    .theory-hero h1 {
+      font-size: 2.1rem;
+    }
+
+    .theory-motto {
+      font-size: 1.2rem;
+    }
+
+    .theory-description {
+      font-size: 0.95rem;
+    }
+
+    .theory-intro .card-body {
+      padding: 25px !important;
+    }
+
+    .theory-cta {
+      padding: 22px;
+    }
+
+    .theory-tab {
+      padding: 8px 14px;
+      font-size: 0.82rem;
+    }
+  }
+
+
+/*RESOURCES*/
+/* =========================
+   INTRO
+========================= */
+
+  .resources-intro {
+    max-width: 650px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  /* =========================
+   INFO BLOCK
+========================= */
+
+  .resource-info {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 22px 25px;
+
+    background: var(--bs-primary-bg-subtle);
+    border-radius: 18px;
+  }
+
+  .resource-info-icon {
+    width: 52px;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: var(--bs-primary);
+    color: white;
+
+    font-size: 1.4rem;
+  }
+
+  /* =========================
+   FILTERS
+========================= */
+
+  .resource-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .resource-filter {
+    border: 1px solid #e5e7eb;
+    background: white;
+
+    padding: 9px 16px;
+
+    border-radius: 50px;
+
+    color: #6b7280;
+
+    font-size: 0.9rem;
+
+    transition: 0.2s;
+  }
+
+  .resource-filter:hover {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+  }
+
+  .resource-filter.active {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+  }
+
+  /* =========================
+   CARD
+========================= */
+
+  .resource-card {
+    background: white;
+
+    border: none;
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .resource-card:hover {
+    transform: translateY(-6px);
+
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  /* =========================
+   IMAGE
+========================= */
+
+  .resource-image {
+    height: 190px;
+    position: relative;
+
+    overflow: hidden;
+  }
+
+  .resource-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transition: transform 0.4s ease;
+  }
+
+  .resource-card:hover .resource-image img {
+    transform: scale(1.05);
+  }
+
+  /* =========================
+   PLACEHOLDER
+========================= */
+
+  .resource-placeholder {
+    height: 190px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: linear-gradient(135deg, #eef2ff, #f8fafc);
+
+    color: var(--bs-primary);
+
+    font-size: 4rem;
+  }
+
+  /* =========================
+   TYPE BADGE
+========================= */
+
+  .resource-type-badge {
+    position: absolute;
+
+    left: 15px;
+    bottom: 15px;
+
+    padding: 7px 11px;
+
+    border-radius: 50px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    backdrop-filter: blur(6px);
+
+    font-size: 0.78rem;
+
+    font-weight: 600;
+
+    color: #374151;
+  }
+
+  /* =========================
+   META
+========================= */
+
+  .resource-meta {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    color: #6b7280;
+
+    font-size: 0.8rem;
+
+    margin-bottom: 5px;
+  }
+
+  .resource-meta i {
+    color: var(--bs-primary);
+  }
+
+  .resource-category {
+    display: inline-block;
+
+    width: fit-content;
+
+    margin-top: 10px;
+    margin-bottom: 15px;
+
+    padding: 5px 10px;
+
+    border-radius: 50px;
+
+    background: #f3f4f6;
+
+    color: #6b7280;
+
+    font-size: 0.75rem;
+  }
+
+  /* =========================
+   BUTTON
+========================= */
+
+  .resource-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 10px 15px;
+
+    border-radius: 10px;
+
+    background: var(--bs-primary);
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    transition: 0.2s;
+  }
+
+  .resource-button:hover {
+    color: white;
+
+    transform: translateY(-1px);
+
+    opacity: 0.9;
+  }
+
+  /* =========================
+   EMPTY
+========================= */
+
+  .empty-icon {
+    font-size: 4rem;
+    color: #d1d5db;
+
+    margin-bottom: 15px;
+  }
+
+  /* =========================
+   MOBILE
+========================= */
+
+  @media (max-width: 576px) {
+    .resources-intro {
+      font-size: 0.95rem;
+    }
+
+    .resource-info {
+      align-items: flex-start;
+      padding: 18px;
+    }
+
+    .resource-image,
+    .resource-placeholder {
+      height: 170px;
+    }
+  }

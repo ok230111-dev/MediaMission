@@ -1,0 +1,380 @@
+{% extends "base.html" %} {% block title %}{{ t('theory') }} | MediaMission{%
+endblock %} {% block content %}
+
+<section class="container py-5">
+  <!-- ВЕРХНІ ВКЛАДКИ -->
+  <div class="theory-top-tabs mb-4">
+    <a href="/theory" class="theory-tab active">
+      <i class="bi bi-book-half me-1"></i> {{ t('tab_theory') }}
+    </a>
+    <a href="/theory/resources" class="theory-tab"
+      ><i class="bi bi-collection me-1"></i> {{ t('tab_resources') }}
+    </a>
+    <a href="/games" class="theory-tab">
+      <i class="bi bi-controller me-1"></i> {{ t('tab_games') }}
+    </a>
+    <a href="/tournaments" class="theory-tab">
+      <i class="bi bi-trophy me-1"></i> {{ t('tab_tournaments') }}
+    </a>
+    <a href="/dictionary" class="theory-tab">
+      <i class="bi-journal-text me-1"></i> {{ t('tab_dictionary') }}</a
+    >
+  </div>
+
+  <!-- HERO -->
+  <div class="theory-hero text-center mb-5">
+    <div class="theory-badge mb-3">
+      <i class="bi bi-book-half me-2"></i>
+      {{ t('theory_badge') }}
+    </div>
+
+    <h1 class="fw-bold display-5 mb-3">
+      {{ t('theory_title') }}
+      <span class="step-primary">MediaMission</span>
+    </h1>
+
+    <div class="theory-motto mb-3">
+      <span class="step-neutral">{{ t('find') }}</span>
+      <span class="step-primary">{{ t('verify') }}</span>
+      <span class="step-success">{{ t('protect') }}</span>
+    </div>
+
+    <p class="text-muted theory-description">{{ t('theory_hero_desc') }}</p>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="theory-intro card border-0 shadow-sm mb-5">
+    <div class="card-body p-4 p-md-5">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <span class="text-primary fw-semibold small text-uppercase">
+            <i class="bi bi-lightning-charge-fill me-1"></i>
+            {{ t('theory_how_label') }}
+          </span>
+
+          <h3 class="fw-bold mt-2 mb-3">{{ t('theory_how_title') }}</h3>
+
+          <p class="text-muted mb-0">{{ t('theory_how_desc') }}</p>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="theory-steps">
+            <div class="theory-step">
+              <div class="step-number">1</div>
+              <div>
+                <strong>{{ t('theory_step1_title') }}</strong>
+                <small>{{ t('theory_step1_desc') }}</small>
+              </div>
+            </div>
+
+            <div class="theory-step">
+              <div class="step-number">2</div>
+              <div>
+                <strong>{{ t('theory_step2_title') }}</strong>
+                <small>{{ t('theory_step2_desc') }}</small>
+              </div>
+            </div>
+
+            <div class="theory-step">
+              <div class="step-number">3</div>
+              <div>
+                <strong>{{ t('theory_step3_title') }}</strong>
+                <small>{{ t('theory_step3_desc') }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Допомога та зворотний зв'язок -->
+  <section class="mt-5 pt-4 mb-5">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">{{ t('help_title') }}</h2>
+      <p class="mb-0">{{ t('help_desc') }}</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- ЄПроблема -->
+      <div class="col-md-4">
+        <a href="/support" class="text-decoration-none">
+          <div class="support-card h-100">
+            <div class="support-icon problem-icon">
+              <i class="bi bi-bug-fill"></i>
+            </div>
+
+            <h4 class="fw-bold">{{ t('help_problem_title') }}</h4>
+
+            <p class="mb-0">{{ t('help_problem_desc') }}</p>
+
+            <div class="support-link">
+              {{ t('help_problem_link') }}
+              <i class="bi bi-arrow-right"></i>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- ЄІдея -->
+      <div class="col-md-4">
+        <a href="/support-idea" class="text-decoration-none">
+          <div class="support-card h-100">
+            <div class="support-icon idea-icon">
+              <i class="bi bi-lightbulb-fill"></i>
+            </div>
+
+            <h4 class="fw-bold">{{ t('help_idea_title') }}</h4>
+
+            <p class="mb-0">{{ t('help_idea_desc') }}</p>
+
+            <div class="support-link">
+              {{ t('help_idea_link') }}
+              <i class="bi bi-arrow-right"></i>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- mmsAI -->
+      <div class="col-md-4">
+        <a href="#" id="footerAiChatTrigger" class="text-decoration-none">
+          <div class="support-card h-100">
+            <div class="support-icon ai-icon">
+              <i class="bi bi-stars"></i>
+            </div>
+
+            <h4 class="fw-bold">{{ t('help_ai_title') }}</h4>
+
+            <p class="mb-0">{{ t('help_ai_desc') }}</p>
+
+            <div class="support-link">
+              {{ t('help_ai_link') }}
+              <i class="bi bi-arrow-right"></i>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  {% if topics|length > 0 %}
+
+  <div class="theory-progress card border-0 shadow-sm mb-5">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <strong>{{ t('theory_progress_title') }}</strong>
+          <div class="text-muted small">{{ t('theory_progress_desc') }}</div>
+        </div>
+
+        <div class="fw-bold text-primary">
+          {{ completed_topic_ids|length }} / {{ topics|length }}
+        </div>
+      </div>
+
+      {% set progress = (completed_topic_ids|length / topics|length * 100) if
+      topics|length > 0 else 0 %}
+
+      <div class="progress theory-progress-bar">
+        <div
+          class="progress-bar bg-primary"
+          style="width: {{ progress }}%"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
+  <!-- ОСНОВНИЙ БЛОК: БІЧНЕ МЕНЮ + КОНТЕНТ -->
+  <div class="row g-4">
+    <!-- ASIDE: КАТЕГОРІЇ -->
+    <div class="col-lg-3">
+      <aside class="theory-sidebar">
+        <h6 class="theory-sidebar-title">{{ t('theory_sidebar_title') }}</h6>
+        <div class="theory-category-list" id="categoryFilterList">
+          <button
+            type="button"
+            class="theory-category-item active"
+            data-category="all"
+          >
+            <i class="bi bi-grid-fill"></i> {{ t('category_all') }}
+          </button>
+          <button
+            type="button"
+            class="theory-category-item"
+            data-category="website"
+          >
+            <i class="bi bi-globe"></i> {{ t('category_website') }}
+          </button>
+          <button
+            type="button"
+            class="theory-category-item"
+            data-category="text"
+          >
+            <i class="bi bi-file-text"></i> {{ t('category_text') }}
+          </button>
+          <button
+            type="button"
+            class="theory-category-item"
+            data-category="video"
+          >
+            <i class="bi bi-camera-reels"></i> {{ t('category_video') }}
+          </button>
+          <button
+            type="button"
+            class="theory-category-item"
+            data-category="photo"
+          >
+            <i class="bi bi-image"></i> {{ t('category_photo') }}
+          </button>
+          <button type="button" class="theory-category-item" data-category="ai">
+            <i class="bi bi-robot"></i> {{ t('category_ai') }}
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- КОНТЕНТ: ТЕМИ -->
+    <div class="col-lg-9">
+      <!-- SECTION HEADER -->
+      <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+          <span class="text-primary fw-semibold small text-uppercase">
+            <i class="bi bi-grid-fill me-1"></i>
+            {{ t('theory_materials_label') }}
+          </span>
+
+          <h2 class="fw-bold mb-1 mt-1">{{ t('theory_materials_title') }}</h2>
+
+          <p class="text-muted mb-0">{{ t('theory_materials_desc') }}</p>
+        </div>
+      </div>
+
+      <!-- TOPICS -->
+      <div class="row g-4" id="topicsGrid">
+        {% for topic in topics %}
+
+        <div
+          class="col-sm-6 col-lg-6 topic-col"
+          data-category="{{ topic.category }}"
+        >
+          <a href="/theory/{{ topic.id }}" class="text-decoration-none">
+            <div
+              class="card theory-card h-100 {% if topic.id in completed_topic_ids %} theory-card-done {% endif %}"
+            >
+              <div class="card-body p-4">
+                <!-- ICON + STATUS -->
+                <div
+                  class="d-flex justify-content-between align-items-start mb-3"
+                >
+                  <div class="theory-icon">{{ topic.icon }}</div>
+
+                  {% if topic.id in completed_topic_ids %}
+
+                  <span class="theory-completed">
+                    <i class="bi bi-check-lg"></i>
+                  </span>
+
+                  {% endif %}
+                </div>
+
+                <!-- CATEGORY -->
+                {% if topic.category %}
+
+                <span class="theory-category"> {{ topic.category }} </span>
+
+                {% endif %}
+
+                <!-- TITLE -->
+                <h5 class="fw-bold mt-2 mb-2">{{ topic.title }}</h5>
+
+                <!-- SUBTITLE -->
+                {% if topic.subtitle %}
+
+                <p class="text-muted small mb-4">{{ topic.subtitle }}</p>
+
+                {% endif %}
+
+                <!-- META -->
+                <div
+                  class="d-flex justify-content-between align-items-center pt-3 border-top"
+                >
+                  <span class="text-muted small">
+                    <i class="bi bi-clock me-1"></i>
+                    {{ topic.reading_time }} {{ t('min') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        {% endfor %}
+      </div>
+
+      <div id="noTopicsMessage" class="text-center text-muted py-5 d-none">
+        <i class="bi bi-inbox display-4 d-block mb-2"></i>
+        {{ t('theory_no_topics') }}
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM CTA -->
+  <div class="theory-cta mt-5">
+    <div class="row align-items-center g-4">
+      <div class="col-md-8">
+        <div class="d-flex gap-3 align-items-start">
+          <div class="cta-icon">
+            <i class="bi bi-controller"></i>
+          </div>
+
+          <div>
+            <h4 class="fw-bold mb-2">{{ t('theory_cta_title') }}</h4>
+
+            <p class="text-muted mb-0">{{ t('theory_cta_desc') }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 text-md-end">
+        <a
+          href="/missions-overview"
+          class="btn btn-primary btn-lg rounded-pill px-4"
+        >
+          {{ t('theory_cta_btn') }}
+          <i class="bi bi-arrow-right ms-2"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const buttons = document.querySelectorAll(".theory-category-item");
+    const topicCols = document.querySelectorAll(".topic-col");
+    const noTopicsMessage = document.getElementById("noTopicsMessage");
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const category = btn.dataset.category;
+        let visibleCount = 0;
+
+        topicCols.forEach((col) => {
+          const match = category === "all" || col.dataset.category === category;
+          col.classList.toggle("d-none", !match);
+          if (match) visibleCount++;
+        });
+
+        noTopicsMessage.classList.toggle("d-none", visibleCount > 0);
+      });
+    });
+  });
+</script>
+{% endblock %}

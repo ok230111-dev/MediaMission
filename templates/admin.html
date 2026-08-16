@@ -37,6 +37,17 @@
 
         <button
           class="btn"
+          id="theory-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#theory-pane"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-journal-bookmark-fill me-1"></i> Теорія
+        </button>
+
+        <button
+          class="btn"
           id="missions-tab"
           data-bs-toggle="tab"
           data-bs-target="#missions-pane"
@@ -949,8 +960,358 @@
           </button>
         </div>
       </div>
-
       <div id="reviewsList" class="d-flex flex-column gap-3"></div>
+    </div>
+
+    <!-- 9. Вкладка Теорія -->
+    <div class="tab-pane fade" id="theory-pane" role="tabpanel">
+      <!-- Створення теми теорії -->
+      <div class="card admin-card mb-4">
+        <div class="card-header">
+          <span class="step-badge">1</span>
+          <h3>Нова тема теорії</h3>
+        </div>
+        <div class="card-body">
+          <form id="theoryTopicForm" onsubmit="return false;">
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Назва теми *</label>
+                <input
+                  type="text"
+                  id="theoryTitle"
+                  class="form-control"
+                  placeholder="Наприклад: Як розпізнати фейкову новину"
+                  required
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Підзаголовок</label>
+                <input
+                  type="text"
+                  id="theorySubtitle"
+                  class="form-control"
+                  placeholder="Короткий опис теми"
+                />
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label class="form-label fw-bold">Категорія</label>
+                <select class="form-select" id="theoryCategory">
+                  <option value="news">📰 Новини</option>
+                  <option value="video">🎬 Відео</option>
+                  <option value="photo">🖼️ Фото</option>
+                  <option value="website">🌐 Вебсайти</option>
+                  <option value="ai">🤖 ШІ</option>
+                  <option value="general" selected>📚 Загальне</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-bold">Іконка (емодзі)</label>
+                <input
+                  type="text"
+                  id="theoryIcon"
+                  class="form-control"
+                  placeholder="📚"
+                  maxlength="10"
+                  value="📚"
+                />
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-bold">Порядок</label>
+                <input
+                  type="number"
+                  id="theoryOrder"
+                  class="form-control"
+                  value="0"
+                />
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-bold">Час читання (хв)</label>
+                <input
+                  type="number"
+                  id="theoryReadingTime"
+                  class="form-control"
+                  value="5"
+                  min="1"
+                />
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-bold">XP за читання</label>
+                <input
+                  type="number"
+                  id="theoryXp"
+                  class="form-control"
+                  value="5"
+                  min="0"
+                />
+              </div>
+
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="theoryPublished"
+                    checked
+                  />
+                  <label class="form-check-label" for="theoryPublished"
+                    >Опубліковано одразу</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <label class="form-label fw-bold">Пов'язані місії</label>
+            <div
+              id="theoryRelatedMissions"
+              class="border rounded-3 p-3 mb-3"
+              style="max-height: 200px; overflow-y: auto"
+            >
+              <span class="text-muted small">Завантаження списку місій...</span>
+            </div>
+
+            <hr class="my-4" />
+
+            <label class="form-label fw-bold mb-2">Блоки контенту</label>
+            <div id="theory-blocks-container">
+              <div class="mb-3 theory-block-row border rounded-3 p-3">
+                <select class="form-select mb-2 theory-block-type">
+                  <option value="text">📝 Текст</option>
+                  <option value="image">🖼️ Фото</option>
+                  <option value="video">🎬 Відео</option>
+                  <option value="website">🌐 Посилання на сайт</option>
+                </select>
+                <textarea
+                  class="form-control mb-2 theory-block-text"
+                  rows="3"
+                  placeholder="Текст блоку / підпис"
+                ></textarea>
+                <input
+                  type="file"
+                  class="form-control mb-2 theory-block-file d-none"
+                  accept="image/*,video/*"
+                />
+                <input
+                  type="url"
+                  class="form-control mb-2 theory-block-url d-none"
+                  placeholder="https://..."
+                />
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  onclick="removeTheoryBlock(this)"
+                >
+                  <i class="bi bi-trash me-1"></i>Видалити
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-add-row mb-4"
+              onclick="addTheoryBlock()"
+            >
+              <i class="bi bi-plus-lg me-1"></i>Додати блок
+            </button>
+
+            <div class="save-bar text-center">
+              <button
+                type="button"
+                class="btn btn-success btn-lg px-4"
+                id="saveTheoryTopicBtn"
+              >
+                <i class="bi bi-check-circle-fill me-2"></i>Зберегти тему
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Список тем теорії -->
+      <div class="card shadow-sm mb-5">
+        <div
+          class="card-header py-3 d-flex justify-content-between align-items-center"
+        >
+          <h4 class="m-0 fw-bold">📚 Теми теорії</h4>
+          <button
+            class="btn btn-sm btn-outline-primary"
+            onclick="loadTheoryTopics()"
+          >
+            <i class="bi bi-arrow-clockwise me-1"></i> Оновити
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">ID</th>
+                  <th>Тема</th>
+                  <th>Категорія</th>
+                  <th>Блоків</th>
+                  <th>Місій</th>
+                  <th>XP</th>
+                  <th>Статус</th>
+                  <th class="text-end pe-3">Дії</th>
+                </tr>
+              </thead>
+              <tbody id="theoryTopicsTableBody">
+                <tr>
+                  <td colspan="8" class="text-center py-4 text-muted">
+                    Завантаження...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Створення ресурсу -->
+      <div class="card admin-card mb-4">
+        <div class="card-header">
+          <span class="step-badge">2</span>
+          <h3>Новий ресурс (бібліотека)</h3>
+        </div>
+        <div class="card-body">
+          <form id="theoryResourceForm" onsubmit="return false;">
+            <div class="row g-3">
+              <div class="col-12 col-md-8">
+                <label class="form-label fw-bold">Назва *</label>
+                <input
+                  type="text"
+                  id="resourceTitle"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-6 col-md-4">
+                <label class="form-label fw-bold">Тип</label>
+                <select class="form-select" id="resourceType">
+                  <option value="article">📄 Стаття</option>
+                  <option value="video">🎬 Відео</option>
+                  <option value="book">📖 Книга</option>
+                  <option value="website">🌐 Сайт</option>
+                  <option value="pdf">📑 PDF</option>
+                  <option value="tool">🛠️ Інструмент</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-bold">Опис</label>
+                <textarea
+                  id="resourceDescription"
+                  class="form-control"
+                  rows="2"
+                ></textarea>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Посилання (URL)</label>
+                <input
+                  type="url"
+                  id="resourceUrl"
+                  class="form-control"
+                  placeholder="https://..."
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Обкладинка</label>
+                <input
+                  type="file"
+                  id="resourceImage"
+                  class="form-control"
+                  accept="image/png, image/jpeg, image/webp"
+                />
+              </div>
+
+              <div class="col-6 col-md-4">
+                <label class="form-label fw-bold">Автор</label>
+                <input type="text" id="resourceAuthor" class="form-control" />
+              </div>
+              <div class="col-6 col-md-4">
+                <label class="form-label fw-bold">Мова</label>
+                <input
+                  type="text"
+                  id="resourceLanguage"
+                  class="form-control"
+                  placeholder="uk / en / de"
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label fw-bold">Категорія</label>
+                <input
+                  type="text"
+                  id="resourceCategory"
+                  class="form-control"
+                  placeholder="news / video / general..."
+                />
+              </div>
+
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="resourcePublished"
+                    checked
+                  />
+                  <label class="form-check-label" for="resourcePublished"
+                    >Опубліковано одразу</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="save-bar text-center mt-3">
+              <button
+                type="button"
+                class="btn btn-success btn-lg px-4"
+                id="saveTheoryResourceBtn"
+              >
+                <i class="bi bi-check-circle-fill me-2"></i>Зберегти ресурс
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Список ресурсів -->
+      <div class="card shadow-sm mb-5">
+        <div
+          class="card-header py-3 d-flex justify-content-between align-items-center"
+        >
+          <h4 class="m-0 fw-bold">🔗 Ресурси</h4>
+          <button
+            class="btn btn-sm btn-outline-primary"
+            onclick="loadTheoryResources()"
+          >
+            <i class="bi bi-arrow-clockwise me-1"></i> Оновити
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">ID</th>
+                  <th>Назва</th>
+                  <th>Тип</th>
+                  <th>Категорія</th>
+                  <th>Статус</th>
+                  <th class="text-end pe-3">Дії</th>
+                </tr>
+              </thead>
+              <tbody id="theoryResourcesTableBody">
+                <tr>
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    Завантаження...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -387,3 +387,90 @@ class UserDailyTask(db.Model):
     __table_args__ = (
         db.UniqueConstraint('user_id', 'template_id', 'date', name='unique_user_task_per_day'),
     )
+
+class TheoryTopic(db.Model):
+    __tablename__ = "theory_topics"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    subtitle = db.Column(db.String(300), nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    # напр. "news", "video", "photo", "website", "ai", "general"
+    icon = db.Column(db.String(10), default="📚")
+    order = db.Column(db.Integer, default=0)  # для сортування в списку тем
+    reading_time = db.Column(db.Integer, default=5)  # хвилини на читання
+    xp_reward = db.Column(db.Integer, default=5)  # невелика нагорода за прочитання
+    is_published = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    blocks = db.relationship(
+        "TheoryBlock",
+        backref="topic",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="TheoryBlock.block_order"
+    )
+
+    related_missions = db.relationship(
+        "Missions",
+        secondary="theory_mission_link",
+        backref="related_theory"
+    )
+
+
+class TheoryBlock(db.Model):
+    __tablename__ = "theory_blocks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey("theory_topics.id"), nullable=False)
+    block_order = db.Column(db.Integer, nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    # тут той самий підхід з маркерами [IMAGE]/[VIDEO]/[WEBSITE], що й у MissionContent
+
+
+# Проміжна таблиця "теорія ↔ місії" (many-to-many, одна тема може вести до кількох місій)
+theory_mission_link = db.Table(
+    "theory_mission_link",
+    db.Column("topic_id", db.Integer, db.ForeignKey("theory_topics.id"), primary_key=True),
+    db.Column("mission_id", db.Integer, db.ForeignKey("missions.id"), primary_key=True)
+)
+
+
+class UserTheoryProgress(db.Model):
+    __tablename__ = "user_theory_progress"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    topic_id = db.Column(db.Integer, db.ForeignKey("theory_topics.id"), nullable=False)
+    completed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    topic = db.relationship("TheoryTopic")
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'topic_id', name='unique_user_topic'),
+    )
+
+class TheoryResource(db.Model):
+    __tablename__ = "theory_resources"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(300), nullable=False)
+
+    description = db.Column(db.Text, nullable=True)
+
+    resource_type = db.Column(
+        db.String(30),
+        nullable=False
+    )
+    # video / book / website / pdf / article / tool
+    url = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.Text, nullable=True)
+    author = db.Column(db.String(300), nullable=True)
+    language = db.Column(db.String(10), nullable=True)
+    category = db.Column(db.String(50), nullable=True)
+    is_published = db.Column(db.Boolean, default=True)
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )

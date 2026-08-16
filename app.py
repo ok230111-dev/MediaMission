@@ -28,7 +28,7 @@ from models import (
     Missions, MissionContent, Questions, Options, Users, 
     UserMissionProgress, UserAnswer, Notification, NotificationRecipient,
     NotificationComment, NotificationReaction, Achievement, UserAchievement,
-    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView, Conversation, ChatMessage, Review, DailyTaskTemplate, UserDailyTask
+    SupportTicket, Idea, SecureAdminIndexView, UserAdminView, IdeaAdminView, Conversation, ChatMessage, Review, DailyTaskTemplate, UserDailyTask, TheoryTopic, TheoryBlock, UserTheoryProgress, TheoryResource
 )
 from translations import translate
 from utils import date_uk
@@ -40,6 +40,10 @@ app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "avif"}
 MAX_IDEA_FILE_SIZE = 5 * 1024 * 1024
+
+
+THEORY_RESOURCE_TYPES = {"video", "book", "website", "pdf", "article", "tool"}
+THEORY_CATEGORIES = {"news", "video", "photo", "website", "ai", "general"}
 
 # Firebase initialization
 cred_path = os.environ.get("FIREBASE_CRED_PATH", "serviceAccountKey.json")
@@ -545,6 +549,61 @@ def index():
     
     return render_template('index.html', users_count=users_count, missions_count=missions_count, total_xp=total_xp, featured_reviews=featured_reviews)
 
+@app.route("/theory")
+def theory_overview():
+    topics = TheoryTopic.query.filter_by(is_published=True).order_by(TheoryTopic.order).all()
+
+    user_id = session.get("user_id")
+    completed_topic_ids = set()
+    if user_id:
+        completed_topic_ids = {
+            p.topic_id for p in UserTheoryProgress.query.filter_by(user_id=user_id).all()
+        }
+
+    return render_template(
+        "theory.html",
+        topics=topics,
+        completed_topic_ids=completed_topic_ids
+    )
+
+@app.route("/theory/<int:topic_id>", methods=["GET", "POST"])
+def theory_detail(topic_id):
+    topic = db.session.get(TheoryTopic, topic_id)
+    if not topic:
+        return "Тему не знайдено", 404
+
+    user_id = session.get("user_id")
+
+    if request.method == "POST" and user_id:
+        already_done = UserTheoryProgress.query.filter_by(
+            user_id=user_id, topic_id=topic_id
+        ).first()
+
+        if not already_done:
+            db.session.add(UserTheoryProgress(user_id=user_id, topic_id=topic_id))
+
+            user = db.session.get(Users, user_id)
+            user.total_xp += topic.xp_reward
+            db.session.commit()
+
+        return redirect(url_for("theory_detail", topic_id=topic_id))
+
+    is_completed = False
+    if user_id:
+        is_completed = UserTheoryProgress.query.filter_by(
+            user_id=user_id, topic_id=topic_id
+        ).first() is not None
+
+    return render_template(
+        "theory_detail.html",
+        topic=topic,
+        is_completed=is_completed
+    )
+
+@app.route("/theory/resources")
+def resources():
+    resources = TheoryResource.query.filter_by(is_published=True).order_by(TheoryResource.id.desc()).all()
+    return render_template("resources.html", resources=resources)
 
 @app.route("/reviews", methods=["GET", "POST"])
 def reviews():
@@ -1205,7 +1264,6 @@ def notifications():
 
     return render_template("notifications.html", items=items, conversations=conv_data)
 
-
 # Старий /messages просто редіректить на нову об'єднану сторінку
 @app.route('/messages')
 def messages_list():
@@ -1730,66 +1788,320 @@ def delete_user(target_id):
         print(f"Помилка видалення користувача: {e}")
         return {"success": False, "error": str(e)}, 500
 
+# ============================================================
+# ТЕОРІЯ — АДМІН-МАРШРУТИ
+# Вставити в app.py одразу після маршруту delete_mission,
+# перед send_notification
+# ============================================================
 
-# @app.route("/api/admin/delete_user/<int:target_id>", methods=["DELETE"])
-# def delete_user(target_id):
-#     user_id = session.get("user_id")
-#     if not user_id:
-#         return {"error": "Unauthorized"}, 401
 
-#     current_user = Users.query.get(user_id)
-#     if not current_user or not current_user.admin:
-#         return {"error": "Forbidden"}, 403
+@app.route("/api/admin/add_theory_topic", methods=["POST"])
+def add_theory_topic():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return {"error": "Unauthorized"}, 401
 
-#     target_user = Users.query.get(target_id)
-#     if not target_user:
-#         return {"success": False, "error": "Користувача не знайдено"}, 404
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
 
-#     if target_user.id == current_user.id:
-#         return {"success": False, "error": "Ви не можете видалити самого себе!"}, 400
+    try:
+        title = request.form.get("title", "").strip()
+        subtitle = request.form.get("subtitle", "").strip()
+        category = request.form.get("category", "general")
+        icon = request.form.get("icon", "📚").strip() or "📚"
+        order = int(request.form.get("order", 0) or 0)
+        reading_time = int(request.form.get("reading_time", 5) or 5)
+        xp_reward = int(request.form.get("xp_reward", 5) or 5)
+        is_published = request.form.get("is_published", "true") == "true"
 
-#     try:
-#         if target_user.avatar:
-#             delete_from_cloudinary(target_user.avatar)
+        if not title:
+            return {"error": "Назва теми обов'язкова"}, 400
 
-#         NotificationRecipient.query.filter_by(user_id=target_user.id).delete()
+        if category not in THEORY_CATEGORIES:
+            category = "general"
 
-# # 1. Видаляємо прогрес місій (і пов'язані відповіді, якщо каскад не налаштований)
-#         progress_ids = [p.id for p in UserMissionProgress.query.filter_by(user_id=target_user.id).all()]
-#         if progress_ids:
-#             UserAnswer.query.filter(UserAnswer.user_progress_id.in_(progress_ids)).delete(synchronize_session=False)
-#         UserMissionProgress.query.filter_by(user_id=target_user.id).delete()
+        blocks = json.loads(request.form.get("blocks", "[]"))
+        if not blocks:
+            return {"error": "Додайте хоча б один блок тексту"}, 400
 
-#         conversations = Conversation.query.filter(
-#             db.or_(
-#                 Conversation.user_a_id == target_user.id,
-#                 Conversation.user_b_id == target_user.id
-#             )
-#         ).all()
+        related_mission_ids = request.form.getlist("related_missions")
 
-#         # НОВЕ: обнуляємо created_by у сповіщеннях, які СТВОРИВ цей користувач
-#         # (замість видалення самих сповіщень, щоб не втратити їх для інших отримувачів)
-#         Notification.query.filter_by(created_by=target_user.id).update(
-#             {"created_by": None}, synchronize_session=False
-#         )
+        topic = TheoryTopic(
+            title=title,
+            subtitle=subtitle or None,
+            category=category,
+            icon=icon,
+            order=order,
+            reading_time=reading_time,
+            xp_reward=xp_reward,
+            is_published=is_published,
+        )
+        db.session.add(topic)
+        db.session.flush()  # отримуємо topic.id без коміту
 
-#         # НОВЕ: видаляємо коментарі та реакції користувача до сповіщень
-#         NotificationComment.query.filter_by(user_id=target_user.id).delete()
-#         NotificationReaction.query.filter_by(user_id=target_user.id).delete()
+        if related_mission_ids:
+            missions = Missions.query.filter(Missions.id.in_(related_mission_ids)).all()
+            topic.related_missions = missions
 
-#         for conv in conversations:
-#             ChatMessage.query.filter_by(conversation_id=conv.id).delete()
-#             db.session.delete(conv)
+        for block in blocks:
+            text_value = block.get("text", "")
+            order_index = block.get("order", 0)
 
-#         db.session.delete(target_user)
-#         db.session.commit()
+            file_key = f"block_file_{order_index}"
+            if file_key in request.files:
+                file = request.files[file_key]
+                if file and file.filename:
+                    is_video = text_value.startswith("[VIDEO]")
+                    upload_result = upload_to_cloudinary(
+                        file,
+                        folder="mediamission_theory",
+                        resource_type="video" if is_video else "image"
+                    )
+                    if upload_result["success"]:
+                        rest = text_value.split("\n", 1)
+                        caption = rest[1] if len(rest) > 1 else ""
+                        marker = "[VIDEO]" if is_video else "[IMAGE]"
+                        text_value = f"{marker}{upload_result['url']}" + (f"\n{caption}" if caption else "")
+                    else:
+                        print(f"Помилка завантаження блоку {order_index}: {upload_result.get('error')}")
+                        continue
 
-#         return {"success": True}
+            db.session.add(TheoryBlock(
+                topic_id=topic.id,
+                block_order=order_index,
+                text=text_value
+            ))
 
-#     except Exception as e:
-#         db.session.rollback()
-#         print(f"Помилка видалення користувача: {e}")
-#         return {"success": False, "error": str(e)}, 500
+        db.session.commit()
+        return {"success": True, "message": "Тему теорії створено", "topic_id": topic.id}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка створення теми теорії: {e}")
+        return {"error": str(e)}, 500
+
+
+@app.route("/api/admin/theory_topics", methods=["GET"])
+def get_admin_theory_topics():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    topics = TheoryTopic.query.order_by(TheoryTopic.order.asc(), TheoryTopic.id.desc()).all()
+
+    result = []
+    for t in topics:
+        result.append({
+            "id": t.id,
+            "title": t.title,
+            "subtitle": t.subtitle or "",
+            "category": t.category,
+            "icon": t.icon,
+            "order": t.order,
+            "reading_time": t.reading_time,
+            "xp_reward": t.xp_reward,
+            "is_published": t.is_published,
+            "blocks_count": len(t.blocks),
+            "related_missions_count": len(t.related_missions),
+        })
+
+    return jsonify({"success": True, "topics": result})
+
+
+@app.route("/api/admin/toggle_theory_topic/<int:topic_id>", methods=["POST"])
+def toggle_theory_topic(topic_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
+
+    topic = TheoryTopic.query.get(topic_id)
+    if not topic:
+        return {"success": False, "error": "Тему не знайдено"}, 404
+
+    topic.is_published = not topic.is_published
+    db.session.commit()
+    return {"success": True, "is_published": topic.is_published}
+
+
+@app.route("/api/admin/delete_theory_topic/<int:topic_id>", methods=["DELETE"])
+def delete_theory_topic(topic_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
+
+    topic = TheoryTopic.query.get(topic_id)
+    if not topic:
+        return {"success": False, "error": "Тему не знайдено"}, 404
+
+    try:
+        # Видаляємо фото/відео з блоків теми з Cloudinary
+        for block in topic.blocks:
+            if block.text.startswith("[IMAGE]") or block.text.startswith("[VIDEO]"):
+                media_url = block.text.split("\n", 1)[0][7:]
+                delete_from_cloudinary(media_url)
+
+        # Прогрес користувачів по цій темі
+        UserTheoryProgress.query.filter_by(topic_id=topic_id).delete(synchronize_session=False)
+
+        # blocks видаляться каскадом, зв'язок з місіями (theory_mission_link) SQLAlchemy почистить сам
+        db.session.delete(topic)
+        db.session.commit()
+
+        return {"success": True, "message": f"Тему #{topic_id} видалено"}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка видалення теми теорії: {e}")
+        return {"success": False, "error": str(e)}, 500
+
+
+# ------------------------------------------------------------
+# TheoryResource — бібліотека матеріалів (відео/книги/статті/сайти)
+# ------------------------------------------------------------
+
+@app.route("/api/admin/add_theory_resource", methods=["POST"])
+def add_theory_resource():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return {"error": "Unauthorized"}, 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
+
+    try:
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
+        resource_type = request.form.get("resource_type", "article")
+        url = request.form.get("url", "").strip()
+        author = request.form.get("author", "").strip()
+        language = request.form.get("language", "").strip()
+        category = request.form.get("category", "").strip()
+        is_published = request.form.get("is_published", "true") == "true"
+
+        if not title:
+            return {"error": "Назва ресурсу обов'язкова"}, 400
+
+        if resource_type not in THEORY_RESOURCE_TYPES:
+            resource_type = "article"
+
+        # Обкладинка — або файл (на Cloudinary), або готовий URL
+        image_url = request.form.get("image_url", "").strip() or None
+        if "image" in request.files:
+            file = request.files["image"]
+            if file and file.filename and allowed_file(file.filename):
+                upload_result = upload_to_cloudinary(file, folder="mediamission_theory_resources")
+                if upload_result["success"]:
+                    image_url = upload_result["url"]
+
+        resource = TheoryResource(
+            title=title,
+            description=description or None,
+            resource_type=resource_type,
+            url=url or None,
+            image_url=image_url,
+            author=author or None,
+            language=language or None,
+            category=category or None,
+            is_published=is_published,
+        )
+        db.session.add(resource)
+        db.session.commit()
+
+        return {"success": True, "message": "Ресурс додано", "resource_id": resource.id}
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Помилка створення ресурсу теорії: {e}")
+        return {"error": str(e)}, 500
+
+
+@app.route("/api/admin/theory_resources", methods=["GET"])
+def get_admin_theory_resources():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return jsonify({"error": "Forbidden"}), 403
+
+    resources = TheoryResource.query.order_by(TheoryResource.id.desc()).all()
+
+    result = []
+    for r in resources:
+        result.append({
+            "id": r.id,
+            "title": r.title,
+            "resource_type": r.resource_type,
+            "url": r.url or "",
+            "image_url": r.image_url or "",
+            "author": r.author or "",
+            "language": r.language or "",
+            "category": r.category or "",
+            "is_published": r.is_published,
+        })
+
+    return jsonify({"success": True, "resources": result})
+
+
+@app.route("/api/admin/toggle_theory_resource/<int:resource_id>", methods=["POST"])
+def toggle_theory_resource(resource_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
+
+    resource = TheoryResource.query.get(resource_id)
+    if not resource:
+        return {"success": False, "error": "Ресурс не знайдено"}, 404
+
+    resource.is_published = not resource.is_published
+    db.session.commit()
+    return {"success": True, "is_published": resource.is_published}
+
+
+@app.route("/api/admin/delete_theory_resource/<int:resource_id>", methods=["DELETE"])
+def delete_theory_resource(resource_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return {"error": "Unauthorized"}, 401
+
+    user = Users.query.get(user_id)
+    if not user or not user.admin:
+        return {"error": "Forbidden"}, 403
+
+    resource = TheoryResource.query.get(resource_id)
+    if not resource:
+        return {"success": False, "error": "Ресурс не знайдено"}, 404
+
+    try:
+        if resource.image_url:
+            delete_from_cloudinary(resource.image_url)
+
+        db.session.delete(resource)
+        db.session.commit()
+        return {"success": True, "message": "Ресурс видалено"}
+
+    except Exception as e:
+        db.session.rollback()
+        return {"success": False, "error": str(e)}, 500
 
 @app.route("/api/admin/adjust_xp/<int:target_id>", methods=["POST"])
 def adjust_user_xp(target_id):

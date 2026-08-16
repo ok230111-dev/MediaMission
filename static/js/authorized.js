@@ -25,7 +25,8 @@ onAuthStateChanged(auth, async (user) => {
     about: body.dataset.tAbout,
     lang: body.dataset.tLang ? body.dataset.tLang.toLowerCase() : 'uk', // поточна мова (uk, de, en)
     notifications: body.dataset.tNotifications,
-    theme: body.dataset.tTheme || "Тема"
+    theme: body.dataset.tTheme || "Тема",
+    theory: body.dataset.tTheory,
   };
 
   // 1. Оновлюємо заголовок ЛИШЕ якщо він є на цій сторінці
@@ -123,6 +124,13 @@ onAuthStateChanged(auth, async (user) => {
         </li>
 
         <li class="nav-item">
+          <a class="nav-link" href="/theory">
+            <i class="bi bi-book me-1"></i>  
+            ${t.theory}
+          </a>
+        </li>
+
+        <li class="nav-item">
           <a class="nav-link d-flex align-items-center gap-2" href="/missions-overview">
             <i class="bi bi-journal-check"></i>
             ${t.missions}
@@ -189,7 +197,7 @@ onAuthStateChanged(auth, async (user) => {
             ${t.about}
           </a>
         </li>
-        
+
         <li class="nav-item">
           <a class="nav-link d-flex align-items-center gap-2" href="/register">
             <i class="bi bi-person-plus"></i>

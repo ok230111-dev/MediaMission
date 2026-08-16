@@ -216,3 +216,88 @@
   border-color: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.9);
 }
+
+[data-theme="dark"] .theory-intro {
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.12),
+      rgba(59, 130, 246, 0.03)
+    );
+  }
+
+/* Підкладки для іконок: Темна тема (підвищена прозорість та яскравість) */
+  [data-theme="dark"] .problem-icon {
+    background: rgba(220, 53, 69, 0.2);
+    color: #ff6b6b;
+  }
+
+  [data-theme="dark"] .idea-icon {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+  }
+
+  [data-theme="dark"] .ai-icon {
+    background: rgba(115, 87, 230, 0.25);
+    color: #a78bfa;
+  }
+
+html[data-theme="dark"] .resource-info {
+    background: rgba(79, 124, 255, 0.12);
+  }
+
+  html[data-theme="dark"] .resource-filter {
+    background: var(--mm-surface-2, #1f2330);
+    border-color: var(--mm-border, #2a2f3d);
+    color: var(--mm-text-muted, #9aa1b1);
+  }
+
+  html[data-theme="dark"] .resource-filter:hover {
+    border-color: #7aa2ff;
+    color: #9fbcff;
+  }
+
+  html[data-theme="dark"] .resource-filter.active {
+    background: #4f7cff;
+    border-color: #4f7cff;
+    color: #fff;
+  }
+
+  html[data-theme="dark"] .resource-card {
+    background: var(--mm-surface, #171a21);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+  }
+
+  html[data-theme="dark"] .resource-card:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  html[data-theme="dark"] .resource-placeholder {
+    background: linear-gradient(
+      135deg,
+      rgba(79, 124, 255, 0.14),
+      rgba(79, 124, 255, 0.03)
+    );
+    color: #7aa2ff;
+  }
+
+  html[data-theme="dark"] .resource-type-badge {
+    background: rgba(15, 17, 21, 0.85);
+    color: var(--mm-text, #eceef2);
+  }
+
+  html[data-theme="dark"] .resource-meta {
+    color: var(--mm-text-muted, #9aa1b1);
+  }
+
+  html[data-theme="dark"] .resource-meta i {
+    color: #7aa2ff;
+  }
+
+  html[data-theme="dark"] .resource-category {
+    background: var(--mm-surface-2, #1f2330);
+    color: var(--mm-text-muted, #9aa1b1);
+  }
+
+  html[data-theme="dark"] .empty-icon {
+    color: var(--mm-border, #2a2f3d);
+  }

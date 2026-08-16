@@ -700,3 +700,136 @@
         transform: translateY(0);
     }
 }
+
+
+/* RECOURCES THEORY */
+/* ==========================================================
+   RESOURCE CARDS (Підтримка Dark/Light тем)
+=========================================================== */
+
+/* .resource-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.resource-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-medium, 0 12px 30px rgba(0, 0, 0, 0.12));
+}
+
+/* Обкладинка ресурсу *
+.resource-cover {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background: var(--background-color);
+}
+
+.resource-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.resource-card:hover .resource-cover img {
+  transform: scale(1.05);
+}
+
+.resource-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.8rem;
+  color: var(--text-light);
+  opacity: 0.5;
+}
+
+/* Бейдж типу ресурсу *
+.resource-type-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Наповнення *
+.resource-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.resource-meta-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resource-lang {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--border-color);
+  color: var(--text-light);
+}
+
+.resource-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color);
+  line-height: 1.4;
+}
+
+.resource-author {
+  font-size: 0.82rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.resource-desc {
+  font-size: 0.88rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Кнопка посилання *
+.resource-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.resource-btn:hover {
+  background: var(--primary-color);
+  color: #fff;
+} */

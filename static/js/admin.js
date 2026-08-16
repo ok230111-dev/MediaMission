@@ -62,6 +62,30 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
+  document.addEventListener("change", (e) => {
+    if (e.target.classList.contains("theory-block-type")) {
+      const row = e.target.closest(".theory-block-row");
+      if (!row) return;
+
+      const fileInput = row.querySelector(".theory-block-file");
+      const urlInput = row.querySelector(".theory-block-url");
+      const textInput = row.querySelector(".theory-block-text");
+      const type = e.target.value;
+
+      if (fileInput) fileInput.classList.add("d-none");
+      if (urlInput) urlInput.classList.add("d-none");
+      if (textInput) textInput.classList.remove("d-none");
+
+      if (type === "image" || type === "video") {
+        if (fileInput) fileInput.classList.remove("d-none");
+        if (textInput) textInput.classList.add("d-none");
+      } else if (type === "website") {
+        if (urlInput) urlInput.classList.remove("d-none");
+        if (textInput) textInput.classList.add("d-none");
+      }
+    }
+  });
+
   // Автоматично додаємо перше питання при завантаженні
   addQuestion();
 
@@ -69,6 +93,16 @@ document.addEventListener("DOMContentLoaded", function() {
   if (saveBtn) {
     saveBtn.addEventListener("click", saveMission);
   }
+
+  const saveTheoryTopicBtn = document.getElementById("saveTheoryTopicBtn");
+  if (saveTheoryTopicBtn) saveTheoryTopicBtn.addEventListener("click", saveTheoryTopic);
+
+  const saveTheoryResourceBtn = document.getElementById("saveTheoryResourceBtn");
+  if (saveTheoryResourceBtn) saveTheoryResourceBtn.addEventListener("click", saveTheoryResource);
+
+  loadRelatedMissionsCheckboxes();
+  loadTheoryTopics();
+  loadTheoryResources();
 
   // Ініціалізація першого абзацу
   const firstParagraph = document.querySelector(".paragraph-row");
@@ -1004,6 +1038,337 @@ async function deleteReviewItem(id) {
     await loadReviews();
   } else {
     alert(data.error || "Помилка");
+  }
+}
+
+// --- ТЕОРІЯ: БЛОКИ КОНТЕНТУ ---
+function addTheoryBlock() {
+  const container = document.getElementById("theory-blocks-container");
+  if (!container) return;
+
+  const div = document.createElement("div");
+  div.className = "mb-3 theory-block-row border rounded-3 p-3";
+  div.innerHTML = `
+    <select class="form-select mb-2 theory-block-type">
+      <option value="text">📝 Текст</option>
+      <option value="image">🖼️ Фото</option>
+      <option value="video">🎬 Відео</option>
+      <option value="website">🌐 Посилання на сайт</option>
+    </select>
+    <textarea class="form-control mb-2 theory-block-text" rows="3" placeholder="Текст блоку / підпис"></textarea>
+    <input type="file" class="form-control mb-2 theory-block-file d-none" accept="image/*,video/*" />
+    <input type="url" class="form-control mb-2 theory-block-url d-none" placeholder="https://..." />
+    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeTheoryBlock(this)">Видалити</button>
+  `;
+  container.appendChild(div);
+}
+
+function removeTheoryBlock(btn) {
+  const row = btn.closest(".theory-block-row");
+  if (row) row.remove();
+}
+
+// --- ТЕОРІЯ: СПИСОК МІСІЙ ДЛЯ ПРИВ'ЯЗКИ ---
+async function loadRelatedMissionsCheckboxes() {
+  const box = document.getElementById("theoryRelatedMissions");
+  if (!box) return;
+
+  try {
+    const response = await fetch("/api/admin/missions");
+    const data = await response.json();
+
+    if (!data.success || data.missions.length === 0) {
+      box.innerHTML = `<span class="text-muted small">Немає жодної місії — спершу створіть місію.</span>`;
+      return;
+    }
+
+    box.innerHTML = data.missions.map(m => `
+      <div class="form-check">
+        <input class="form-check-input related-mission-checkbox" type="checkbox" value="${m.id}" id="relMission${m.id}">
+        <label class="form-check-label" for="relMission${m.id}">#${m.id} — ${escapeHtml(m.title)}</label>
+      </div>
+    `).join("");
+  } catch (err) {
+    box.innerHTML = `<span class="text-danger small">Помилка завантаження списку місій</span>`;
+  }
+}
+
+// --- ТЕОРІЯ: ЗБЕРЕЖЕННЯ ТЕМИ ---
+async function saveTheoryTopic() {
+  const saveBtn = document.getElementById("saveTheoryTopicBtn");
+  const title = document.getElementById("theoryTitle")?.value.trim();
+
+  if (!title) {
+    alert("Будь ласка, введіть назву теми.");
+    return;
+  }
+
+  const blocksArray = [];
+  const filesToUpload = [];
+  const rows = document.querySelectorAll(".theory-block-row");
+
+  for (let index = 0; index < rows.length; index++) {
+    const row = rows[index];
+    const bNum = index + 1;
+
+    const type = row.querySelector(".theory-block-type")?.value;
+    const textInput = row.querySelector(".theory-block-text")?.value.trim();
+    const fileInput = row.querySelector(".theory-block-file");
+    const urlInput = row.querySelector(".theory-block-url")?.value.trim();
+
+    if (type === "text" && !textInput) {
+      alert(`Введіть текст для блоку №${bNum} або видаліть його.`);
+      return;
+    }
+    if ((type === "image" || type === "video") && (!fileInput || !fileInput.files || !fileInput.files[0])) {
+      alert(`Виберіть файл для блоку №${bNum}.`);
+      return;
+    }
+    if (type === "website" && !urlInput) {
+      alert(`Вкажіть URL для блоку №${bNum}.`);
+      return;
+    }
+
+    if (type === "website") {
+      blocksArray.push({ order: index + 1, text: `[WEBSITE]${urlInput}${textInput ? "\n" + textInput : ""}` });
+    } else if ((type === "image" || type === "video") && fileInput?.files?.[0]) {
+      const marker = type === "image" ? "[IMAGE]" : "[VIDEO]";
+      filesToUpload.push({ key: `block_file_${index + 1}`, file: fileInput.files[0] });
+      blocksArray.push({ order: index + 1, text: `${marker}PENDING_UPLOAD_${index + 1}${textInput ? "\n" + textInput : ""}` });
+    } else {
+      blocksArray.push({ order: index + 1, text: textInput || "" });
+    }
+  }
+
+  if (blocksArray.length === 0) {
+    alert("Додайте хоча б один блок контенту.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("subtitle", document.getElementById("theorySubtitle")?.value.trim() || "");
+  formData.append("category", document.getElementById("theoryCategory")?.value || "general");
+  formData.append("icon", document.getElementById("theoryIcon")?.value.trim() || "📚");
+  formData.append("order", document.getElementById("theoryOrder")?.value || "0");
+  formData.append("reading_time", document.getElementById("theoryReadingTime")?.value || "5");
+  formData.append("xp_reward", document.getElementById("theoryXp")?.value || "5");
+  formData.append("is_published", document.getElementById("theoryPublished")?.checked ? "true" : "false");
+  formData.append("blocks", JSON.stringify(blocksArray));
+
+  document.querySelectorAll(".related-mission-checkbox:checked").forEach(cb => {
+    formData.append("related_missions", cb.value);
+  });
+
+  filesToUpload.forEach(({ key, file }) => formData.append(key, file));
+
+  try {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Збереження...`;
+
+    const response = await fetch("/api/admin/add_theory_topic", { method: "POST", body: formData });
+    const result = await response.json();
+
+    if (result.success) {
+      showToast("✅ Успіх", "Тему теорії створено!", "success");
+      document.getElementById("theoryTopicForm").reset();
+      document.getElementById("theory-blocks-container").innerHTML = "";
+      addTheoryBlock();
+      loadTheoryTopics();
+    } else {
+      showToast("❌ Помилка", result.error || "Невідома помилка", "danger");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("❌ Помилка", "Мережева помилка при збереженні теми.", "danger");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Зберегти тему`;
+  }
+}
+
+// --- ТЕОРІЯ: СПИСОК ТЕМ ---
+async function loadTheoryTopics() {
+  const tbody = document.getElementById("theoryTopicsTableBody");
+  if (!tbody) return;
+
+  try {
+    const response = await fetch("/api/admin/theory_topics");
+    const data = await response.json();
+
+    if (!data.success) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-3">Помилка: ${data.error}</td></tr>`;
+      return;
+    }
+    if (data.topics.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Тем поки немає.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.topics.map(t => `
+      <tr>
+        <td class="ps-3 fw-bold">#${t.id}</td>
+        <td>${t.icon} ${escapeHtml(t.title)}</td>
+        <td><span class="badge bg-secondary-subtle text-secondary">${t.category}</span></td>
+        <td>${t.blocks_count}</td>
+        <td>${t.related_missions_count}</td>
+        <td>${t.xp_reward} XP</td>
+        <td>
+          <span class="badge ${t.is_published ? "bg-success" : "bg-secondary"}" style="cursor:pointer" onclick="toggleTheoryTopic(${t.id})">
+            ${t.is_published ? "Опубліковано" : "Чернетка"}
+          </span>
+        </td>
+        <td class="text-end pe-3">
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteTheoryTopic(${t.id}, '${escapeHtml(t.title)}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-3">Мережева помилка.</td></tr>`;
+  }
+}
+
+async function toggleTheoryTopic(id) {
+  try {
+    const response = await fetch(`/api/admin/toggle_theory_topic/${id}`, { method: "POST" });
+    const result = await response.json();
+    if (result.success) loadTheoryTopics();
+    else showToast("❌ Помилка", result.error || "Не вдалося змінити статус", "danger");
+  } catch (err) {
+    showToast("❌ Помилка", "Мережева помилка", "danger");
+  }
+}
+
+async function deleteTheoryTopic(id, title) {
+  if (!confirm(`Видалити тему "${title || "#" + id}"? Це також видалить весь прогрес користувачів по ній.`)) return;
+
+  try {
+    const response = await fetch(`/api/admin/delete_theory_topic/${id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (result.success) {
+      showToast("✅ Успіх", result.message || "Тему видалено", "success");
+      loadTheoryTopics();
+    } else {
+      showToast("❌ Помилка", result.error || "Не вдалося видалити тему", "danger");
+    }
+  } catch (err) {
+    showToast("❌ Помилка", "Мережева помилка", "danger");
+  }
+}
+
+// --- ТЕОРІЯ: РЕСУРСИ ---
+async function saveTheoryResource() {
+  const saveBtn = document.getElementById("saveTheoryResourceBtn");
+  const title = document.getElementById("resourceTitle")?.value.trim();
+
+  if (!title) {
+    alert("Будь ласка, введіть назву ресурсу.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("resource_type", document.getElementById("resourceType")?.value || "article");
+  formData.append("description", document.getElementById("resourceDescription")?.value.trim() || "");
+  formData.append("url", document.getElementById("resourceUrl")?.value.trim() || "");
+  formData.append("author", document.getElementById("resourceAuthor")?.value.trim() || "");
+  formData.append("language", document.getElementById("resourceLanguage")?.value.trim() || "");
+  formData.append("category", document.getElementById("resourceCategory")?.value.trim() || "");
+  formData.append("is_published", document.getElementById("resourcePublished")?.checked ? "true" : "false");
+
+  const imageInput = document.getElementById("resourceImage");
+  if (imageInput?.files?.[0]) formData.append("image", imageInput.files[0]);
+
+  try {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Збереження...`;
+
+    const response = await fetch("/api/admin/add_theory_resource", { method: "POST", body: formData });
+    const result = await response.json();
+
+    if (result.success) {
+      showToast("✅ Успіх", "Ресурс додано!", "success");
+      document.getElementById("theoryResourceForm").reset();
+      loadTheoryResources();
+    } else {
+      showToast("❌ Помилка", result.error || "Невідома помилка", "danger");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("❌ Помилка", "Мережева помилка при збереженні ресурсу.", "danger");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Зберегти ресурс`;
+  }
+}
+
+async function loadTheoryResources() {
+  const tbody = document.getElementById("theoryResourcesTableBody");
+  if (!tbody) return;
+
+  try {
+    const response = await fetch("/api/admin/theory_resources");
+    const data = await response.json();
+
+    if (!data.success) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Помилка: ${data.error}</td></tr>`;
+      return;
+    }
+    if (data.resources.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Ресурсів поки немає.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.resources.map(r => `
+      <tr>
+        <td class="ps-3 fw-bold">#${r.id}</td>
+        <td>${escapeHtml(r.title)}</td>
+        <td><span class="badge bg-secondary-subtle text-secondary">${r.resource_type}</span></td>
+        <td>${escapeHtml(r.category || "—")}</td>
+        <td>
+          <span class="badge ${r.is_published ? "bg-success" : "bg-secondary"}" style="cursor:pointer" onclick="toggleTheoryResource(${r.id})">
+            ${r.is_published ? "Опубліковано" : "Чернетка"}
+          </span>
+        </td>
+        <td class="text-end pe-3">
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteTheoryResource(${r.id}, '${escapeHtml(r.title)}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Мережева помилка.</td></tr>`;
+  }
+}
+
+async function toggleTheoryResource(id) {
+  try {
+    const response = await fetch(`/api/admin/toggle_theory_resource/${id}`, { method: "POST" });
+    const result = await response.json();
+    if (result.success) loadTheoryResources();
+    else showToast("❌ Помилка", result.error || "Не вдалося змінити статус", "danger");
+  } catch (err) {
+    showToast("❌ Помилка", "Мережева помилка", "danger");
+  }
+}
+
+async function deleteTheoryResource(id, title) {
+  if (!confirm(`Видалити ресурс "${title || "#" + id}"?`)) return;
+
+  try {
+    const response = await fetch(`/api/admin/delete_theory_resource/${id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (result.success) {
+      showToast("✅ Успіх", result.message || "Ресурс видалено", "success");
+      loadTheoryResources();
+    } else {
+      showToast("❌ Помилка", result.error || "Не вдалося видалити ресурс", "danger");
+    }
+  } catch (err) {
+    showToast("❌ Помилка", "Мережева помилка", "danger");
   }
 }
 

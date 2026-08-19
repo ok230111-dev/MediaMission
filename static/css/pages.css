@@ -301,6 +301,168 @@
     margin: 0 auto 20px;
 }
 
+/* ==========================================================
+     HOW IT WORKS — адаптивний степер / timeline
+  =========================================================== */
+
+  .how-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  .how-step {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    padding-bottom: 36px;
+  }
+
+  .how-step:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Вертикальна лінія-з'єднувач між кроками (мобільний / планшет режим) */
+  .how-step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 27px;
+    top: 56px;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      var(--primary-color),
+      var(--border-color)
+    );
+  }
+
+  .how-step-marker {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .how-step-number {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-color);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 800;
+    font-size: 1.3rem;
+    box-shadow: var(--shadow-small, 0 4px 12px rgba(0, 0, 0, 0.06));
+    position: relative;
+    z-index: 1;
+  }
+
+  .how-step-body {
+    flex-grow: 1;
+    padding-top: 8px;
+  }
+
+  .how-step-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 6px;
+  }
+
+  .how-step-text {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 0;
+    max-width: 520px;
+  }
+
+  /* ==========================================================
+     ВЕЛИКІ ЕКРАНИ — горизонтальний степер замість вертикальної лінії
+  =========================================================== */
+
+  @media (min-width: 992px) {
+    .how-steps {
+      flex-direction: row;
+      align-items: flex-start;
+      max-width: 100%;
+      gap: 0;
+    }
+
+    .how-step {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding-bottom: 0;
+      flex: 1;
+      padding: 0 12px;
+    }
+
+    /* Горизонтальна лінія-з'єднувач між кроками */
+    .how-step:not(:last-child)::before {
+      left: calc(50% + 28px + 12px);
+      right: calc(-50% + 28px + 12px);
+      top: 27px;
+      bottom: auto;
+      width: auto;
+      height: 2px;
+      background: linear-gradient(
+        to right,
+        var(--primary-color),
+        var(--border-color)
+      );
+    }
+
+    .how-step-marker {
+      margin-bottom: 16px;
+    }
+
+    .how-step-body {
+      padding-top: 0;
+    }
+
+    .how-step-text {
+      max-width: 200px;
+    }
+  }
+
+  /* Фінальний крок трохи виділений (заклик до дії, XP) */
+  .how-step:last-child .how-step-number {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+  }
+
+  /* ==========================================================
+     МОБІЛЬНІ ЕКРАНИ — трохи компактніше
+  =========================================================== */
+
+  @media (max-width: 576px) {
+    .how-step-number {
+      width: 48px;
+      height: 48px;
+      font-size: 1.1rem;
+    }
+
+    .how-step:not(:last-child)::before {
+      left: 23px;
+      top: 48px;
+    }
+
+    .how-step-title {
+      font-size: 1.05rem;
+    }
+
+    .how-step-text {
+      font-size: 0.88rem;
+    }
+  }
+
 /* CTA BOX */
 .cta-box {
     background: var(--surface-color);

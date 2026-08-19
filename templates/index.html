@@ -304,34 +304,56 @@ endblock %} {% block content %}
 </section>
 
 <!-- HOW IT WORKS -->
+
 <section class="how-it-works container py-5 section-bg-1">
-  <div class="row text-center g-4">
-    <div class="col-6 col-md-3">
-      <div class="step-card">
-        <i class="bi bi-1-circle display-4 text-primary"></i>
-        <h4 class="mt-3 fs-5">{{ t('index_how_login') }}</h4>
-        <p class="small text-muted-custom">{{ t('index_how_login_text') }}</p>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-step-marker">
+        <span class="how-step-number">1</span>
+      </div>
+      <div class="how-step-body">
+        <h4 class="how-step-title">{{ t('index_how_login') }}</h4>
+        <p class="how-step-text">{{ t('index_how_login_text') }}</p>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="step-card">
-        <i class="bi bi-2-circle display-4 text-primary"></i>
-        <h4 class="mt-3 fs-5">{{ t('index_how_choose') }}</h4>
-        <p class="small text-muted-custom">{{ t('index_how_choose_text') }}</p>
+
+    <div class="how-step">
+      <div class="how-step-marker">
+        <span class="how-step-number">2</span>
+      </div>
+      <div class="how-step-body">
+        <h4 class="how-step-title">{{t('index_how_theory')}}</h4>
+        <p class="how-step-text">{{t('index_how_theory_text')}}</p>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="step-card">
-        <i class="bi bi-3-circle display-4 text-primary"></i>
-        <h4 class="mt-3 fs-5">{{ t('index_how_analyse') }}</h4>
-        <p class="small text-muted-custom">{{ t('index_how_analyse_text') }}</p>
+
+    <div class="how-step">
+      <div class="how-step-marker">
+        <span class="how-step-number">3</span>
+      </div>
+      <div class="how-step-body">
+        <h4 class="how-step-title">{{ t('index_how_choose') }}</h4>
+        <p class="how-step-text">{{ t('index_how_choose_text') }}</p>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="step-card">
-        <i class="bi bi-4-circle display-4 text-primary"></i>
-        <h4 class="mt-3 fs-5">{{ t('index_how_xp') }}</h4>
-        <p class="small text-muted-custom">{{ t('index_how_xp_text') }}</p>
+
+    <div class="how-step">
+      <div class="how-step-marker">
+        <span class="how-step-number">4</span>
+      </div>
+      <div class="how-step-body">
+        <h4 class="how-step-title">{{ t('index_how_analyse') }}</h4>
+        <p class="how-step-text">{{ t('index_how_analyse_text') }}</p>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="how-step-marker">
+        <span class="how-step-number">5</span>
+      </div>
+      <div class="how-step-body">
+        <h4 class="how-step-title">{{ t('index_how_xp') }}</h4>
+        <p class="how-step-text">{{ t('index_how_xp_text') }}</p>
       </div>
     </div>
   </div>

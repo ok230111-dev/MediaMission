@@ -19,52 +19,10 @@ onAuthStateChanged(auth, (user) => {
     if (emailElem) emailElem.textContent = email;
     if (avatarElem) avatarElem.textContent = displayName.charAt(0).toUpperCase();
 
-    // Оновлюємо XP та рівень
-    updateXPProgress();
-
   } else {
     window.location.href = "/login";
   }
 });
-
-// ============================================
-// ОНОВЛЕННЯ XP ТА РІВНЯ
-// ============================================
-function updateXPProgress() {
-    const section = document.querySelector("section[data-t-level]");
-    const tLevel = section?.dataset.tLevel || "Level";
-    const tXpLeft = section?.dataset.tXpLeft || "";
-    const tXpToNext = section?.dataset.tXpToNext || "";
-
-    const xpTextElem = document.getElementById("totalXp");
-    const currentXP = xpTextElem ? parseInt(xpTextElem.textContent.trim(), 10) || 0 : 0;
-
-    const xpPerLevel = 500;
-    const level = Math.floor(currentXP / xpPerLevel) + 1;
-    const currentLevelXP = currentXP % xpPerLevel;
-    const xpNeeded = xpPerLevel - currentLevelXP;
-    const progressPercent = Math.min((currentLevelXP / xpPerLevel) * 100, 100);
-
-    const currentLevelEl = document.getElementById("currentLevel");
-    const xpTextEl = document.getElementById("xpText");
-    const xpNeededEl = document.getElementById("xpNeeded");
-    const progressBar = document.getElementById("xpProgressBar");
-
-    if (currentLevelEl) currentLevelEl.textContent = `${tLevel} ${level}`;
-    if (xpTextEl) xpTextEl.textContent = `${currentLevelXP} / ${xpPerLevel} XP`;
-    if (xpNeededEl) xpNeededEl.textContent = `${xpNeeded} XP`;
-
-    // Оновлюємо текст навколо xpNeeded
-    const xpNeededParent = xpNeededEl?.parentElement;
-    if (xpNeededParent && tXpLeft && tXpToNext) {
-      xpNeededParent.innerHTML = `${tXpLeft} <strong id="xpNeeded">${xpNeeded} XP</strong> ${tXpToNext}`;
-    }
-
-    if (progressBar) {
-      progressBar.style.width = `${progressPercent}%`;
-      progressBar.setAttribute("aria-valuenow", progressPercent);
-    }
-}
 
 // ============================================
 // ВЕРИФІКАЦІЯ EMAIL ЧЕРЕЗ FLASK (CUSTOM)

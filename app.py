@@ -32,7 +32,7 @@ from models import (
 )
 from translations import translate
 from utils import date_uk
-from gamification import init_achievements, check_and_unlock_achievements
+from gamification import init_achievements, check_and_unlock_achievements, GamificationSystem
 
 load_dotenv()
 
@@ -868,6 +868,8 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    level_info = GamificationSystem.calculate_level_info(user.total_xp)
+
     newly_unlocked = check_and_unlock_achievements(user_id)
     if newly_unlocked:
         flash(f"🎉 Ви отримали нові досягнення!", 'success')
@@ -924,7 +926,8 @@ def profile():
         successful_attempts=successful_attempts,
         success_rate=success_rate,
         newly_unlocked=newly_unlocked,
-        tasks=tasks
+        tasks=tasks,
+        level_info=level_info
     )
 
 @app.route("/leaderboard", methods=["GET", "POST"])

@@ -42,6 +42,14 @@ MediaMission{% endblock %} {% block content %}
           <button
             type="button"
             class="btn btn-outline-primary text-start category-btn"
+            data-category="theory"
+            data-label="{{ t('issue_category_theory') }}"
+          >
+            <i class="bi bi-book me-2"></i>{{ t('issue_category_theory') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-primary text-start category-btn"
             data-category="mission"
             data-label="{{ t('support_cat_mission') }}"
           >

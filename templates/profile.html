@@ -403,54 +403,20 @@ MediaMission{% endblock %} {% block style %}
             <p class="text-muted mb-2 small text-truncate" id="profileEmail">
               {{ user.email }}
             </p>
+          </div>
+        </div>
 
-            <!-- Блок Рангу, Ліги та кнопки "i" -->
-            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
-              <div class="league-rank-badge">
-                <span id="userLeagueIcon">🛡️</span>
-                <span id="userLeagueName" class="text-primary"
-                  >{{ user.league_name|default('Бронзова ліга') }}</span
-                >
-                <span class="text-muted">•</span>
-                <span id="userRankName" class="fw-bold"
-                  >{{ user.rank_name|default('Новачок') }}</span
-                >
-              </div>
-
-              <button
-                type="button"
-                class="btn btn-outline-primary btn-info-system"
-                data-bs-toggle="modal"
-                data-bs-target="#gamificationSystemModal"
-                title="Пояснення системи рівнів, рангів та ліг"
-                aria-label="Інформація про систему рівнів"
-              >
-                i
-              </button>
-            </div>
-
-            <!-- Форма завантаження аватара -->
-            <form
-              action="/upload-avatar"
-              method="POST"
-              enctype="multipart/form-data"
+        <!-- Блок Рангу, Ліги та кнопки "i" -->
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-2 mt-3">
+          <div class="league-rank-badge">
+            <span id="userLeagueIcon">🛡️</span>
+            <span id="userLeagueName" class="text-primary"
+              >{{ user.league_name|default('Бронзова ліга') }}</span
             >
-              <label
-                for="avatarInput"
-                class="btn btn-sm btn-outline-primary rounded-pill avatar-upload-btn"
-              >
-                <i class="bi bi-camera"></i> {{ t('change_avatar') }}
-              </label>
-              <input
-                type="file"
-                name="avatar"
-                id="avatarInput"
-                accept="image/png,image/jpeg,image/webp"
-                class="d-none"
-                onchange="this.form.submit()"
-                aria-label="{{ t('change_avatar') }}"
-              />
-            </form>
+            <span class="text-muted">•</span>
+            <span id="userRankName" class="fw-bold"
+              >{{ user.rank_name|default('Новачок') }}</span
+            >
           </div>
         </div>
 
@@ -478,55 +444,41 @@ MediaMission{% endblock %} {% block style %}
           </span>
           {% endif %}
         </div>
-
-        <!-- Зміна паролю (лише для акаунтів з паролем, не для Google) -->
-        {% if user.provider == 'password' %}
-        <div class="mt-3">
-          <div class="d-flex align-items-center gap-2 flex-wrap">
-            <button
-              id="changePasswordBtn"
-              class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-              aria-label="{{ t('change_password') }}"
-            >
-              <i class="bi bi-key-fill"></i> {{ t('change_password') }}
-            </button>
-          </div>
-          <div id="changePasswordStatus" class="mt-2 small" role="status"></div>
-        </div>
-        {% endif %}
       </div>
 
       <!-- Шкала прогресу до наступного рівня -->
       <div class="col-12 col-md-8">
         <!-- XP статистика -->
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div
+          class="d-flex justify-content-between align-items-center mb-2 mt-2"
+        >
           <span class="fw-bold text-primary" id="currentLevel">
-            {{ t('profile_level') }} {% set user_level = (user.total_xp /
-            500)|int + 1 %} {{ user_level }}
+            {{ t('profile_level') }} {{ level_info.level }}
           </span>
           <span class="text-muted small" id="xpText">
-            {{ user.total_xp }} / 500 XP
+            {{ level_info.xp_in_current_level }} / {{
+            level_info.xp_required_for_next }} XP
           </span>
         </div>
 
-        <!-- Прогрес-бар -->
         <div class="progress" style="height: 14px; border-radius: 10px">
           <div
-            class="progress-bar progress-bar-striped progress-bar-animated"
+            class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
             role="progressbar"
             id="xpProgressBar"
-            style="width: {{ (user.total_xp % 500) / 500 * 100 }}%; border-radius: 10px"
-            aria-valuenow="{{ (user.total_xp % 500) / 500 * 100 }}"
+            style="width: {{ level_info.progress_percent }}%; border-radius: 10px"
+            aria-valuenow="{{ level_info.progress_percent }}"
             aria-valuemin="0"
             aria-valuemax="100"
-            aria-label="XP progress"
           ></div>
         </div>
 
-        <!-- Текст про залишок XP -->
         <small class="text-muted mt-2 d-block">
           {{ t('xp_left_to_next_level') }}
-          <strong id="xpNeeded">{{ 500 - (user.total_xp % 500) }} XP</strong>
+          <strong id="xpNeeded"
+            >{{ level_info.xp_required_for_next - level_info.xp_in_current_level
+            }} XP</strong
+          >
           {{ t('xp_to_next_level') }}
         </small>
       </div>
@@ -989,12 +941,19 @@ MediaMission{% endblock %} {% block style %}
     aria-hidden="true"
   >
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border-radius: 16px; border: none">
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold">
-            <i class="bi bi-person-lines-fill text-primary me-2"></i>{{
-            t('profile_information_account') }}
-          </h5>
+      <div class="modal-content account-info-modal">
+        <div class="modal-header border-0 pb-0">
+          <div class="d-flex align-items-center gap-2">
+            <span class="account-modal-icon">
+              <i class="bi bi-person-lines-fill"></i>
+            </span>
+            <div>
+              <h5 class="modal-title fw-bold mb-0">
+                {{ t('profile_information_account') }}
+              </h5>
+              <small class="text-muted">{{ user.display_name }}</small>
+            </div>
+          </div>
           <button
             type="button"
             class="btn-close"
@@ -1002,99 +961,191 @@ MediaMission{% endblock %} {% block style %}
             aria-label="Close"
           ></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <small class="text-muted d-block">{{ t('username') }}</small>
-            <strong>{{ user.display_name }}</strong>
+
+        <div class="modal-body pt-3">
+          <!-- Блок 1: Основна інформація -->
+          <div class="account-section mb-3">
+            <h6 class="account-section-title">
+              <i class="bi bi-card-text me-1"></i>{{ t('account_info_section')
+              }}
+            </h6>
+
+            <div class="account-info-row">
+              <span class="account-info-label">{{ t('username') }}</span>
+              <span class="account-info-value">{{ user.display_name }}</span>
+            </div>
+            <div class="account-info-row">
+              <span class="account-info-label">Email</span>
+              <span
+                class="account-info-value text-truncate"
+                style="max-width: 220px"
+                >{{ user.email }}</span
+              >
+            </div>
+            <div class="account-info-row">
+              <span class="account-info-label">{{ t('login_method') }}</span>
+              <span class="account-info-value">
+                {% if user.provider == 'google.com' %}
+                <i class="bi bi-google"></i> Google {% else %}
+                <i class="bi bi-envelope"></i> {{ t('email_password') }} {%
+                endif %}
+              </span>
+            </div>
+            <div class="account-info-row">
+              <span class="account-info-label">{{ t('email_status') }}</span>
+              <span class="account-info-value">
+                {% if user.email_verified %}
+                <span class="badge rounded-pill account-badge-success"
+                  >{{ t('verified') }}</span
+                >
+                {% else %}
+                <span class="badge rounded-pill account-badge-warning"
+                  >{{ t('unverified') }}</span
+                >
+                {% endif %}
+              </span>
+            </div>
+            <div class="account-info-row">
+              <span class="account-info-label"
+                >{{ t('registration_date') }}</span
+              >
+              <span class="account-info-value"
+                >{{ user.created_at.strftime("%d.%m.%Y") }}</span
+              >
+            </div>
+            {% if user.last_login %}
+            <div class="account-info-row account-info-row-last">
+              <span class="account-info-label">{{ t('last_login') }}</span>
+              <span class="account-info-value"
+                >{{ user.last_login.strftime("%H:%M, %d.%m.%Y") }}</span
+              >
+            </div>
+            {% endif %}
           </div>
 
-          <div class="mb-3">
-            <small class="text-muted d-block">Email</small>
-            <strong>{{ user.email }}</strong>
+          <!-- Блок 2: Сповіщення та приватність -->
+          <div class="account-section mb-3">
+            <h6 class="account-section-title">
+              <i class="bi bi-sliders me-1"></i>{{
+              t('notifications_and_privacy') }}
+            </h6>
+
+            <div class="account-toggle-row">
+              <div>
+                <label
+                  class="account-toggle-title"
+                  for="pushNotificationsSwitch"
+                >
+                  {{ t('profile_push_notifications') }}
+                </label>
+                <p class="account-toggle-desc">
+                  {{ t('profile_push_notifications_text') }}
+                </p>
+              </div>
+              <div class="form-check form-switch flex-shrink-0">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="pushNotificationsSwitch"
+                  aria-label="Увімкнути PUSH-сповіщення"
+                />
+              </div>
+            </div>
+
+            <div class="account-toggle-row account-toggle-row-last">
+              <div>
+                <label class="account-toggle-title" for="privacySwitch">
+                  {{ t('show_me_in_ratings') }}
+                </label>
+                <p class="account-toggle-desc">
+                  {{ t('show_me_in_ratings_text') }}
+                </p>
+              </div>
+              <div class="form-check form-switch flex-shrink-0">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="privacySwitch"
+                  {%
+                  if
+                  user.allowed_to_show
+                  %}checked{%
+                  endif
+                  %}
+                  aria-label="{{ t('show_in_community') }}"
+                />
+              </div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <small class="text-muted d-block">{{ t('login_method') }}</small>
-            <strong>
-              {% if user.provider == 'google.com' %}
-              <i class="bi bi-google"></i> Google {% else %}
-              <i class="bi bi-envelope"></i> {{ t('email_password') }} {% endif
-              %}
-            </strong>
+          <div class="account-section mb-3">
+            <h6 class="account-section-title">
+              <i class="bi bi-sliders me-1"></i>{{ t('learn_levels_and_rangs')
+              }}
+            </h6>
+            <button
+              type="button"
+              class="account-info-link"
+              data-bs-toggle="modal"
+              data-bs-target="#gamificationSystemModal"
+              aria-label="Інформація про систему рівнів"
+            >
+              <i class="bi bi-info-circle me-1"></i>{{ t('learn_about_levels')
+              }}
+            </button>
           </div>
 
-          <div class="mb-3">
-            <small class="text-muted d-block">{{ t('email_status') }}</small>
-            <strong>
-              {% if user.email_verified %}
-              <span class="text-success">{{ t('verified') }}</span>
-              {% else %}
-              <span class="text-warning">{{ t('unverified') }}</span>
+          <!-- Блок 3: Дії -->
+          <div class="account-section">
+            <h6 class="account-section-title">
+              <i class="bi bi-gear me-1"></i>{{ t('actions') }}
+            </h6>
+
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <form
+                action="/upload-avatar"
+                method="POST"
+                enctype="multipart/form-data"
+                class="m-0"
+              >
+                <label
+                  for="avatarInput"
+                  class="btn btn-sm btn-outline-primary rounded-pill mb-0"
+                >
+                  <i class="bi bi-camera"></i> {{ t('change_avatar') }}
+                </label>
+                <input
+                  type="file"
+                  name="avatar"
+                  id="avatarInput"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="d-none"
+                  onchange="this.form.submit()"
+                  aria-label="{{ t('change_avatar') }}"
+                />
+              </form>
+
+              {% if user.provider == 'password' %}
+              <button
+                id="changePasswordBtn"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                aria-label="{{ t('change_password') }}"
+              >
+                <i class="bi bi-key-fill"></i> {{ t('change_password') }}
+              </button>
               {% endif %}
-            </strong>
-          </div>
+            </div>
 
-          <div class="mb-3">
-            <small class="text-muted d-block"
-              >{{ t('registration_date') }}</small
-            >
-            <strong>{{ user.created_at.strftime("%H:%M, %d.%m.%Y") }}</strong>
+            {% if user.provider == 'password' %}
+            <div id="changePasswordStatus" class="small" role="status"></div>
+            {% endif %}
           </div>
-
-          {% if user.last_login %}
-          <div class="mb-3">
-            <small class="text-muted d-block">{{ t('last_login') }}</small>
-            <strong>{{ user.last_login.strftime("%H:%M, %d.%m.%Y") }}</strong>
-          </div>
-          {% endif %}
-
-          <div class="mb-0">
-            <small class="text-muted d-block">{{ t('account_id') }}</small>
-            <code class="small">{{ user.firebase_uid }}</code>
-          </div>
-
-          <div class="form-check form-switch mt-3">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="pushNotificationsSwitch"
-              aria-label="Увімкнути PUSH-сповіщення"
-            />
-            <label
-              class="form-check-label fw-bold"
-              for="pushNotificationsSwitch"
-            >
-              🔔 PUSH-сповіщення
-            </label>
-          </div>
-          <p class="text-muted small mb-3">
-            Отримувати важливі сповіщення прямо у браузері
-          </p>
-
-          <div class="form-check form-switch mt-4">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="privacySwitch"
-              {%
-              if
-              user.allowed_to_show
-              %}checked{%
-              endif
-              %}
-              aria-label="{{ t('show_in_community') }}"
-            />
-            <label class="form-check-label" for="privacySwitch">
-              {{ t('show_me_in_ratings') }}
-            </label>
-          </div>
-
-          <p class="text-muted mt-2">{{ t('privacy_description') }}</p>
         </div>
-        <div class="modal-footer border-0">
+
+        <div class="modal-footer border-0 pt-0">
           <button
             type="button"
-            class="btn btn-secondary"
+            class="btn btn-outline-secondary rounded-pill px-4"
             data-bs-dismiss="modal"
           >
             {{ t('close') }}

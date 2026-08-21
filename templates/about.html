@@ -294,15 +294,33 @@ MediaMission{% endblock %} {% block style %}
         t('about_contact_title') }}
       </h3>
       <div class="d-flex justify-content-center gap-3 flex-wrap">
-        <a href="/contact" class="btn btn-outline-primary">
-          <i class="bi bi-envelope me-2"></i>Email
+        <a
+          href="mailto:mediamission.contact@gmail.com"
+          class="contact-email-card text-decoration-none"
+        >
+          <div class="contact-icon-wrapper">
+            <i class="bi bi-envelope-fill"></i>
+          </div>
+          <div class="contact-info">
+            <span class="contact-label">Email підтримки</span>
+            <span class="contact-email">mediamission.contact@gmail.com</span>
+          </div>
+          <i class="bi bi-arrow-right-short contact-arrow"></i>
         </a>
         <a
           href="https://github.com/ok230111-dev/MediaMission"
           target="_blank"
-          class="btn btn-outline-dark"
+          rel="noopener noreferrer"
+          class="github-card text-decoration-none"
         >
-          <i class="bi bi-github me-2"></i>GitHub
+          <div class="github-icon-wrapper">
+            <i class="bi bi-github"></i>
+          </div>
+          <div class="github-info">
+            <span class="github-label">Open Source</span>
+            <span class="github-repo">ok230111-dev/MediaMission</span>
+          </div>
+          <i class="bi bi-box-arrow-up-right github-arrow"></i>
         </a>
       </div>
     </div>
@@ -319,4 +337,128 @@ MediaMission{% endblock %} {% block style %}
     </div>
   </div>
 </section>
+
+<style>
+  .contact-email-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 16px;
+    transition: all 0.25s ease;
+  }
+
+  .contact-email-card:hover {
+    border-color: var(--primary-color, #2563eb);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.1);
+  }
+
+  .contact-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .contact-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light, #64748b);
+  }
+
+  .contact-email {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-color, #0f172a);
+  }
+
+  .contact-arrow {
+    font-size: 1.4rem;
+    color: var(--text-light, #64748b);
+    transition: transform 0.2s ease;
+  }
+
+  .contact-email-card:hover .contact-arrow {
+    transform: translateX(4px);
+    color: var(--primary-color, #2563eb);
+  }
+
+  .github-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    background: var(--surface-color, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 16px;
+    transition: all 0.25s ease;
+  }
+
+  .github-card:hover {
+    border-color: var(--text-color, #0f172a);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium, 0 8px 20px rgba(0, 0, 0, 0.08));
+  }
+
+  .github-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--background-color, #f8fafc);
+    color: var(--text-color, #0f172a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+  }
+
+  .github-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .github-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light, #64748b);
+  }
+
+  .github-repo {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-color, #0f172a);
+  }
+
+  .github-arrow {
+    font-size: 1.1rem;
+    color: var(--text-light, #64748b);
+    transition:
+      transform 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .github-card:hover .github-arrow {
+    transform: translate(2px, -2px);
+    color: var(--text-color, #0f172a);
+  }
+</style>
 {% endblock %}

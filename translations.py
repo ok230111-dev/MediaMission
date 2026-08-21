@@ -673,6 +673,7 @@ TRANSLATIONS = {
         "issue_content_not_loading": "Контент не завантажується",
         "issue_missing_content": "Відсутній матеріал або стаття",
         "issue_broken_resource_link": "Не працює посилання на ресурс",
+        "reviews": "Відгуки"
     },
     "de": {
         "theme_toggle_label": "Design",
@@ -1342,6 +1343,7 @@ TRANSLATIONS = {
         "issue_content_not_loading": "Inhalt lädt nicht",
         "issue_missing_content": "Fehlendes Material oder Artikel",
         "issue_broken_resource_link": "Ressourcen-Link funktioniert nicht",
+        "reviews": "Rezensionen"
     },
     "en": {
         "theme_toggle_label": "Theme", 
@@ -2010,6 +2012,7 @@ TRANSLATIONS = {
         "issue_content_not_loading": "Content not loading",
         "issue_missing_content": "Missing material or article",
         "issue_broken_resource_link": "Broken resource link",
+        "reviews": "Reviews"
     },
 }
 

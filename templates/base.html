@@ -672,6 +672,7 @@
     <main class="main-content flex-grow-1t">
       {% block content %} {% endblock %}
     </main>
+
     <footer class="site-footer mt-auto pt-5 pb-3">
       <div class="container">
         <div class="row g-4">
@@ -716,6 +717,16 @@
               <li><a href="/impressum">{{ t('nav_impressum') }}</a></li>
             </ul>
           </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="text-center mb-1">
+          <h2 class="fw-bold">
+            <span class="step-neutral">{{ t('find') }}</span>
+            <span class="step-primary">{{ t('verify') }}</span>
+            <span class="step-success">{{ t('protect') }}</span>
+          </h2>
         </div>
 
         <hr class="my-4" />

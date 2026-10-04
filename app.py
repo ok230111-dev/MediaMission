@@ -122,8 +122,8 @@ AI_SYSTEM_PROMPT = """Ти — mmsAI, офіційний AI-Помічник о�
 - Не обговорюй теми, не пов'язані з сайтом, інфограмотністю чи медіаграмотністю."""
 
 GROQ_CANDIDATE_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
+    "openai/gpt-oss-120b", 
+    "openai/gpt-oss-20b"
 ]
 
 # Register admin views
@@ -2789,8 +2789,9 @@ def ai_chat():
             raw_response = groq_client.chat.completions.with_raw_response.create(
                 model=model_name,
                 messages=messages,
-                max_tokens=500,
+                max_tokens=2000,
                 temperature=0.7,
+                reasoning_effort="low",
             )
             headers = raw_response.headers
             completion = raw_response.parse()

@@ -1,0 +1,132 @@
+{% extends "base.html" %} {% block title %}{{ t('theory') }} | MediaMission{%
+endblock %} {% block content %}
+
+<section class="container py-5">
+  <!-- ВЕРХНІ ВКЛАДКИ -->
+  <div class="theory-top-tabs mb-4">
+    <a href="/theory" class="theory-tab">
+      <i class="bi bi-book-half me-1"></i> {{ t('tab_theory') }}
+    </a>
+    <a href="/theory/resources" class="theory-tab"
+      ><i class="bi bi-collection me-1"></i> {{ t('tab_resources') }}
+    </a>
+    <a href="/games" class="theory-tab">
+      <i class="bi bi-controller me-1"></i> {{ t('tab_games') }}
+    </a>
+    <a href="/tournaments" class="theory-tab">
+      <i class="bi bi-trophy me-1"></i> {{ t('tab_tournaments') }}
+    </a>
+    <a href="/glossary" class="theory-tab active">
+      <i class="bi bi-journal-text me-1"></i> {{ t('tab_dictionary') }}</a
+    >
+  </div>
+
+  <!-- HERO -->
+  <div class="theory-hero text-center mb-5">
+    <h1 class="fw-bold display-5 mb-3">
+      {{ t('theory_title') }}
+      <span class="step-primary">MediaMission</span>
+    </h1>
+
+    <div class="theory-motto mb-3">
+      <span class="step-neutral">{{ t('find') }}</span>
+      <span class="step-primary">{{ t('verify') }}</span>
+      <span class="step-success">{{ t('protect') }}</span>
+    </div>
+
+    <p class="text-muted theory-description">{{ t('theory_hero_desc') }}</p>
+  </div>
+
+  <section class="about_glossary mb-5" aria-labelledby="about-glossary-title">
+    <div class="about-glossary-heading">
+      <span class="about-glossary-icon" aria-hidden="true">
+        <i class="bi bi-journal-bookmark-fill"></i>
+      </span>
+      <div>
+        <p class="about-glossary-eyebrow mb-1">MediaMission</p>
+        <h2 id="about-glossary-title" class="mb-0">
+          {{ t('glossary_about_heading') }}
+        </h2>
+      </div>
+    </div>
+
+    <div class="about-glossary-meta">
+      <div class="about-glossary-meta-item">
+        <span class="about-glossary-label"
+          >{{ t('glossary_about_author_label') }}</span
+        >
+        <strong>{{ t('glossary_about_authors') }}</strong>
+      </div>
+      <div class="about-glossary-meta-item">
+        <span class="about-glossary-label"
+          >{{ t('glossary_about_year_label') }}</span
+        >
+        <strong>{{ t('glossary_about_year') }}</strong>
+      </div>
+    </div>
+
+    <p class="about-glossary-recommendation">
+      <i class="bi bi-patch-check-fill" aria-hidden="true"></i>
+      {{ t('glossary_about_recommendation') }}
+    </p>
+
+    <p class="about-glossary-institution mb-4">
+      <i class="bi bi-building me-2" aria-hidden="true"></i>
+      {{ t('glossary_about_institution') }}
+    </p>
+
+    <div class="about-glossary-source">
+      <span class="about-glossary-label"
+        >{{ t('glossary_about_source_label') }}</span
+      >
+      <p class="mb-0">{{ t('glossary_about_source') }}</p>
+    </div>
+  </section>
+
+  <!-- Вставте цей блок у потрібне місце сторінки бібліотеки теорії -->
+  <section
+    id="glossary"
+    class="glossary container my-4"
+    data-source-url="{{ url_for('glossary_data') }}"
+    data-count-all="{{ t('glossary_count_all') }}"
+    data-count-found="{{ t('glossary_count_found') }}"
+    data-load-error="{{ t('glossary_load_error') }}"
+  >
+    <h2 class="mb-3">{{ t('glossary_heading') }}</h2>
+
+    <div class="input-group input-group-lg mb-2">
+      <span class="input-group-text">🔍</span>
+      <input
+        type="search"
+        id="glossary-search"
+        class="form-control"
+        placeholder="{{ t('glossary_search_placeholder') }}"
+        autocomplete="off"
+        aria-label="{{ t('glossary_search_label') }}"
+      />
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="glossary-in-defs" />
+      <label class="form-check-label" for="glossary-in-defs">
+        {{ t('glossary_search_definitions') }}
+      </label>
+    </div>
+
+    <p class="text-secondary small">{{ t('glossary_language_note') }}</p>
+
+    <p id="glossary-count" class="text-secondary small mb-3"></p>
+
+    <div id="glossary-list" class="row g-3"></div>
+
+    <div id="glossary-empty" class="alert alert-secondary d-none">
+      {{ t('glossary_empty') }}
+    </div>
+  </section>
+
+  <!-- Підключення (внизу сторінки, після Bootstrap): -->
+  <!-- <link rel="stylesheet" href="/static/css/glossary.css"> -->
+  <script src="{{ url_for('static', filename='js/glossary.js') }}?v={{ asset_version('js/glossary.js') }}"></script>
+</section>
+
+{% endblock %}

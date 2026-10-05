@@ -1003,6 +1003,14 @@ def service_worker():
 def firebase_messaging_sw():
     return send_from_directory('static', 'service-worker.js', mimetype='application/javascript')
 
+@app.route('/glossary')
+def glossary():
+    return render_template("glossary.html")
+
+@app.route('/api/glossary')
+def glossary_data():
+    return send_from_directory(app.root_path, 'glossary.json', mimetype='application/json')
+
 # ========== API ROUTES ==========
 
 @app.route("/api/daily_tasks/claim/<int:task_id>", methods=["POST"])

@@ -177,12 +177,7 @@ onAuthStateChanged(auth, async (user) => {
           </a>
         </li>
 
-        <li class="nav-item">
-          <a class="nav-link d-flex align-items-center gap-2" href="/missions-overview">
-            <i class="bi bi-journal-check"></i>
-            ${t.missions}
-          </a>
-        </li>
+      
 
         <li class="nav-item">
           <a class="nav-link d-flex align-items-center gap-2" href="/about">
